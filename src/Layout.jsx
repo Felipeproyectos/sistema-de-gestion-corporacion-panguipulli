@@ -36,6 +36,7 @@ export default function Layout({ children, currentPageName }) {
     { label: "Solicitudes", page: "Solicitudes", icon: ClipboardList, adminOnly: false },
     { label: "Alertas", page: "Alertas", icon: Bell, adminOnly: false },
     { label: "Usuarios", page: "Usuarios", icon: Users, adminOnly: true },
+    { label: "Configuración", page: "Configuracion", icon: Settings, adminOnly: true },
   ];
 
   const visibleItems = navItems.filter(i => !i.adminOnly || isAdmin);
