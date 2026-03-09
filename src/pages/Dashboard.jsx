@@ -15,17 +15,12 @@ export default function Dashboard() {
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
-      const isAdmin = u?.role === "admin";
       const allEquipos = await base44.entities.EquipoDEA.list();
-      const filtrados = isAdmin
-        ? allEquipos
-        : allEquipos.filter(e => e.usuarios_asignados?.includes(u.email));
-      setEquipos(filtrados);
-      const ids = filtrados.map(e => e.id);
+      setEquipos(allEquipos);
       const allParches = await base44.entities.Parche.list();
-      setParches(allParches.filter(p => ids.includes(p.equipo_id)));
+      setParches(allParches);
       const allSolicitudes = await base44.entities.SolicitudStock.list();
-      setSolicitudes(isAdmin ? allSolicitudes : allSolicitudes.filter(s => s.solicitante_email === u.email));
+      setSolicitudes(allSolicitudes);
       setLoading(false);
     });
   }, []);

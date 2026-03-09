@@ -17,10 +17,7 @@ export default function Equipos() {
     const u = await base44.auth.me();
     setUser(u);
     const all = await base44.entities.EquipoDEA.list();
-    const filtrados = u?.role === "admin"
-      ? all
-      : all.filter(e => e.usuarios_asignados?.includes(u.email));
-    setEquipos(filtrados);
+    setEquipos(all);
     setLoading(false);
   };
 

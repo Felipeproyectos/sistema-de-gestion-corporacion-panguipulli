@@ -11,15 +11,10 @@ export default function Alertas() {
 
   useEffect(() => {
     const init = async () => {
-      const u = await base44.auth.me();
       const allEquipos = await base44.entities.EquipoDEA.list();
-      const filtrados = u?.role === "admin"
-        ? allEquipos
-        : allEquipos.filter(e => e.usuarios_asignados?.includes(u.email));
-      setEquipos(filtrados);
-      const ids = filtrados.map(e => e.id);
+      setEquipos(allEquipos);
       const allParches = await base44.entities.Parche.list();
-      setParches(allParches.filter(p => ids.includes(p.equipo_id)));
+      setParches(allParches);
       setLoading(false);
     };
     init();
