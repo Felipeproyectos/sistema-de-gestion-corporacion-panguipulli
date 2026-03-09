@@ -60,6 +60,7 @@ export default function ParchesPanel({ equipoId, parches, onRefresh, isAdmin }) 
               <select className={inputCls + " w-full"} value={form.tipo} onChange={e => set("tipo", e.target.value)}>
                 <option value="adulto">Adulto</option>
                 <option value="nino">Niño</option>
+                <option value="mixto">Mixto (Adulto/Niño)</option>
               </select>
             </div>
             <div>
@@ -97,7 +98,7 @@ export default function ParchesPanel({ equipoId, parches, onRefresh, isAdmin }) 
           return (
             <div key={p.id} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3">
               <div className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full ${p.tipo === "adulto" ? "bg-blue-500" : "bg-pink-500"}`} />
+                <div className={`w-2 h-2 rounded-full ${p.tipo === "adulto" ? "bg-blue-500" : p.tipo === "nino" ? "bg-pink-500" : "bg-purple-500"}`} />
                 <div>
                   <p className="text-sm font-medium text-slate-800 capitalize">
                     {p.tipo} — {p.cantidad} ud{p.cantidad > 1 ? "s" : ""}
