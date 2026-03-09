@@ -68,9 +68,9 @@ export default function Configuracion() {
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 space-y-6">
         {/* Preview */}
         <div className="flex items-center gap-4 p-5 rounded-xl bg-slate-800">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0" style={{ background: "#e63946" }}>
+          <div className="flex items-center justify-center overflow-hidden flex-shrink-0" style={form.logo_url ? { width: 52, height: 52 } : { width: 44, height: 44, background: "#e63946", borderRadius: 12 }}>
             {form.logo_url
-              ? <img src={form.logo_url} alt="logo" className="w-full h-full object-cover" />
+              ? <img src={form.logo_url} alt="logo" className="w-full h-full object-contain" />
               : <Settings className="w-6 h-6 text-white" />
             }
           </div>
