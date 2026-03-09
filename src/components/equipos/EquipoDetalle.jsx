@@ -93,6 +93,14 @@ export default function EquipoDetalle({ equipo, onClose, onEdit, onDelete, isAdm
             ))}
           </div>
 
+          {/* Fotografía */}
+          {equipo.foto_url && (
+            <div>
+              <p className="text-xs text-slate-400 mb-2">Fotografía del Equipo</p>
+              <img src={equipo.foto_url} alt="Equipo DEA" className="w-full max-h-64 object-contain rounded-2xl border border-slate-100 bg-slate-50" />
+            </div>
+          )}
+
           {/* Documento */}
           {equipo.orden_compra_url && (
             <div className="flex items-center gap-3 bg-blue-50 rounded-xl p-4">
