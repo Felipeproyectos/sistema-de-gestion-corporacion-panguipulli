@@ -29,7 +29,7 @@ export default function Solicitudes() {
   const [respuesta, setRespuesta] = useState("");
 
   const load = async () => {
-    const u = await base44.auth.me();
+    const u = await base44.auth.me().catch(() => null);
     setUser(u);
     const allEquipos = await base44.entities.EquipoDEA.list();
     const equiposFiltrados = u?.role === "admin"

@@ -14,7 +14,7 @@ export default function Equipos() {
   const [selectedEquipo, setSelectedEquipo] = useState(null);
 
   const load = async () => {
-    const u = await base44.auth.me();
+    const u = await base44.auth.me().catch(() => null);
     setUser(u);
     const all = await base44.entities.EquipoDEA.list();
     setEquipos(all);

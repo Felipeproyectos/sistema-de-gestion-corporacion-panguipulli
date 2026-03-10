@@ -13,16 +13,20 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    base44.auth.me().then(async (u) => {
+    const init = async () => {
+      const u = await base44.auth.me().catch(() => null);
       setUser(u);
-      const allEquipos = await base44.entities.EquipoDEA.list();
+      const [allEquipos, allParches, allSolicitudes] = await Promise.all([
+        base44.entities.EquipoDEA.list(),
+        base44.entities.Parche.list(),
+        base44.entities.SolicitudStock.list(),
+      ]);
       setEquipos(allEquipos);
-      const allParches = await base44.entities.Parche.list();
       setParches(allParches);
-      const allSolicitudes = await base44.entities.SolicitudStock.list();
       setSolicitudes(allSolicitudes);
       setLoading(false);
-    });
+    };
+    init();
   }, []);
 
   const hoy = new Date();
