@@ -209,14 +209,35 @@ export default function Solicitudes() {
               )}
               <div>
                 <label className="text-xs font-medium text-slate-600 mb-1 block">Tipo de Solicitud *</label>
-                <select className={inputCls} value={form.tipo_solicitud} onChange={e => setForm(f => ({ ...f, tipo_solicitud: e.target.value }))}>
-                  {TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                <select className={inputCls} value={form.tipo_categoria} onChange={e => setForm(f => ({ ...f, tipo_categoria: e.target.value }))}>
+                  {TIPOS_FORM.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">Cantidad</label>
-                <input type="number" className={inputCls} min={1} value={form.cantidad} onChange={e => setForm(f => ({ ...f, cantidad: parseInt(e.target.value) }))} />
-              </div>
+
+              {form.tipo_categoria === "parches" ? (
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-slate-600 block">Cantidades por tipo de parche</label>
+                  {PARCHE_TIPOS.map(p => (
+                    <div key={p.value} className="flex items-center gap-3">
+                      <span className="text-sm text-slate-700 w-40 flex-shrink-0">{p.label}</span>
+                      <input
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        className={inputCls}
+                        value={form.parches[p.value]}
+                        onChange={e => setForm(f => ({ ...f, parches: { ...f.parches, [p.value]: e.target.value } }))}
+                      />
+                    </div>
+                  ))}
+                  <p className="text-xs text-slate-400">Deja en 0 los tipos que no necesites</p>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-xs font-medium text-slate-600 mb-1 block">Cantidad</label>
+                  <input type="number" className={inputCls} min={1} value={form.cantidad} onChange={e => setForm(f => ({ ...f, cantidad: parseInt(e.target.value) }))} />
+                </div>
+              )}
               <div>
                 <label className="text-xs font-medium text-slate-600 mb-1 block">Descripción / Motivo *</label>
                 <textarea className={inputCls} rows={3} value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))} placeholder="Describe el motivo de la solicitud..." />
