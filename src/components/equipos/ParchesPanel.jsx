@@ -100,8 +100,8 @@ export default function ParchesPanel({ equipoId, parches, onRefresh, isAdmin }) 
               <div className="flex items-center gap-3">
                 <div className={`w-2 h-2 rounded-full ${p.tipo === "adulto" ? "bg-blue-500" : p.tipo === "nino" ? "bg-pink-500" : "bg-purple-500"}`} />
                 <div>
-                  <p className="text-sm font-medium text-slate-800 capitalize">
-                    {p.tipo} — {p.cantidad} ud{p.cantidad > 1 ? "s" : ""}
+                  <p className="text-sm font-medium text-slate-800">
+                    {p.tipo === "nino" ? "Niño" : p.tipo === "mixto" ? "Mixto" : "Adulto"} — {p.cantidad} ud{p.cantidad > 1 ? "s" : ""}
                   </p>
                   <p className="text-xs text-slate-400">
                     Vence: {p.fecha_vencimiento ? format(parseISO(p.fecha_vencimiento), "dd/MM/yyyy") : "—"}
