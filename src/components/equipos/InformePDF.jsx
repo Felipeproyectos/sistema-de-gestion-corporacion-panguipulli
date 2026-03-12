@@ -42,7 +42,7 @@ export default function InformePDF({ equipos, parches }) {
         <!-- Header -->
         <div style="border-bottom: 3px solid #e63946; padding-bottom: 20px; margin-bottom: 30px;">
           <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
-            ${logo ? `<img src="${logo}" alt="Logo" style="width: 60px; height: 60px; object-fit: contain;" />` : ''}
+            ${logo ? `<div style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;"><img src="${logo}" alt="Logo" style="max-width: 80px; max-height: 80px; object-fit: contain;" /></div>` : ''}
             <div>
               <p style="margin: 0; font-size: 16px; font-weight: 600; color: #1a2e4a;">Corporación Municipal de Panguipulli</p>
               <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">Área Salud</p>

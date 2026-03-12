@@ -59,7 +59,7 @@ export default function Layout({ children, currentPageName }) {
       <aside className="hidden lg:flex flex-col w-64 min-h-screen" style={{ background: "#1a2e4a" }}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-7 border-b border-white/10">
-          <div className="flex items-center justify-center overflow-hidden flex-shrink-0" style={appConfig?.logo_url ? { width: 48, height: 48 } : { width: 36, height: 36, background: "#e63946", borderRadius: 12 }}>
+          <div className="flex items-center justify-center overflow-hidden flex-shrink-0" style={appConfig?.logo_url ? { width: 64, height: 64 } : { width: 36, height: 36, background: "#e63946", borderRadius: 12 }}>
             {appConfig?.logo_url
               ? <img src={appConfig.logo_url} alt="logo" className="w-full h-full object-contain" />
               : <Heart className="w-5 h-5 text-white" />
@@ -111,7 +111,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-4" style={{ background: "#1a2e4a" }}>
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center overflow-hidden" style={appConfig?.logo_url ? { width: 36, height: 36 } : { width: 28, height: 28, background: "#e63946", borderRadius: 8 }}>
+          <div className="flex items-center justify-center overflow-hidden" style={appConfig?.logo_url ? { width: 44, height: 44 } : { width: 28, height: 28, background: "#e63946", borderRadius: 8 }}>
             {appConfig?.logo_url
               ? <img src={appConfig.logo_url} alt="logo" className="w-full h-full object-contain" />
               : <Heart className="w-4 h-4 text-white" />
