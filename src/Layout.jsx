@@ -59,7 +59,7 @@ export default function Layout({ children, currentPageName }) {
       <aside className="hidden lg:flex flex-col w-64 min-h-screen" style={{ background: "linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)" }}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-7 border-b border-white/10">
-          <div className="flex items-center justify-center overflow-hidden flex-shrink-0" style={appConfig?.logo_url ? { width: 64, height: 64 } : { width: 36, height: 36, background: "#e63946", borderRadius: 12 }}>
+          <div className="flex items-center justify-center overflow-hidden flex-shrink-0" style={appConfig?.logo_url ? { width: 64, height: 64 } : { width: 36, height: 36, background: "rgba(255,255,255,0.2)", borderRadius: 12 }}>
             {appConfig?.logo_url ?
             <img src={appConfig.logo_url} alt="logo" className="w-full h-full object-contain" /> :
             <Heart className="w-5 h-5 text-white" />
@@ -93,7 +93,7 @@ export default function Layout({ children, currentPageName }) {
         {user &&
         <div className="px-4 py-5 border-t border-white/10">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: "#e63946" }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: "rgba(255,255,255,0.2)" }}>
                 {user.full_name?.charAt(0) || user.email?.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
@@ -111,7 +111,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Mobile Header */}
       <div className="px-4 py-4 lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between" style={{ background: "linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)" }}>
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center overflow-hidden" style={appConfig?.logo_url ? { width: 56, height: 56 } : { width: 28, height: 28, background: "#e63946", borderRadius: 8 }}>
+          <div className="flex items-center justify-center overflow-hidden" style={appConfig?.logo_url ? { width: 56, height: 56 } : { width: 28, height: 28, background: "rgba(255,255,255,0.2)", borderRadius: 8 }}>
             {appConfig?.logo_url ?
             <img src={appConfig.logo_url} alt="logo" className="w-full h-full object-contain" /> :
             <Heart className="w-4 h-4 text-white" />
