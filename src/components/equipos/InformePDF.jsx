@@ -159,7 +159,11 @@ export default function InformePDF({ equipos, parches }) {
       const imgY = 0;
 
       pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      pdf.save(`Informe_Equipos_DEA_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+      
+      // Abrir en nueva ventana para imprimir o guardar
+      const pdfBlob = pdf.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, '_blank');
     } finally {
       document.body.removeChild(container);
       setGenerando(false);
