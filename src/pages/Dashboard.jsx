@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Monitor, AlertTriangle, CheckCircle, ClipboardList, TrendingUp } from "lucide-react";
+import { Monitor, AlertTriangle, Package, ClipboardList, Activity, ArrowRight, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, parseISO } from "date-fns";
@@ -42,9 +42,9 @@ export default function Dashboard() {
   const pendientes = solicitudes.filter(s => s.estado === "pendiente");
 
   const stats = [
-    { label: "Equipos Activos", value: operativos.length, total: equipos.length, icon: Monitor, color: "#10b981", bg: "#ecfdf5" },
-    { label: "Parches por Vencer", value: porVencer.length, icon: AlertTriangle, color: "#f59e0b", bg: "#fffbeb" },
-    { label: "Parches Vencidos", value: vencidos.length, icon: AlertTriangle, color: "#e63946", bg: "#fff1f2" },
+    { label: "Equipos Activos", value: operativos.length, total: equipos.length, icon: Monitor, color: "#4ade80", bg: "#f0fdf4" },
+    { label: "Parches por Vencer", value: porVencer.length, icon: AlertTriangle, color: "#fbbf24", bg: "#fffbeb" },
+    { label: "Parches Vencidos", value: vencidos.length, icon: Package, color: "#e63946", bg: "#fff1f2" },
     { label: "Solicitudes Pendientes", value: pendientes.length, icon: ClipboardList, color: "#6366f1", bg: "#eef2ff" },
   ];
 
@@ -55,96 +55,145 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="p-6 lg:p-10 max-w-6xl mx-auto">
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-slate-500 mt-1">Bienvenido, {user?.full_name || user?.email}</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      {/* Header con gradiente */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-emerald-500 to-teal-400 px-6 lg:px-10 pt-12 pb-24">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjEiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-40" />
+        <div className="relative max-w-6xl mx-auto">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Activity className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl lg:text-4xl font-bold text-white">Dashboard</h1>
+              <p className="text-emerald-50 text-sm mt-0.5">Bienvenido, {user?.full_name || user?.email}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        {stats.map((s, i) => {
-          const Icon = s.icon;
-          return (
-            <div key={i} className="rounded-2xl p-5 bg-white shadow-sm border border-slate-100">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: s.bg }}>
-                <Icon className="w-5 h-5" style={{ color: s.color }} />
+      {/* Stats Cards - elevadas sobre el header */}
+      <div className="max-w-6xl mx-auto px-6 lg:px-10 -mt-16 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((s, i) => {
+            const Icon = s.icon;
+            return (
+              <div key={i} className="group relative bg-white rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-100 hover:border-emerald-200">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-50 to-transparent rounded-full -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110" style={{ background: s.bg }}>
+                    <Icon className="w-6 h-6" style={{ color: s.color }} />
+                  </div>
+                  <p className="text-3xl font-bold text-slate-900 mb-1">{s.value}</p>
+                  <p className="text-xs text-slate-500 font-medium">{s.label}</p>
+                  {s.total !== undefined && (
+                    <p className="text-xs text-slate-400 mt-1">de {s.total} totales</p>
+                  )}
+                </div>
               </div>
-              <p className="text-2xl font-bold text-slate-900">{s.value}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
-              {s.total !== undefined && (
-                <p className="text-xs text-slate-400 mt-1">de {s.total} totales</p>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* Alertas recientes */}
-      {(porVencer.length > 0 || vencidos.length > 0) && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm mb-6">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="font-semibold text-slate-800 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
-              Alertas de Parches
-            </h2>
-          </div>
-          <div className="divide-y divide-slate-50">
-            {vencidos.slice(0, 3).map(p => {
-              const equipo = equipos.find(e => e.id === p.equipo_id);
-              return (
-                <div key={p.id} className="px-6 py-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">{equipo?.marca} {equipo?.modelo}</p>
-                    <p className="text-xs text-slate-500">Parches {p.tipo} — Lote {p.lote || "-"}</p>
+      <div className="max-w-6xl mx-auto px-6 lg:px-10 mb-8">
+        {(porVencer.length > 0 || vencidos.length > 0) && (
+          <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-3xl border border-red-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-5 bg-white/60 backdrop-blur-sm border-b border-red-100/50">
+              <div className="flex items-center justify-between">
+                <h2 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
+                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-red-600" />
                   </div>
-                  <span className="text-xs font-medium px-2.5 py-1 rounded-full text-red-700 bg-red-50">VENCIDO</span>
-                </div>
-              );
-            })}
-            {porVencer.slice(0, 3).map(p => {
-              const equipo = equipos.find(e => e.id === p.equipo_id);
-              const dias = differenceInDays(parseISO(p.fecha_vencimiento), hoy);
-              return (
-                <div key={p.id} className="px-6 py-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">{equipo?.marca} {equipo?.modelo}</p>
-                    <p className="text-xs text-slate-500">Parches {p.tipo} — Vence en {dias} días</p>
+                  Alertas Críticas
+                </h2>
+                <Link to={createPageUrl("Alertas")} className="flex items-center gap-1 text-sm text-red-600 font-semibold hover:gap-2 transition-all">
+                  Ver todas <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+            <div className="p-6 space-y-3">
+              {vencidos.slice(0, 3).map(p => {
+                const equipo = equipos.find(e => e.id === p.equipo_id);
+                return (
+                  <div key={p.id} className="bg-white rounded-xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow border border-red-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                        <Package className="w-5 h-5 text-red-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{equipo?.marca} {equipo?.modelo}</p>
+                        <p className="text-xs text-slate-500">Parches {p.tipo} — Lote {p.lote || "-"}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold px-3 py-1.5 rounded-full text-red-700 bg-red-100 border border-red-200">VENCIDO</span>
                   </div>
-                  <span className="text-xs font-medium px-2.5 py-1 rounded-full text-amber-700 bg-amber-50">PRÓXIMO</span>
-                </div>
-              );
-            })}
+                );
+              })}
+              {porVencer.slice(0, 3).map(p => {
+                const equipo = equipos.find(e => e.id === p.equipo_id);
+                const dias = differenceInDays(parseISO(p.fecha_vencimiento), hoy);
+                return (
+                  <div key={p.id} className="bg-white rounded-xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow border border-amber-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <AlertTriangle className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{equipo?.marca} {equipo?.modelo}</p>
+                        <p className="text-xs text-slate-500">Parches {p.tipo} — Vence en {dias} días</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold px-3 py-1.5 rounded-full text-amber-700 bg-amber-100 border border-amber-200">PRÓXIMO</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div className="px-6 py-3">
-            <Link to={createPageUrl("Alertas")} className="text-xs text-red-600 font-medium hover:underline">Ver todas las alertas →</Link>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Equipos resumen */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-800">Equipos DEA</h2>
-          <Link to={createPageUrl("Equipos")} className="text-xs text-red-600 font-medium hover:underline">Ver todos →</Link>
-        </div>
-        <div className="divide-y divide-slate-50">
-          {equipos.slice(0, 5).map(e => (
-            <div key={e.id} className="px-6 py-3 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-800">{e.marca} {e.modelo}</p>
-                <p className="text-xs text-slate-500">{e.establecimiento} — {e.lugar_destinado}</p>
+      <div className="max-w-6xl mx-auto px-6 lg:px-10 pb-10">
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-lg overflow-hidden">
+          <div className="px-6 py-5 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 flex items-center justify-between">
+            <h2 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <Monitor className="w-4 h-4 text-emerald-600" />
               </div>
-              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                e.estado === "operativo" ? "bg-green-50 text-green-700" :
-                e.estado === "mantenimiento" ? "bg-amber-50 text-amber-700" :
-                "bg-red-50 text-red-700"
-              }`}>{e.estado?.replace("_", " ")}</span>
-            </div>
-          ))}
-          {equipos.length === 0 && (
-            <div className="px-6 py-8 text-center text-slate-400 text-sm">No hay equipos asignados</div>
-          )}
+              Equipos DEA Recientes
+            </h2>
+            <Link to={createPageUrl("Equipos")} className="flex items-center gap-1 text-sm text-emerald-600 font-semibold hover:gap-2 transition-all">
+              Ver todos <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {equipos.slice(0, 5).map(e => (
+              <div key={e.id} className="px-6 py-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Monitor className="w-6 h-6 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">{e.marca} {e.modelo}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{e.establecimiento} — {e.lugar_destinado}</p>
+                  </div>
+                </div>
+                <span className={`text-xs font-bold px-3 py-1.5 rounded-full border ${
+                  e.estado === "operativo" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                  e.estado === "mantenimiento" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                  "bg-red-50 text-red-700 border-red-200"
+                }`}>{e.estado?.replace("_", " ").toUpperCase()}</span>
+              </div>
+            ))}
+            {equipos.length === 0 && (
+              <div className="px-6 py-12 text-center text-slate-400 text-sm">
+                <Monitor className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                No hay equipos asignados
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
