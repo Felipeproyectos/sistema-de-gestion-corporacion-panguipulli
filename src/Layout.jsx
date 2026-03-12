@@ -46,17 +46,17 @@ export default function Layout({ children, currentPageName }) {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         :root {
-          --primary: #1a2e4a;
+          --primary: #4ade80;
           --accent: #e63946;
           --accent-light: #fff1f2;
         }
         .nav-link { transition: all 0.2s ease; }
-        .nav-link:hover { background: rgba(255,255,255,0.08); }
-        .nav-link.active { background: rgba(230,57,70,0.18); border-left: 3px solid #e63946; }
+        .nav-link:hover { background: rgba(255,255,255,0.15); }
+        .nav-link.active { background: rgba(255,255,255,0.25); border-left: 3px solid #ffffff; }
       `}</style>
 
       {/* Sidebar Desktop */}
-      <aside className="hidden lg:flex flex-col w-64 min-h-screen" style={{ background: "#1a2e4a" }}>
+      <aside className="hidden lg:flex flex-col w-64 min-h-screen" style={{ background: "#4ade80" }}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-7 border-b border-white/10">
           <div className="flex items-center justify-center overflow-hidden flex-shrink-0" style={appConfig?.logo_url ? { width: 64, height: 64 } : { width: 36, height: 36, background: "#e63946", borderRadius: 12 }}>
@@ -109,7 +109,7 @@ export default function Layout({ children, currentPageName }) {
       </aside>
 
       {/* Mobile Header */}
-      <div className="bg-green-300 px-4 py-4 lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between" style={{ background: "#1a2e4a" }}>
+      <div className="px-4 py-4 lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between" style={{ background: "#4ade80" }}>
         <div className="flex items-center gap-2">
           <div className="flex items-center justify-center overflow-hidden" style={appConfig?.logo_url ? { width: 44, height: 44 } : { width: 28, height: 28, background: "#e63946", borderRadius: 8 }}>
             {appConfig?.logo_url ?
@@ -126,7 +126,7 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Mobile Menu */}
       {menuOpen &&
-      <div className="lg:hidden fixed inset-0 z-40 pt-16" style={{ background: "#1a2e4a" }}>
+      <div className="lg:hidden fixed inset-0 z-40 pt-16" style={{ background: "#4ade80" }}>
           <nav className="px-4 py-4 space-y-1">
             {visibleItems.map((item) => {
             const Icon = item.icon;
