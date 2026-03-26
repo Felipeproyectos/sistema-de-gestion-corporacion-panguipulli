@@ -38,16 +38,25 @@ export default function Historial() {
   );
 
   return (
-    <div className="p-6 lg:p-10 max-w-5xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#1565c0,#0288d1)" }}>
-            <History className="w-5 h-5 text-white" />
+    <div className="min-h-screen" style={{ background: "#e8f4fd" }}>
+      {/* Header */}
+      <div className="relative overflow-hidden px-6 lg:px-10 pt-10 pb-20" style={{ background: "linear-gradient(135deg, #0f2d6b 0%, #1565c0 40%, #29b6f6 100%)" }}>
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full opacity-20 border-4 border-white" />
+        <div className="absolute right-4 bottom-0 w-72 h-72 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #29b6f6 0%, transparent 70%)" }} />
+        <div className="relative max-w-5xl mx-auto flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.2)" }}>
+            <History className="w-6 h-6 text-white" />
           </div>
-          Historial de Actividad
-        </h1>
-        <p className="text-slate-500 mt-1">Registro de todas las acciones realizadas en la plataforma</p>
+          <div>
+            <p className="text-cyan-200 text-xs font-semibold uppercase tracking-widest">Auditoría</p>
+            <h1 className="text-3xl font-bold text-white">Historial de Actividad</h1>
+            <p className="text-blue-100 text-sm mt-0.5">Registro de todas las acciones realizadas en la plataforma</p>
+          </div>
+        </div>
       </div>
+
+      <div className="max-w-5xl mx-auto px-6 lg:px-10 -mt-10 pb-10">
+      <div className="mb-0">
 
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -136,6 +145,8 @@ export default function Historial() {
             </div>
           );
         })}
+      </div>
+      </div>
       </div>
     </div>
   );

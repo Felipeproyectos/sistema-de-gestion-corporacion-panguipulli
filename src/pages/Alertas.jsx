@@ -93,30 +93,44 @@ export default function Alertas() {
   );
 
   return (
-    <div className="p-6 lg:p-10 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <div className="flex items-start justify-between">
+    <div className="min-h-screen" style={{ background: "#e8f4fd" }}>
+      {/* Header */}
+      <div className="relative overflow-hidden px-6 lg:px-10 pt-10 pb-20" style={{ background: "linear-gradient(135deg, #0f2d6b 0%, #1565c0 40%, #29b6f6 100%)" }}>
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full opacity-20 border-4 border-white" />
+        <div className="absolute right-4 bottom-0 w-72 h-72 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #29b6f6 0%, transparent 70%)" }} />
+        <div className="relative max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.2)" }}>
+              <AlertTriangle className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-cyan-200 text-xs font-semibold uppercase tracking-widest">Monitoreo</p>
+              <h1 className="text-3xl font-bold text-white">Alertas de Vencimiento</h1>
+              <p className="text-blue-100 text-sm mt-0.5">Control de vencimiento de parches por equipo</p>
+            </div>
+          </div>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Alertas de Vencimiento</h1>
-            <p className="text-slate-500 mt-1">Control de vencimiento de parches por equipo</p>
+            <button
+              onClick={() => setShowNotifModal(true)}
+              disabled={enviando}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm disabled:opacity-60"
+              style={{ background: "rgba(255,255,255,0.2)", color: "white", border: "1px solid rgba(255,255,255,0.3)" }}
+            >
+              {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+              {enviando ? "Enviando..." : "Notificar por Email"}
+              {!enviando && <ChevronDown className="w-3.5 h-3.5 opacity-70" />}
+            </button>
+            {mensajeEnvio && (
+              <div className={`mt-2 px-4 py-2 rounded-xl text-xs font-medium inline-flex items-center gap-2 ${mensajeEnvio.startsWith('✅') ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+                {mensajeEnvio}
+              </div>
+            )}
           </div>
-          <button
-            onClick={() => setShowNotifModal(true)}
-            disabled={enviando}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-md disabled:opacity-60 hover:opacity-90 transition-all"
-            style={{ background: "linear-gradient(135deg, #1565c0, #0288d1)" }}
-          >
-            {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-            {enviando ? "Enviando..." : "Notificar por Email"}
-            {!enviando && <ChevronDown className="w-3.5 h-3.5 opacity-70" />}
-          </button>
         </div>
-        {mensajeEnvio && (
-          <div className={`mt-3 px-4 py-2.5 rounded-xl text-sm font-medium inline-flex items-center gap-2 ${mensajeEnvio.startsWith('✅') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-            {mensajeEnvio}
-          </div>
-        )}
       </div>
+
+      <div className="max-w-4xl mx-auto px-6 lg:px-10 -mt-10 pb-10">
+      <div className="mb-0">
 
       {/* Modal de Notificación */}
       {showNotifModal && (
@@ -297,6 +311,8 @@ export default function Alertas() {
             <p>No hay parches en esta categoría</p>
           </div>
         )}
+      </div>
+      </div>
       </div>
     </div>
   );

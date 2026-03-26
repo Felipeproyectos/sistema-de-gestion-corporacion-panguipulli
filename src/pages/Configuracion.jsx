@@ -62,11 +62,24 @@ export default function Configuracion() {
   const labelCls = "block text-xs font-medium text-slate-600 mb-1";
 
   return (
-    <div className="p-6 lg:p-10 max-w-2xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Configuración</h1>
-        <p className="text-slate-500 mt-1">Personaliza el nombre y logo de la aplicación</p>
+    <div className="min-h-screen" style={{ background: "#e8f4fd" }}>
+      {/* Header */}
+      <div className="relative overflow-hidden px-6 lg:px-10 pt-10 pb-20" style={{ background: "linear-gradient(135deg, #0f2d6b 0%, #1565c0 40%, #29b6f6 100%)" }}>
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full opacity-20 border-4 border-white" />
+        <div className="absolute right-4 bottom-0 w-72 h-72 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #29b6f6 0%, transparent 70%)" }} />
+        <div className="relative max-w-2xl mx-auto flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.2)" }}>
+            <Settings className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <p className="text-cyan-200 text-xs font-semibold uppercase tracking-widest">Sistema</p>
+            <h1 className="text-3xl font-bold text-white">Configuración</h1>
+            <p className="text-blue-100 text-sm mt-0.5">Personaliza el nombre y logo de la aplicación</p>
+          </div>
+        </div>
       </div>
+
+      <div className="max-w-2xl mx-auto px-6 lg:px-10 -mt-10 pb-10">
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 space-y-6">
         {/* Preview */}
@@ -137,6 +150,7 @@ export default function Configuracion() {
       {/* Sistema de Alertas Automáticas */}
       <div className="mt-6">
         <ManualAlertasAutomaticas />
+      </div>
       </div>
     </div>
   );
