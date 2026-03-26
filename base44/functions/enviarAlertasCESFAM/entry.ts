@@ -10,10 +10,11 @@ Deno.serve(async (req) => {
     const cesfamFiltro = body.cesfam || null;
     const emailsExtra = Array.isArray(body.emails_extra) ? body.emails_extra : [];
 
-    const [parches, equipos, configAlertas] = await Promise.all([
+    const [parches, equipos, configAlertas, users] = await Promise.all([
       base44.asServiceRole.entities.Parche.list(),
       base44.asServiceRole.entities.EquipoDEA.list(),
       base44.asServiceRole.entities.ConfigAlerta.list(),
+      base44.asServiceRole.entities.User.list().catch(() => []),
     ]);
 
     const hoy = new Date();
@@ -59,6 +60,56 @@ Deno.serve(async (req) => {
     }
 
     let enviados = 0;
+
+    // Recopilar correos de usuarios asignados a equipos con alertas
+    const emailsUsuariosAsignados = new Set();
+    for (const { equipo } of Object.values(alertasPorEquipo)) {
+      for (const email of (equipo.usuarios_asignados || [])) {
+        emailsUsuariosAsignados.add(email);
+      }
+    }
+
+    // Enviar a usuarios asignados si hay alertas
+    if (emailsUsuariosAsignados.size > 0 && Object.keys(alertasPorCesfam).length > 0) {
+      const allAlertasRows = Object.entries(alertasPorCesfam).flatMap(([cesfam, alertas]) =>
+        alertas.flatMap(({ equipo, parches: ps }) =>
+          ps.map(p => `<tr>
+            <td style="padding:10px;border-bottom:1px solid #f1f5f9;">${cesfam}</td>
+            <td style="padding:10px;border-bottom:1px solid #f1f5f9;">${equipo.marca} ${equipo.modelo}</td>
+            <td style="padding:10px;border-bottom:1px solid #f1f5f9;">${p.tipo}</td>
+            <td style="padding:10px;border-bottom:1px solid #f1f5f9;">${new Date(p.fecha_vencimiento).toLocaleDateString('es-ES')}</td>
+            <td style="padding:10px;border-bottom:1px solid #f1f5f9;font-weight:bold;color:${p.estado==='VENCIDO'?'#dc2626':'#ea580c'}">${p.estado==='VENCIDO'?`Vencido hace ${Math.abs(p.diasRestantes)} días`:`${p.diasRestantes} días restantes`}</td>
+          </tr>`)
+        )
+      ).join('');
+      const totalCount = Object.values(alertasPorCesfam).reduce((a,b) => a + b.reduce((s,x)=>s+x.parches.length,0), 0);
+      const bodyAsignados = `<div style="font-family:sans-serif;max-width:700px;margin:0 auto;padding:24px;background:#f8fafc;">
+        <div style="background:#1565c0;padding:24px;border-radius:12px 12px 0 0;text-align:center;">
+          <h1 style="color:white;margin:0;font-size:22px;">⚠️ Alertas DEA — Equipos Asignados</h1>
+        </div>
+        <div style="background:white;padding:24px;border-radius:0 0 12px 12px;">
+          <p>Hay <strong>${totalCount} parche(s)</strong> que requieren atención en equipos a tu cargo:</p>
+          <table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <thead><tr style="background:#f1f5f9;">
+              <th style="padding:10px;text-align:left;">CESFAM</th>
+              <th style="padding:10px;text-align:left;">Equipo</th>
+              <th style="padding:10px;text-align:left;">Tipo Parche</th>
+              <th style="padding:10px;text-align:left;">Vencimiento</th>
+              <th style="padding:10px;text-align:left;">Estado</th>
+            </tr></thead>
+            <tbody>${allAlertasRows}</tbody>
+          </table>
+        </div>
+      </div>`;
+      for (const email of emailsUsuariosAsignados) {
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: email,
+          subject: `⚠️ Alertas DEA: ${totalCount} parche(s) requieren atención`,
+          body: bodyAsignados,
+        });
+        enviados++;
+      }
+    }
 
     // Enviar a correos extra manuales si hay alertas
     if (emailsExtra.length > 0 && Object.keys(alertasPorCesfam).length > 0) {

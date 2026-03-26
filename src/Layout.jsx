@@ -13,7 +13,8 @@ import {
   LogOut,
   Bell,
   Settings,
-  Building2 } from
+  Building2,
+  History } from
 "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
@@ -38,6 +39,7 @@ export default function Layout({ children, currentPageName }) {
   { label: "Alertas", page: "Alertas", icon: Bell, adminOnly: false },
   { label: "Usuarios", page: "Usuarios", icon: Users, adminOnly: true },
   { label: "Centros de Salud", page: "Centros", icon: Building2, adminOnly: true },
+  { label: "Historial", page: "Historial", icon: History, adminOnly: true },
   { label: "Configuración", page: "Configuracion", icon: Settings, adminOnly: true }];
 
 

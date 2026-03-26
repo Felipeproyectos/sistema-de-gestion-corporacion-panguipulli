@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import Centros from './pages/Centros';
+import Historial from './pages/Historial';
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
@@ -59,6 +60,7 @@ const AuthenticatedApp = () => {
         />
       ))}
       <Route path="/Centros" element={<LayoutWrapper currentPageName="Centros"><Centros /></LayoutWrapper>} />
+      <Route path="/Historial" element={<LayoutWrapper currentPageName="Historial"><Historial /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
