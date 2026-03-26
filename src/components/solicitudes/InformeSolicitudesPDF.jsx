@@ -73,75 +73,77 @@ export default function InformeSolicitudesPDF({ solicitudes, equipos }) {
       `;
     }).join("");
 
-    const html = `
-<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8"/>
   <title>Informe de Solicitudes</title>
   <style>
+    @page { size: letter; margin: 18mm 20mm 22mm 20mm; }
     @media print {
-      body { margin: 0; }
-      .no-print { display: none; }
+      body { margin: 0; background: white; }
+      .no-print { display: none !important; }
       table { page-break-inside: auto; }
       tr { page-break-inside: avoid; }
     }
+    * { box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f8fafc;
+      background: #f0f4f8;
       margin: 0;
-      padding: 32px;
+      padding: 28px 32px;
       color: #1e293b;
     }
+    .page { background: white; max-width: 216mm; margin: 0 auto; padding: 24px 28px 20px; }
     .header {
       background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
-      border-radius: 14px;
-      padding: 28px 32px;
+      border-radius: 10px;
+      padding: 22px 26px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 28px;
+      margin-bottom: 22px;
     }
-    .header-left { display: flex; align-items: center; gap: 20px; }
-    .header-logo { width: 72px; height: 72px; object-fit: contain; background: rgba(255,255,255,0.15); border-radius: 12px; padding: 4px; }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .header-logo { width: 64px; height: 64px; object-fit: contain; background: rgba(255,255,255,0.15); border-radius: 10px; padding: 4px; }
     .header-title { color: white; }
-    .header-title h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
-    .header-title p { margin: 4px 0 0; font-size: 14px; color: rgba(255,255,255,0.75); }
-    .header-right { text-align: right; color: rgba(255,255,255,0.85); font-size: 13px; line-height: 1.8; }
+    .header-title h1 { margin: 0; font-size: 22px; font-weight: 700; }
+    .header-title p { margin: 4px 0 0; font-size: 12px; color: rgba(255,255,255,0.75); }
+    .header-right { text-align: right; color: rgba(255,255,255,0.85); font-size: 12px; line-height: 1.8; }
     .resumen-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 14px;
-      margin-bottom: 28px;
+      gap: 12px;
+      margin-bottom: 22px;
     }
     .resumen-card {
       background: white;
-      border-radius: 12px;
-      padding: 16px 14px;
+      border-radius: 10px;
+      padding: 14px 12px;
       text-align: center;
       box-shadow: 0 1px 4px rgba(0,0,0,0.07);
       border-top: 3px solid var(--card-color);
     }
-    .resumen-card .num { font-size: 28px; font-weight: 700; color: var(--card-color); }
-    .resumen-card .lbl { font-size: 11px; color: #64748b; margin-top: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
-    .table-wrap { background: white; border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); overflow: hidden; margin-bottom: 24px; }
-    .table-header { padding: 18px 24px; border-bottom: 2px solid #f1f5f9; display: flex; align-items: center; gap: 10px; }
-    .table-header h2 { margin: 0; font-size: 17px; font-weight: 700; color: #1e293b; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .resumen-card .num { font-size: 26px; font-weight: 700; color: var(--card-color); }
+    .resumen-card .lbl { font-size: 10px; color: #64748b; margin-top: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+    .table-wrap { background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); overflow: hidden; margin-bottom: 20px; }
+    .table-header { padding: 14px 20px; border-bottom: 2px solid #f1f5f9; }
+    .table-header h2 { margin: 0; font-size: 15px; font-weight: 700; color: #1e293b; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
     thead tr { background: #f8fafc; }
-    thead th { padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; }
-    tbody tr:hover { background: #f8fafc; }
-    .footer { text-align: center; padding: 20px 0 0; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+    thead th { padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    .footer { text-align: center; padding: 14px 0 0; font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; margin-top: 10px; }
     .print-btn {
       position: fixed; bottom: 24px; right: 24px;
-      background: #2563eb; color: white; border: none; border-radius: 12px;
-      padding: 14px 24px; font-size: 15px; font-weight: 600; cursor: pointer;
-      box-shadow: 0 4px 16px rgba(37,99,235,0.4);
-      display: flex; align-items: center; gap: 8px;
+      background: #2563eb; color: white; border: none; border-radius: 10px;
+      padding: 12px 22px; font-size: 14px; font-weight: 600; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.4);
     }
   </style>
 </head>
 <body>
+<div class="page">
   <div class="header">
     <div class="header-left">
       ${logo ? `<img src="${logo}" class="header-logo" alt="Logo"/>` : ""}
@@ -158,58 +160,34 @@ export default function InformeSolicitudesPDF({ solicitudes, equipos }) {
   </div>
 
   <div class="resumen-grid">
-    <div class="resumen-card" style="--card-color:#64748b">
-      <div class="num">${resumen.total}</div>
-      <div class="lbl">Total</div>
-    </div>
-    <div class="resumen-card" style="--card-color:#ea580c">
-      <div class="num">${resumen.pendiente}</div>
-      <div class="lbl">Pendientes</div>
-    </div>
-    <div class="resumen-card" style="--card-color:#16a34a">
-      <div class="num">${resumen.aprobada}</div>
-      <div class="lbl">Aprobadas</div>
-    </div>
-    <div class="resumen-card" style="--card-color:#1d4ed8">
-      <div class="num">${resumen.completada}</div>
-      <div class="lbl">Completadas</div>
-    </div>
-    <div class="resumen-card" style="--card-color:#dc2626">
-      <div class="num">${resumen.rechazada}</div>
-      <div class="lbl">Rechazadas</div>
-    </div>
+    <div class="resumen-card" style="--card-color:#64748b"><div class="num">${resumen.total}</div><div class="lbl">Total</div></div>
+    <div class="resumen-card" style="--card-color:#ea580c"><div class="num">${resumen.pendiente}</div><div class="lbl">Pendientes</div></div>
+    <div class="resumen-card" style="--card-color:#16a34a"><div class="num">${resumen.aprobada}</div><div class="lbl">Aprobadas</div></div>
+    <div class="resumen-card" style="--card-color:#1d4ed8"><div class="num">${resumen.completada}</div><div class="lbl">Completadas</div></div>
+    <div class="resumen-card" style="--card-color:#dc2626"><div class="num">${resumen.rechazada}</div><div class="lbl">Rechazadas</div></div>
   </div>
 
   <div class="table-wrap">
-    <div class="table-header">
-      <h2>📋 Detalle de Solicitudes</h2>
-    </div>
+    <div class="table-header"><h2>📋 Detalle de Solicitudes</h2></div>
     <table>
       <thead>
         <tr>
-          <th>Tipo</th>
-          <th>Equipo</th>
-          <th>Establecimiento</th>
-          <th>Cantidad</th>
-          <th>Descripción</th>
-          <th>Solicitante</th>
-          <th>Estado</th>
-          <th>Fecha</th>
+          <th>Tipo</th><th>Equipo</th><th>Establecimiento</th><th>Cantidad</th><th>Descripción</th><th>Solicitante</th><th>Estado</th><th>Fecha</th>
         </tr>
       </thead>
       <tbody>
-        ${filas || `<tr><td colspan="8" style="text-align:center;padding:24px;color:#94a3b8;">Sin solicitudes registradas</td></tr>`}
+        ${filas || `<tr><td colspan="8" style="text-align:center;padding:20px;color:#94a3b8;">Sin solicitudes registradas</td></tr>`}
       </tbody>
     </table>
   </div>
 
   <div class="footer">
-    Sistema de Gestión de Equipos DEA &nbsp;•&nbsp; Informe generado automáticamente el ${format(hoy, "dd/MM/yyyy")} a las ${format(hoy, "HH:mm")} hrs
+    Corporación Municipal Panguipulli &nbsp;–&nbsp; Departamento Informática &nbsp;–&nbsp; Área Salud<br/>
+    Informe generado automáticamente el ${format(hoy, "dd/MM/yyyy")} a las ${format(hoy, "HH:mm")} hrs
   </div>
+</div>
 
-  <button class="print-btn no-print" onclick="window.print()">
-    🖨️ Imprimir / Guardar PDF
-  </button>
+<button class="print-btn no-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
 </body>
 </html>
     `;

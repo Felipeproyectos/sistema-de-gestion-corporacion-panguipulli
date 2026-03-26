@@ -1,7 +1,5 @@
 import { FileDown, Loader2 } from "lucide-react";
 import { useState } from "react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { format } from "date-fns";
 import { base44 } from "@/api/base44Client";
 
@@ -10,176 +8,164 @@ export default function InformePDF({ equipos, parches }) {
 
   const generarPDF = async () => {
     setGenerando(true);
-    
-    // Obtener configuración de la app
+
     const appConfig = await base44.entities.AppConfig.list().catch(() => []);
     const logo = appConfig[0]?.logo_url || null;
-    
-    // Crear contenedor temporal para el contenido del PDF
-    const container = document.createElement('div');
-    container.style.position = 'absolute';
-    container.style.left = '-9999px';
-    container.style.width = '210mm';
-    container.style.padding = '20mm';
-    container.style.background = 'white';
-    container.style.fontFamily = 'Inter, sans-serif';
-    
-    // Agrupar parches por equipo
+    const hoy = new Date();
+
     const parchesMap = {};
     parches.forEach(p => {
       if (!parchesMap[p.equipo_id]) parchesMap[p.equipo_id] = [];
       parchesMap[p.equipo_id].push(p);
     });
 
-    // Calcular estadísticas
     const totalEquipos = equipos.length;
     const operativos = equipos.filter(e => e.estado === "operativo").length;
     const enMantenimiento = equipos.filter(e => e.estado === "mantenimiento").length;
     const fueraServicio = equipos.filter(e => e.estado === "fuera_de_servicio").length;
 
-    container.innerHTML = `
-      <div style="color: #1a2e4a;">
-        <!-- Header -->
-        <div style="border-bottom: 3px solid #e63946; padding-bottom: 20px; margin-bottom: 30px;">
-          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
-            ${logo ? `<div style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;"><img src="${logo}" alt="Logo" style="max-width: 80px; max-height: 80px; object-fit: contain;" /></div>` : ''}
-            <div>
-              <p style="margin: 0; font-size: 16px; font-weight: 600; color: #1a2e4a;">Corporación Municipal de Panguipulli</p>
-              <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">Área Salud</p>
-            </div>
-          </div>
-          <h1 style="margin: 16px 0 0 0; font-size: 32px; font-weight: 700; color: #1a2e4a;">Informe de Equipos DEA</h1>
-          <p style="margin: 8px 0 0 0; color: #64748b; font-size: 14px;">Generado el ${format(new Date(), "dd/MM/yyyy 'a las' HH:mm")}</p>
-        </div>
+    const equiposHTML = equipos.map(eq => {
+      const equipoParches = parchesMap[eq.id] || [];
+      const estadoColor = eq.estado === "operativo" ? "#10b981" : eq.estado === "mantenimiento" ? "#f59e0b" : "#ef4444";
+      const estadoLabel = eq.estado === "operativo" ? "Operativo" : eq.estado === "mantenimiento" ? "Mantenimiento" : "Fuera de Servicio";
 
-        <!-- Resumen Ejecutivo -->
-        <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-left: 4px solid #e63946; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-          <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a2e4a;">Resumen Ejecutivo</h2>
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-            <div>
-              <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Total de Equipos</p>
-              <p style="margin: 4px 0 0 0; font-size: 28px; font-weight: 700; color: #1a2e4a;">${totalEquipos}</p>
-            </div>
-            <div>
-              <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Operativos</p>
-              <p style="margin: 4px 0 0 0; font-size: 28px; font-weight: 700; color: #10b981;">${operativos}</p>
-            </div>
-            <div>
-              <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">En Mantenimiento</p>
-              <p style="margin: 4px 0 0 0; font-size: 28px; font-weight: 700; color: #f59e0b;">${enMantenimiento}</p>
-            </div>
-            <div>
-              <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Fuera de Servicio</p>
-              <p style="margin: 4px 0 0 0; font-size: 28px; font-weight: 700; color: #ef4444;">${fueraServicio}</p>
-            </div>
+      const parchesHTML = equipoParches.length > 0 ? `
+        <div style="background:#f8fafc;border-radius:6px;padding:10px;margin-top:10px;">
+          <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#1a2e4a;text-transform:uppercase;letter-spacing:0.5px;">Inventario de Parches</p>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+            ${equipoParches.map(p => {
+              const dias = Math.ceil((new Date(p.fecha_vencimiento) - new Date()) / (1000 * 60 * 60 * 24));
+              const vc = dias <= 0 ? "#ef4444" : dias <= 30 ? "#f59e0b" : "#10b981";
+              return `<div style="background:white;border:1px solid #e2e8f0;border-radius:4px;padding:8px;">
+                <p style="margin:0;font-size:10px;color:#94a3b8;text-transform:uppercase;">${p.tipo}</p>
+                <p style="margin:2px 0;font-size:14px;font-weight:700;color:#1a2e4a;">x${p.cantidad}</p>
+                <p style="margin:0;font-size:9px;color:${vc};">Vence: ${format(new Date(p.fecha_vencimiento), "dd/MM/yy")}</p>
+              </div>`;
+            }).join('')}
           </div>
         </div>
+      ` : `<p style="margin:8px 0 0;font-size:11px;color:#94a3b8;font-style:italic;">Sin parches registrados</p>`;
 
-        <!-- Detalle de Equipos -->
-        <h2 style="margin: 0 0 20px 0; font-size: 20px; font-weight: 600; color: #1a2e4a;">Detalle de Equipos</h2>
-        ${equipos.map((eq, idx) => {
-          const equipoParches = parchesMap[eq.id] || [];
-          const estadoColor = eq.estado === "operativo" ? "#10b981" : eq.estado === "mantenimiento" ? "#f59e0b" : "#ef4444";
-          
-          return `
-            <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; page-break-inside: avoid;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-                <div>
-                  <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #1a2e4a;">${eq.marca} ${eq.modelo}</h3>
-                  <p style="margin: 4px 0 0 0; font-size: 12px; color: #94a3b8;">S/N: ${eq.numero_serie}</p>
-                </div>
-                <span style="background: ${estadoColor}20; color: ${estadoColor}; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase;">
-                  ${eq.estado.replace("_", " ")}
-                </span>
-              </div>
-
-              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
-                <div>
-                  <p style="margin: 0; font-size: 11px; color: #94a3b8; text-transform: uppercase;">Establecimiento</p>
-                  <p style="margin: 4px 0 0 0; font-size: 13px; color: #334155; font-weight: 500;">${eq.establecimiento}</p>
-                </div>
-                <div>
-                  <p style="margin: 0; font-size: 11px; color: #94a3b8; text-transform: uppercase;">Lugar Destinado</p>
-                  <p style="margin: 4px 0 0 0; font-size: 13px; color: #334155; font-weight: 500;">${eq.lugar_destinado || "—"}</p>
-                </div>
-                <div>
-                  <p style="margin: 0; font-size: 11px; color: #94a3b8; text-transform: uppercase;">Año de Adquisición</p>
-                  <p style="margin: 4px 0 0 0; font-size: 13px; color: #334155; font-weight: 500;">${eq.anio_adquisicion || "—"}</p>
-                </div>
-                <div>
-                  <p style="margin: 0; font-size: 11px; color: #94a3b8; text-transform: uppercase;">Valor</p>
-                  <p style="margin: 4px 0 0 0; font-size: 13px; color: #334155; font-weight: 500;">${eq.valor ? "$" + Number(eq.valor).toLocaleString() : "—"}</p>
-                </div>
-              </div>
-
-              ${equipoParches.length > 0 ? `
-                <div style="background: #f8fafc; border-radius: 6px; padding: 12px; margin-top: 12px;">
-                  <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 600; color: #1a2e4a;">Inventario de Parches</p>
-                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-                    ${equipoParches.map(p => {
-                      const diasRestantes = Math.ceil((new Date(p.fecha_vencimiento) - new Date()) / (1000 * 60 * 60 * 24));
-                      const vencColor = diasRestantes <= 0 ? "#ef4444" : diasRestantes <= 30 ? "#f59e0b" : "#10b981";
-                      return `
-                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px;">
-                          <p style="margin: 0; font-size: 10px; color: #94a3b8; text-transform: uppercase;">${p.tipo}</p>
-                          <p style="margin: 2px 0; font-size: 14px; font-weight: 600; color: #1a2e4a;">x${p.cantidad}</p>
-                          <p style="margin: 0; font-size: 9px; color: ${vencColor};">Vence: ${format(new Date(p.fecha_vencimiento), "dd/MM/yy")}</p>
-                        </div>
-                      `;
-                    }).join('')}
-                  </div>
-                </div>
-              ` : `
-                <p style="margin: 12px 0 0 0; font-size: 12px; color: #94a3b8; font-style: italic;">Sin parches registrados</p>
-              `}
-
-              ${eq.notas ? `
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
-                  <p style="margin: 0 0 4px 0; font-size: 11px; color: #94a3b8; text-transform: uppercase;">Notas</p>
-                  <p style="margin: 0; font-size: 12px; color: #334155; line-height: 1.5;">${eq.notas}</p>
-                </div>
-              ` : ""}
-            </div>
-          `;
-        }).join('')}
-
-        <!-- Footer -->
-        <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e2e8f0; text-align: center;">
-          <p style="margin: 0; font-size: 11px; color: #94a3b8;">Sistema de Gestión de Equipos DEA • Informe generado automáticamente</p>
+      const notasHTML = eq.notas ? `
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0;">
+          <p style="margin:0 0 2px;font-size:10px;color:#94a3b8;text-transform:uppercase;">Notas</p>
+          <p style="margin:0;font-size:11px;color:#334155;line-height:1.5;">${eq.notas}</p>
         </div>
-      </div>
-    `;
+      ` : "";
 
-    document.body.appendChild(container);
+      return `
+        <div style="border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:14px;page-break-inside:avoid;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+            <div>
+              <h3 style="margin:0;font-size:15px;font-weight:700;color:#1a2e4a;">${eq.marca} ${eq.modelo}</h3>
+              <p style="margin:3px 0 0;font-size:11px;color:#94a3b8;">S/N: ${eq.numero_serie}</p>
+            </div>
+            <span style="background:${estadoColor}20;color:${estadoColor};padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;">${estadoLabel}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:4px;">
+            <div><p style="margin:0;font-size:10px;color:#94a3b8;text-transform:uppercase;">Establecimiento</p><p style="margin:3px 0 0;font-size:12px;color:#334155;font-weight:600;">${eq.establecimiento}</p></div>
+            <div><p style="margin:0;font-size:10px;color:#94a3b8;text-transform:uppercase;">Lugar Destinado</p><p style="margin:3px 0 0;font-size:12px;color:#334155;font-weight:600;">${eq.lugar_destinado || "—"}</p></div>
+            <div><p style="margin:0;font-size:10px;color:#94a3b8;text-transform:uppercase;">Año Adquisición</p><p style="margin:3px 0 0;font-size:12px;color:#334155;font-weight:600;">${eq.anio_adquisicion || "—"}</p></div>
+            <div><p style="margin:0;font-size:10px;color:#94a3b8;text-transform:uppercase;">Valor</p><p style="margin:3px 0 0;font-size:12px;color:#334155;font-weight:600;">${eq.valor ? "$" + Number(eq.valor).toLocaleString() : "—"}</p></div>
+          </div>
+          ${parchesHTML}
+          ${notasHTML}
+        </div>
+      `;
+    }).join('');
 
-    try {
-      const canvas = await html2canvas(container, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const imgX = 0;
-      const imgY = 0;
-
-      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      
-      // Abrir en nueva ventana para imprimir o guardar
-      const pdfBlob = pdf.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      window.open(pdfUrl, '_blank');
-    } finally {
-      document.body.removeChild(container);
-      setGenerando(false);
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Informe de Equipos DEA</title>
+  <style>
+    @page { size: letter; margin: 18mm 20mm 22mm 20mm; }
+    @media print {
+      body { margin: 0; background: white; }
+      .no-print { display: none !important; }
+      .page-footer { display: block; }
     }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 28px 32px;
+      color: #1e293b;
+    }
+    .page { background: white; max-width: 216mm; margin: 0 auto; padding: 24px 28px 20px; }
+    .header-top { display: flex; align-items: center; gap: 14px; padding-bottom: 14px; border-bottom: 3px solid #e63946; margin-bottom: 20px; }
+    .header-logo { width: 68px; height: 68px; object-fit: contain; }
+    .header-org { }
+    .header-org p { margin: 0; font-size: 15px; font-weight: 700; color: #1a2e4a; }
+    .header-org span { font-size: 12px; color: #64748b; }
+    .header-doc { margin-bottom: 6px; }
+    .header-doc h1 { margin: 0; font-size: 26px; font-weight: 800; color: #1a2e4a; }
+    .header-doc p { margin: 4px 0 0; font-size: 12px; color: #64748b; }
+    .resumen { background: #f8fafc; border-left: 4px solid #e63946; padding: 14px 16px; border-radius: 6px; margin-bottom: 20px; }
+    .resumen h2 { margin: 0 0 12px; font-size: 15px; font-weight: 700; color: #1a2e4a; }
+    .resumen-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+    .resumen-item p:first-child { margin: 0; font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .resumen-item p:last-child { margin: 3px 0 0; font-size: 22px; font-weight: 800; }
+    .section-title { font-size: 16px; font-weight: 700; color: #1a2e4a; margin: 0 0 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+    footer {
+      margin-top: 24px;
+      padding-top: 12px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 10px;
+      color: #94a3b8;
+    }
+    .print-btn {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #2563eb; color: white; border: none; border-radius: 10px;
+      padding: 12px 22px; font-size: 14px; font-weight: 600; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.4);
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="header-top">
+    ${logo ? `<img src="${logo}" class="header-logo" alt="Logo"/>` : ""}
+    <div class="header-org">
+      <p>Corporación Municipal de Panguipulli</p>
+      <span>Área Salud</span>
+    </div>
+  </div>
+  <div class="header-doc">
+    <h1>Informe de Equipos DEA</h1>
+    <p>Generado el ${format(hoy, "dd/MM/yyyy 'a las' HH:mm")}</p>
+  </div>
+
+  <div class="resumen">
+    <h2>Resumen Ejecutivo</h2>
+    <div class="resumen-grid">
+      <div class="resumen-item"><p>Total de Equipos</p><p style="color:#1a2e4a;">${totalEquipos}</p></div>
+      <div class="resumen-item"><p>Operativos</p><p style="color:#10b981;">${operativos}</p></div>
+      <div class="resumen-item"><p>En Mantenimiento</p><p style="color:#f59e0b;">${enMantenimiento}</p></div>
+      <div class="resumen-item"><p>Fuera de Servicio</p><p style="color:#ef4444;">${fueraServicio}</p></div>
+    </div>
+  </div>
+
+  <h2 class="section-title">Detalle de Equipos</h2>
+  ${equiposHTML}
+
+  <footer>
+    Corporación Municipal Panguipulli &nbsp;–&nbsp; Departamento Informática &nbsp;–&nbsp; Área Salud<br/>
+    Informe generado automáticamente el ${format(hoy, "dd/MM/yyyy")} a las ${format(hoy, "HH:mm")} hrs
+  </footer>
+</div>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    setGenerando(false);
   };
 
   return (
