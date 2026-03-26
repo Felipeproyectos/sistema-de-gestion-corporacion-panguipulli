@@ -10,10 +10,10 @@ Deno.serve(async (req) => {
     const cesfamFiltro = body.cesfam || null;
     const emailsExtra = Array.isArray(body.emails_extra) ? body.emails_extra : [];
 
-    const [parches, equipos, configAlertas, users] = await Promise.all([
+    const [parches, equipos, centros, users] = await Promise.all([
       base44.asServiceRole.entities.Parche.list(),
       base44.asServiceRole.entities.EquipoDEA.list(),
-      base44.asServiceRole.entities.ConfigAlerta.list(),
+      base44.asServiceRole.entities.Centro.list().catch(() => []),
       base44.asServiceRole.entities.User.list().catch(() => []),
     ]);
 
@@ -160,12 +160,14 @@ Deno.serve(async (req) => {
     }
 
     for (const [cesfam, alertas] of Object.entries(alertasPorCesfam)) {
-      // Buscar config de emails para este CESFAM
-      const config = configAlertas.find(c =>
-        c.cesfam.toLowerCase().includes(cesfam.toLowerCase()) ||
-        cesfam.toLowerCase().includes(c.cesfam.toLowerCase())
+      // Buscar emails del Centro directamente
+      const centro = centros.find(c =>
+        c.nombre?.toLowerCase() === cesfam.toLowerCase() ||
+        c.nombre?.toLowerCase().includes(cesfam.toLowerCase()) ||
+        cesfam.toLowerCase().includes(c.nombre?.toLowerCase() || '')
       );
-      if (!config || !config.emails?.length) continue;
+      const emailsCentro = centro?.emails_contacto || [];
+      if (!emailsCentro.length) continue;
 
       const rows = alertas.flatMap(({ equipo, parches: ps }) =>
         ps.map(p => `
@@ -207,7 +209,7 @@ Deno.serve(async (req) => {
         </div>
       `;
 
-      for (const email of config.emails) {
+      for (const email of emailsCentro) {
         await base44.asServiceRole.integrations.Core.SendEmail({
           to: email,
           subject: `⚠️ Alertas DEA ${cesfam}: ${totalAlertas} parche(s) requieren atención`,

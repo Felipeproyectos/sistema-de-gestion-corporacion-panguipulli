@@ -11,7 +11,7 @@ export default function Alertas() {
   const [enviando, setEnviando] = useState(false);
   const [mensajeEnvio, setMensajeEnvio] = useState("");
   const [showNotifModal, setShowNotifModal] = useState(false);
-  const [configAlertas, setConfigAlertas] = useState([]);
+  const [centros, setCentros] = useState([]);
   const [modoNotif, setModoNotif] = useState("masiva"); // 'masiva' | 'individual'
   const [cesfamSeleccionado, setCesfamSeleccionado] = useState("");
   const [emailManual, setEmailManual] = useState("");
@@ -23,8 +23,8 @@ export default function Alertas() {
       setEquipos(allEquipos);
       const allParches = await base44.entities.Parche.list();
       setParches(allParches);
-      const configs = await base44.entities.ConfigAlerta.list().catch(() => []);
-      setConfigAlertas(configs);
+      const cs = await base44.entities.Centro.list().catch(() => []);
+      setCentros(cs);
       setLoading(false);
     };
     init();
@@ -157,23 +157,23 @@ export default function Alertas() {
               {/* Selección individual */}
               {modoNotif === 'individual' && (
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 mb-2 block">Seleccionar CESFAM</label>
-                  {configAlertas.length === 0 ? (
-                    <p className="text-sm text-slate-400 text-center py-3 bg-slate-50 rounded-xl">No hay CESFAM con correos configurados.<br/>Ve a Configuración para agregarlos.</p>
+                  <label className="text-xs font-semibold text-slate-600 mb-2 block">Seleccionar Centro</label>
+                  {centros.filter(c => c.emails_contacto?.length).length === 0 ? (
+                    <p className="text-sm text-slate-400 text-center py-3 bg-slate-50 rounded-xl">No hay centros con correos configurados.<br/>Ve a Centros de Salud para agregarlos.</p>
                   ) : (
                     <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {configAlertas.map(c => (
+                      {centros.filter(c => c.emails_contacto?.length).map(c => (
                         <button
                           key={c.id}
-                          onClick={() => setCesfamSeleccionado(c.cesfam)}
+                          onClick={() => setCesfamSeleccionado(c.nombre)}
                           className={`w-full flex items-start gap-3 p-3 rounded-xl border-2 text-left transition-all ${
-                            cesfamSeleccionado === c.cesfam ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'
+                            cesfamSeleccionado === c.nombre ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'
                           }`}
                         >
-                          <Mail className={`w-4 h-4 mt-0.5 flex-shrink-0 ${cesfamSeleccionado === c.cesfam ? 'text-blue-600' : 'text-slate-400'}`} />
+                          <Mail className={`w-4 h-4 mt-0.5 flex-shrink-0 ${cesfamSeleccionado === c.nombre ? 'text-blue-600' : 'text-slate-400'}`} />
                           <div>
-                            <p className={`text-sm font-semibold ${cesfamSeleccionado === c.cesfam ? 'text-blue-700' : 'text-slate-700'}`}>{c.cesfam}</p>
-                            <p className="text-xs text-slate-400">{c.emails?.join(', ')}</p>
+                            <p className={`text-sm font-semibold ${cesfamSeleccionado === c.nombre ? 'text-blue-700' : 'text-slate-700'}`}>{c.nombre}</p>
+                            <p className="text-xs text-slate-400">{c.emails_contacto?.join(', ')}</p>
                           </div>
                         </button>
                       ))}
@@ -215,7 +215,7 @@ export default function Alertas() {
               {/* Resumen */}
               {modoNotif === 'masiva' && (
                 <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
-                  <p className="text-xs text-blue-700">Se notificará a <strong>{configAlertas.length} CESFAM(s)</strong> registrados{emailsExtra.length > 0 ? ` + ${emailsExtra.length} correo(s) manual(es)` : ''}.</p>
+                  <p className="text-xs text-blue-700">Se notificará a los correos configurados en <strong>{centros.filter(c => c.emails_contacto?.length).length} centro(s)</strong>{emailsExtra.length > 0 ? ` + ${emailsExtra.length} correo(s) manual(es)` : ''}.</p>
                 </div>
               )}
             </div>

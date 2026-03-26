@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, X, Building2, MapPin, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, X, Building2, MapPin, Loader2, ChevronDown, ChevronUp, Mail } from "lucide-react";
 
 const CENTROS_INICIALES = [
   { nombre: "CESFAM Panguipulli", tipo: "CESFAM", sucursales: [] },
@@ -15,6 +15,7 @@ export default function Centros() {
   const [loading, setLoading] = useState(true);
   const [expandido, setExpandido] = useState(null);
   const [nuevoLugar, setNuevoLugar] = useState({});
+  const [nuevoEmail, setNuevoEmail] = useState({});
   const [saving, setSaving] = useState(null);
 
   const load = async () => {
@@ -56,6 +57,25 @@ export default function Centros() {
   const handleRemoveSucursal = async (centro, lugar) => {
     const sucursales = (centro.sucursales || []).filter(s => s !== lugar);
     await base44.entities.Centro.update(centro.id, { sucursales });
+    load();
+  };
+
+  const handleAddEmail = async (centro) => {
+    const email = nuevoEmail[centro.id]?.trim().toLowerCase();
+    if (!email || !email.includes('@')) return;
+    const emails_contacto = [...(centro.emails_contacto || [])]
+    if (emails_contacto.includes(email)) return;
+    emails_contacto.push(email);
+    setSaving(centro.id + '_email');
+    await base44.entities.Centro.update(centro.id, { emails_contacto });
+    setNuevoEmail(p => ({ ...p, [centro.id]: '' }));
+    setSaving(null);
+    load();
+  };
+
+  const handleRemoveEmail = async (centro, email) => {
+    const emails_contacto = (centro.emails_contacto || []).filter(e => e !== email);
+    await base44.entities.Centro.update(centro.id, { emails_contacto });
     load();
   };
 
@@ -135,8 +155,51 @@ export default function Centros() {
                   )}
                 </div>
 
+                {/* Correos de contacto */}
+                <div className="mt-5 border-t border-slate-100 pt-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5" /> Correos para notificaciones
+                  </p>
+                  <div className="space-y-2 mb-3">
+                    {(centro.emails_contacto || []).length === 0 ? (
+                      <p className="text-sm text-slate-400 italic">Sin correos registrados</p>
+                    ) : (
+                      centro.emails_contacto.map(email => (
+                        <div key={email} className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-3.5 h-3.5 text-blue-400" />
+                            <span className="text-sm text-blue-800">{email}</span>
+                          </div>
+                          <button onClick={() => handleRemoveEmail(centro, email)} className="text-blue-300 hover:text-red-500 transition-colors">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      className="flex-1 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-slate-50"
+                      placeholder="correo@ejemplo.com"
+                      value={nuevoEmail[centro.id] || ''}
+                      onChange={e => setNuevoEmail(p => ({ ...p, [centro.id]: e.target.value }))}
+                      onKeyDown={e => e.key === 'Enter' && handleAddEmail(centro)}
+                    />
+                    <button
+                      onClick={() => handleAddEmail(centro)}
+                      disabled={saving === centro.id + '_email' || !nuevoEmail[centro.id]?.trim()}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+                      style={{ background: '#1565c0' }}
+                    >
+                      {saving === centro.id + '_email' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                      Agregar
+                    </button>
+                  </div>
+                </div>
+
                 {/* Agregar nueva ubicación */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 mt-4">
                   <input
                     className="flex-1 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-slate-50"
                     placeholder="Ej: Posta Tralcapulli, Estación Médica..."
