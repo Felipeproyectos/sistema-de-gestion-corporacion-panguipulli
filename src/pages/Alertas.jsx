@@ -14,6 +14,8 @@ export default function Alertas() {
   const [configAlertas, setConfigAlertas] = useState([]);
   const [modoNotif, setModoNotif] = useState("masiva"); // 'masiva' | 'individual'
   const [cesfamSeleccionado, setCesfamSeleccionado] = useState("");
+  const [emailManual, setEmailManual] = useState("");
+  const [emailsExtra, setEmailsExtra] = useState([]);
 
   useEffect(() => {
     const init = async () => {
@@ -30,14 +32,25 @@ export default function Alertas() {
 
   const hoy = new Date();
 
+  const addEmailExtra = () => {
+    const e = emailManual.trim().toLowerCase();
+    if (!e || !e.includes('@') || emailsExtra.includes(e)) return;
+    setEmailsExtra(prev => [...prev, e]);
+    setEmailManual("");
+  };
+
   const handleEnviarAlertas = async (cesfamFiltro = null) => {
     setEnviando(true);
     setMensajeEnvio("");
     setShowNotifModal(false);
-    const payload = cesfamFiltro ? { cesfam: cesfamFiltro } : {};
+    const payload = {
+      ...(cesfamFiltro ? { cesfam: cesfamFiltro } : {}),
+      ...(emailsExtra.length > 0 ? { emails_extra: emailsExtra } : {})
+    };
     const res = await base44.functions.invoke('enviarAlertasCESFAM', payload);
     const enviados = res.data?.enviados ?? 0;
-    setMensajeEnvio(enviados > 0 ? `✅ Alertas enviadas a ${enviados} correo(s)` : '⚠️ No se encontraron correos configurados para los CESFAM con alertas');
+    setMensajeEnvio(enviados > 0 ? `✅ Alertas enviadas a ${enviados} correo(s)` : '⚠️ No se encontraron destinatarios configurados');
+    setEmailsExtra([]);
     setEnviando(false);
   };
 
@@ -169,10 +182,40 @@ export default function Alertas() {
                 </div>
               )}
 
+              {/* Correos extra manuales */}
+              <div className="border-t border-slate-100 pt-4">
+                <label className="text-xs font-semibold text-slate-600 mb-2 block">Agregar correo adicional (opcional)</label>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-slate-50"
+                    placeholder="correo@ejemplo.com"
+                    value={emailManual}
+                    onChange={e => setEmailManual(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addEmailExtra()}
+                  />
+                  <button
+                    onClick={addEmailExtra}
+                    className="px-3 py-2 rounded-xl text-sm font-semibold text-white"
+                    style={{ background: '#1565c0' }}
+                  >Agregar</button>
+                </div>
+                {emailsExtra.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {emailsExtra.map(e => (
+                      <span key={e} className="flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full border border-blue-200">
+                        <Mail className="w-3 h-3" />{e}
+                        <button onClick={() => setEmailsExtra(prev => prev.filter(x => x !== e))}><X className="w-3 h-3 hover:text-red-500" /></button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Resumen */}
               {modoNotif === 'masiva' && (
                 <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
-                  <p className="text-xs text-blue-700">Se notificará a <strong>{configAlertas.length} CESFAM(s)</strong> registrados con alertas activas.</p>
+                  <p className="text-xs text-blue-700">Se notificará a <strong>{configAlertas.length} CESFAM(s)</strong> registrados{emailsExtra.length > 0 ? ` + ${emailsExtra.length} correo(s) manual(es)` : ''}.</p>
                 </div>
               )}
             </div>

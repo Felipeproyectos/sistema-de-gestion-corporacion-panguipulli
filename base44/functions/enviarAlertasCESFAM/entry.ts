@@ -6,6 +6,10 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+    const body = await req.json().catch(() => ({}));
+    const cesfamFiltro = body.cesfam || null;
+    const emailsExtra = Array.isArray(body.emails_extra) ? body.emails_extra : [];
+
     const [parches, equipos, configAlertas] = await Promise.all([
       base44.asServiceRole.entities.Parche.list(),
       base44.asServiceRole.entities.EquipoDEA.list(),
@@ -38,15 +42,71 @@ Deno.serve(async (req) => {
       return Response.json({ message: 'No hay alertas que enviar', enviados: 0 });
     }
 
+    // Filtrar por CESFAM si viene en el payload
+    const equiposFiltrados = cesfamFiltro
+      ? Object.values(alertasPorEquipo).filter(({ equipo }) =>
+          equipo.establecimiento?.toLowerCase().includes(cesfamFiltro.toLowerCase()) ||
+          cesfamFiltro.toLowerCase().includes(equipo.establecimiento?.toLowerCase() || '')
+        )
+      : Object.values(alertasPorEquipo);
+
     // Agrupar alertas por establecimiento (CESFAM)
     const alertasPorCesfam = {};
-    for (const { equipo, parches: ps } of Object.values(alertasPorEquipo)) {
+    for (const { equipo, parches: ps } of equiposFiltrados) {
       const est = equipo.establecimiento;
       if (!alertasPorCesfam[est]) alertasPorCesfam[est] = [];
       alertasPorCesfam[est].push({ equipo, parches: ps });
     }
 
     let enviados = 0;
+
+    // Enviar a correos extra manuales si hay alertas
+    if (emailsExtra.length > 0 && Object.keys(alertasPorCesfam).length > 0) {
+      const allRows = Object.entries(alertasPorCesfam).flatMap(([, alertas]) =>
+        alertas.flatMap(({ equipo, parches: ps }) =>
+          ps.map(p => `
+            <tr>
+              <td style="padding:10px;border-bottom:1px solid #f1f5f9;">${equipo.establecimiento}</td>
+              <td style="padding:10px;border-bottom:1px solid #f1f5f9;">${equipo.marca} ${equipo.modelo}</td>
+              <td style="padding:10px;border-bottom:1px solid #f1f5f9;">${equipo.lugar_destinado || '—'}</td>
+              <td style="padding:10px;border-bottom:1px solid #f1f5f9;">${p.tipo}</td>
+              <td style="padding:10px;border-bottom:1px solid #f1f5f9;">${new Date(p.fecha_vencimiento).toLocaleDateString('es-ES')}</td>
+              <td style="padding:10px;border-bottom:1px solid #f1f5f9;font-weight:bold;color:${p.estado === 'VENCIDO' ? '#dc2626' : p.estado === 'CRÍTICO' ? '#ea580c' : '#d97706'}">
+                ${p.estado === 'VENCIDO' ? `Vencido hace ${Math.abs(p.diasRestantes)} días` : `${p.diasRestantes} días restantes`}
+              </td>
+            </tr>`
+          )
+        )
+      ).join('');
+      const totalExtra = Object.values(alertasPorCesfam).reduce((acc, a) => acc + a.reduce((s, x) => s + x.parches.length, 0), 0);
+      const bodyExtra = `<div style="font-family:sans-serif;max-width:700px;margin:0 auto;padding:24px;background:#f8fafc;">
+        <div style="background:#1565c0;padding:24px;border-radius:12px 12px 0 0;text-align:center;">
+          <h1 style="color:white;margin:0;font-size:22px;">⚠️ Alertas DEA — Resumen General</h1>
+        </div>
+        <div style="background:white;padding:24px;border-radius:0 0 12px 12px;">
+          <p>Se detectaron <strong>${totalExtra} parche(s)</strong> que requieren atención:</p>
+          <table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <thead><tr style="background:#f1f5f9;">
+              <th style="padding:10px;text-align:left;">CESFAM</th>
+              <th style="padding:10px;text-align:left;">Equipo</th>
+              <th style="padding:10px;text-align:left;">Ubicación</th>
+              <th style="padding:10px;text-align:left;">Tipo</th>
+              <th style="padding:10px;text-align:left;">Vencimiento</th>
+              <th style="padding:10px;text-align:left;">Estado</th>
+            </tr></thead>
+            <tbody>${allRows}</tbody>
+          </table>
+        </div>
+      </div>`;
+      for (const email of emailsExtra) {
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: email,
+          subject: `⚠️ Alertas DEA: ${totalExtra} parche(s) requieren atención`,
+          body: bodyExtra,
+        });
+        enviados++;
+      }
+    }
 
     for (const [cesfam, alertas] of Object.entries(alertasPorCesfam)) {
       // Buscar config de emails para este CESFAM
