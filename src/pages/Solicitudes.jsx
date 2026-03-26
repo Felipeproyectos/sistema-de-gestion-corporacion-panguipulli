@@ -109,7 +109,7 @@ export default function Solicitudes() {
   return (
     <div className="min-h-screen" style={{ background: "#e8f4fd" }}>
       {/* Header */}
-      <div className="relative overflow-hidden px-6 lg:px-10 pt-10 pb-20" style={{ background: "linear-gradient(135deg, #0f2d6b 0%, #1565c0 40%, #29b6f6 100%)" }}>
+      <div className="relative overflow-hidden px-6 lg:px-10 pt-10 pb-8" style={{ background: "linear-gradient(135deg, #0f2d6b 0%, #1565c0 40%, #29b6f6 100%)" }}>
         <div className="absolute right-8 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full opacity-20 border-4 border-white" />
         <div className="absolute right-4 bottom-0 w-72 h-72 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #29b6f6 0%, transparent 70%)" }} />
         <div className="relative max-w-4xl mx-auto flex items-center justify-between">
@@ -136,7 +136,7 @@ export default function Solicitudes() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 lg:px-10 -mt-10 pb-10">
+      <div className="max-w-4xl mx-auto px-6 lg:px-10 pt-6 pb-10">
 
       {/* Lista */}
       <div className="bg-white rounded-3xl shadow-lg p-6 mb-6">

@@ -57,7 +57,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen" style={{ background: "#e8f4fd" }}>
       {/* Header con gradiente azul-cian */}
-      <div className="relative overflow-hidden px-6 lg:px-10 pt-12 pb-24" style={{ background: "linear-gradient(135deg, #0f2d6b 0%, #1565c0 40%, #29b6f6 100%)" }}>
+      <div className="relative overflow-hidden px-6 lg:px-10 pt-12 pb-8" style={{ background: "linear-gradient(135deg, #0f2d6b 0%, #1565c0 40%, #29b6f6 100%)" }}>
         {/* Círculos decorativos al estilo de la imagen */}
         <div className="absolute right-8 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full opacity-20 border-4 border-white" style={{ background: "radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)" }} />
         <div className="absolute right-32 top-1/3 w-36 h-36 rounded-full opacity-15 border-4 border-cyan-200" style={{ background: "radial-gradient(circle, rgba(100,220,255,0.2) 0%, transparent 70%)" }} />
@@ -79,7 +79,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards - elevadas sobre el header */}
-      <div className="max-w-6xl mx-auto px-6 lg:px-10 -mt-16 mb-8">
+      <div className="max-w-6xl mx-auto px-6 lg:px-10 pt-6 mb-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((s, i) => {
             const Icon = s.icon;
