@@ -12,6 +12,7 @@ export default function Alertas() {
   const [mensajeEnvio, setMensajeEnvio] = useState("");
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [centros, setCentros] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
   const [modoNotif, setModoNotif] = useState("masiva"); // 'masiva' | 'individual'
   const [cesfamSeleccionado, setCesfamSeleccionado] = useState("");
   const [emailManual, setEmailManual] = useState("");
@@ -25,6 +26,8 @@ export default function Alertas() {
       setParches(allParches);
       const cs = await base44.entities.Centro.list().catch(() => []);
       setCentros(cs);
+      const us = await base44.entities.User.list().catch(() => []);
+      setUsuarios(us);
       setLoading(false);
     };
     init();
@@ -196,14 +199,50 @@ export default function Alertas() {
                 </div>
               )}
 
-              {/* Correos extra manuales */}
+              {/* Correos extra - usuarios del sistema + manual */}
               <div className="border-t border-slate-100 pt-4">
-                <label className="text-xs font-semibold text-slate-600 mb-2 block">Agregar correo adicional (opcional)</label>
+                <label className="text-xs font-semibold text-slate-600 mb-2 block">Destinatarios adicionales (opcional)</label>
+                
+                {/* Usuarios del sistema */}
+                {usuarios.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs text-slate-400 mb-2">Usuarios del sistema:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {usuarios.map(u => {
+                        const email = u.email;
+                        const selected = emailsExtra.includes(email);
+                        return (
+                          <button
+                            key={u.id}
+                            onClick={() => {
+                              if (selected) {
+                                setEmailsExtra(prev => prev.filter(x => x !== email));
+                              } else {
+                                setEmailsExtra(prev => [...prev, email]);
+                              }
+                            }}
+                            className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full border transition-all ${
+                              selected
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-blue-300'
+                            }`}
+                          >
+                            <Mail className="w-3 h-3" />
+                            <span className="font-medium">{u.full_name || email}</span>
+                            {selected && <X className="w-3 h-3" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Correo manual */}
                 <div className="flex gap-2">
                   <input
                     type="email"
                     className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-slate-50"
-                    placeholder="correo@ejemplo.com"
+                    placeholder="Agregar correo manual..."
                     value={emailManual}
                     onChange={e => setEmailManual(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addEmailExtra()}
@@ -214,9 +253,9 @@ export default function Alertas() {
                     style={{ background: '#1565c0' }}
                   >Agregar</button>
                 </div>
-                {emailsExtra.length > 0 && (
+                {emailsExtra.filter(e => !usuarios.find(u => u.email === e)).length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {emailsExtra.map(e => (
+                    {emailsExtra.filter(e => !usuarios.find(u => u.email === e)).map(e => (
                       <span key={e} className="flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full border border-blue-200">
                         <Mail className="w-3 h-3" />{e}
                         <button onClick={() => setEmailsExtra(prev => prev.filter(x => x !== e))}><X className="w-3 h-3 hover:text-red-500" /></button>
