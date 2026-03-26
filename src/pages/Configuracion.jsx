@@ -81,7 +81,7 @@ export default function Configuracion() {
 
       <div className="max-w-2xl mx-auto px-6 lg:px-10 -mt-10 pb-10">
 
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 space-y-6">
+      <div className="bg-white rounded-3xl shadow-lg p-8 space-y-6">
         {/* Preview */}
         <div className="flex items-center gap-4 p-5 rounded-xl bg-slate-800">
           <div className="flex items-center justify-center overflow-hidden flex-shrink-0" style={form.logo_url ? { width: 52, height: 52 } : { width: 44, height: 44, background: "#e63946", borderRadius: 12 }}>
