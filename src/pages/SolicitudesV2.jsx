@@ -148,13 +148,86 @@ export default function SolicitudesV2() {
   );
 }
 
+// Tipos de solicitud según tipo de equipo
+const TIPOS_POR_EQUIPO = {
+  dea: [
+    { value: "cambio_parches", label: "Cambio de Parches Adulto" },
+    { value: "cambio_parches_pediatrico", label: "Cambio de Parches Pediátrico" },
+    { value: "cambio_parches_mixto", label: "Cambio de Parches Mixto" },
+    { value: "mantenimiento_preventivo", label: "Mantenimiento Preventivo" },
+    { value: "mantenimiento_correctivo", label: "Mantenimiento Correctivo" },
+    { value: "revision_tecnica", label: "Revisión Técnica" },
+    { value: "otros", label: "Otros" },
+  ],
+  monitor_desfibrilador: [
+    { value: "cambio_parches", label: "Cambio de Electrodos Adulto" },
+    { value: "cambio_parches_pediatrico", label: "Cambio de Electrodos Pediátrico" },
+    { value: "mantenimiento_preventivo", label: "Mantenimiento Preventivo" },
+    { value: "mantenimiento_correctivo", label: "Mantenimiento Correctivo" },
+    { value: "revision_tecnica", label: "Revisión Técnica" },
+    { value: "compra_repuestos", label: "Compra de Repuestos" },
+    { value: "otros", label: "Otros" },
+  ],
+  ambulancia: [
+    { value: "mantenimiento_preventivo", label: "Mantención Preventiva (Vehículo)" },
+    { value: "mantenimiento_correctivo", label: "Reparación Correctiva" },
+    { value: "revision_tecnica", label: "Revisión Técnica Vehicular" },
+    { value: "compra_repuestos", label: "Compra de Repuestos / Insumos" },
+    { value: "otros", label: "Otros" },
+  ],
+  monitor_multiparametros: [
+    { value: "mantenimiento_preventivo", label: "Mantenimiento Preventivo" },
+    { value: "mantenimiento_correctivo", label: "Mantenimiento Correctivo" },
+    { value: "revision_tecnica", label: "Revisión Técnica" },
+    { value: "compra_repuestos", label: "Compra de Repuestos / Accesorios" },
+    { value: "otros", label: "Otros" },
+  ],
+  default: [
+    { value: "mantenimiento_preventivo", label: "Mantenimiento Preventivo" },
+    { value: "mantenimiento_correctivo", label: "Mantenimiento Correctivo" },
+    { value: "revision_tecnica", label: "Revisión Técnica" },
+    { value: "compra_repuestos", label: "Compra de Repuestos" },
+    { value: "otros", label: "Otros" },
+  ]
+};
+
+const TIPO_EQUIPO_LABEL = {
+  dea: "DEA",
+  monitor_desfibrilador: "Monitor Desfibrilador",
+  ambulancia: "Ambulancia",
+  monitor_multiparametros: "Monitor Multiparámetros"
+};
+
 function SolicitudForm({ equipos, user, onClose, onSaved }) {
+  const centroDefault = user?.centro_asignado || "";
+  const isAdmin = user?.role === "admin";
+
+  // Equipos filtrados según centro del usuario
+  const equiposFiltrados = centroDefault && !isAdmin
+    ? equipos.filter(eq => eq.centro_principal === centroDefault)
+    : equipos;
+
   const [form, setForm] = useState({
-    equipo_id: "", tipo: "revision_tecnica", fecha: new Date().toISOString().split("T")[0],
-    observaciones: "", centro: user?.centro || ""
+    equipo_id: "",
+    tipo: "",
+    fecha: new Date().toISOString().split("T")[0],
+    observaciones: "",
+    centro: centroDefault
   });
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const equipoSeleccionado = equiposFiltrados.find(e => e.id === form.equipo_id);
+  const tipoEquipo = equipoSeleccionado?.tipo || null;
+  const tiposDisponibles = tipoEquipo ? (TIPOS_POR_EQUIPO[tipoEquipo] || TIPOS_POR_EQUIPO.default) : [];
+
+  // Cuando cambia el equipo, resetear tipo
+  const handleEquipoChange = (equipoId) => {
+    const eq = equiposFiltrados.find(e => e.id === equipoId);
+    const tipos = eq ? (TIPOS_POR_EQUIPO[eq.tipo] || TIPOS_POR_EQUIPO.default) : [];
+    set("equipo_id", equipoId);
+    setForm(f => ({ ...f, equipo_id: equipoId, tipo: tipos[0]?.value || "", centro: eq?.centro_principal || f.centro }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -170,43 +243,73 @@ function SolicitudForm({ equipos, user, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="px-7 pt-7 pb-4 border-b border-slate-100 flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900">Nueva Solicitud</h2>
           <button onClick={onClose}><X className="w-5 h-5 text-slate-400" /></button>
         </div>
         <form onSubmit={handleSubmit} className="px-7 py-5 space-y-4">
+
+          {/* Centro - prellenado y bloqueado para usuarios normales */}
+          <div>
+            <label className="text-xs font-semibold text-slate-600 block mb-1">Centro</label>
+            {isAdmin ? (
+              <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.centro} onChange={e => set("centro", e.target.value)}>
+                <option value="">Seleccionar...</option>
+                {CENTROS_ESTRUCTURA.map(c => <option key={c.nombre} value={c.nombre}>{c.nombre}</option>)}
+              </select>
+            ) : (
+              <div className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50 text-slate-700 flex items-center gap-2">
+                <span className="text-slate-400">🏥</span>
+                {centroDefault || <span className="text-slate-400">Sin centro asignado</span>}
+              </div>
+            )}
+          </div>
+
+          {/* Equipo - filtrado por centro */}
           <div>
             <label className="text-xs font-semibold text-slate-600 block mb-1">Equipo *</label>
-            <select required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.equipo_id} onChange={e => set("equipo_id", e.target.value)}>
+            <select required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.equipo_id} onChange={e => handleEquipoChange(e.target.value)}>
               <option value="">Seleccionar equipo...</option>
-              {equipos.map(eq => <option key={eq.id} value={eq.id}>{eq.marca} {eq.modelo} #{eq.numero_inventario}</option>)}
+              {equiposFiltrados.map(eq => (
+                <option key={eq.id} value={eq.id}>
+                  [{TIPO_EQUIPO_LABEL[eq.tipo] || eq.tipo}] {eq.marca} {eq.modelo} #{eq.numero_inventario}
+                </option>
+              ))}
             </select>
+            {!form.equipo_id && centroDefault && equiposFiltrados.length === 0 && (
+              <p className="text-xs text-amber-600 mt-1">No hay equipos registrados para este centro</p>
+            )}
           </div>
+
+          {/* Tipo - dinámico según tipo de equipo */}
           <div>
-            <label className="text-xs font-semibold text-slate-600 block mb-1">Tipo *</label>
-            <select required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.tipo} onChange={e => set("tipo", e.target.value)}>
-              {TIPOS_SOLICITUD.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
+            <label className="text-xs font-semibold text-slate-600 block mb-1">
+              Tipo de Solicitud *
+              {tipoEquipo && <span className="ml-1 text-blue-500 font-normal">({TIPO_EQUIPO_LABEL[tipoEquipo]})</span>}
+            </label>
+            {!form.equipo_id ? (
+              <div className="w-full border border-dashed border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-400 bg-slate-50">
+                Primero selecciona un equipo
+              </div>
+            ) : (
+              <select required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.tipo} onChange={e => set("tipo", e.target.value)}>
+                {tiposDisponibles.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            )}
           </div>
+
           <div>
             <label className="text-xs font-semibold text-slate-600 block mb-1">Fecha *</label>
             <input type="date" required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.fecha} onChange={e => set("fecha", e.target.value)} />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-600 block mb-1">Centro</label>
-            <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.centro} onChange={e => set("centro", e.target.value)}>
-              <option value="">Seleccionar...</option>
-              {CENTROS_ESTRUCTURA.map(c => <option key={c.nombre} value={c.nombre}>{c.nombre}</option>)}
-            </select>
-          </div>
-          <div>
             <label className="text-xs font-semibold text-slate-600 block mb-1">Observaciones {form.tipo === "otros" ? "*" : ""}</label>
-            <textarea required={form.tipo === "otros"} rows={3} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.observaciones} onChange={e => set("observaciones", e.target.value)} />
+            <textarea required={form.tipo === "otros"} rows={3} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" placeholder="Describe el problema o requerimiento..." value={form.observaciones} onChange={e => set("observaciones", e.target.value)} />
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-slate-600 border border-slate-200">Cancelar</button>
-            <button type="submit" disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60" style={{ background: "linear-gradient(135deg, #1565c0, #0288d1)" }}>
+            <button type="submit" disabled={saving || !form.equipo_id || !form.tipo} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60" style={{ background: "linear-gradient(135deg, #1565c0, #0288d1)" }}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {saving ? "Guardando..." : "Crear Solicitud"}
             </button>
