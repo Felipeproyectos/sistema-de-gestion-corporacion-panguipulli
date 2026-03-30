@@ -18,9 +18,9 @@ export default function Dashboard() {
         const u = await base44.auth.me().catch(() => null);
         setUser(u);
         const [allEquipos, allParches, allSolicitudes] = await Promise.all([
-          base44.entities.EquipoDEA.list().catch(() => []),
+          base44.entities.Equipo.list().catch(() => []),
           base44.entities.Parche.list().catch(() => []),
-          base44.entities.SolicitudStock.list().catch(() => []),
+          base44.entities.Solicitud.list().catch(() => []),
         ]);
         setEquipos(allEquipos);
         setParches(allParches);
