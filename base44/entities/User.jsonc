@@ -1,0 +1,19 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user"
+    },
+    "centro_asignado": {
+      "type": "string",
+      "description": "Centro de salud asignado al usuario (solo para rol user)"
+    }
+  },
+  "required": []
+}

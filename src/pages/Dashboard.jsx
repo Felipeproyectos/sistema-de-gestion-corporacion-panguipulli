@@ -70,9 +70,9 @@ export default function Dashboard() {
               <Activity className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-cyan-200 text-xs font-semibold uppercase tracking-widest">Sistema de Gestión</p>
-              <h1 className="text-3xl lg:text-4xl font-bold text-white">Dashboard DEA</h1>
-              <p className="text-blue-100 text-sm mt-0.5">Bienvenido, {user?.full_name || user?.email}</p>
+              <p className="text-cyan-200 text-xs font-semibold uppercase tracking-widest">Sistema de Gestión de Equipos</p>
+              <h1 className="text-3xl lg:text-4xl font-bold text-white">Dashboard</h1>
+              <p className="text-blue-100 text-sm mt-0.5">Bienvenido, {user?.full_name || user?.email}{user?.centro_asignado ? ` · ${user.centro_asignado}` : ""}</p>
             </div>
           </div>
         </div>

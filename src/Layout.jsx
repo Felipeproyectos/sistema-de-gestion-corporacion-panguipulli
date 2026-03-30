@@ -32,7 +32,7 @@ export default function Layout({ children, currentPageName }) {
     }).catch(() => {});
   }, []);
 
-  const isAdmin = true; // Temporalmente todos tienen permisos de admin
+  const isAdmin = user?.role === "admin";
 
   const navItems = [
   { label: "Dashboard", page: "Dashboard", icon: LayoutDashboard, adminOnly: false },
@@ -40,8 +40,6 @@ export default function Layout({ children, currentPageName }) {
   { label: "Actividades", page: "Actividades", icon: Activity, adminOnly: false },
   { label: "Alertas", page: "AlertasV2", icon: Bell, adminOnly: false },
   { label: "Solicitudes", page: "SolicitudesV2", icon: ClipboardList, adminOnly: false },
-  { label: "Centros de Salud", page: "Centros", icon: Building2, adminOnly: false },
-  { label: "Usuarios", page: "Usuarios", icon: Users, adminOnly: true },
   { label: "Reportes", page: "Reportes", icon: FileText, adminOnly: false },
   { label: "Historial", page: "Historial", icon: History, adminOnly: true },
   { label: "Configuración", page: "Configuracion", icon: Settings, adminOnly: true }];
@@ -74,8 +72,8 @@ export default function Layout({ children, currentPageName }) {
             }
           </div>
           <div>
-            <p className="text-white font-semibold text-sm leading-none">{appConfig?.nombre_app || "DEA Manager"}</p>
-            <p className="text-white/40 text-xs mt-0.5">{appConfig?.subtitulo || "Sistema de gestión"}</p>
+            <p className="text-white font-semibold text-sm leading-none">{appConfig?.nombre_app || "Sistema de Gestión de Equipos"}</p>
+            <p className="text-white/40 text-xs mt-0.5">{appConfig?.subtitulo || "Sistema de Gestión de Equipos"}</p>
           </div>
         </div>
 
@@ -125,7 +123,7 @@ export default function Layout({ children, currentPageName }) {
             <Heart className="w-4 h-4 text-white" />
             }
           </div>
-          <span className="text-white font-semibold text-sm">{appConfig?.nombre_app || "DEA Manager"}</span>
+          <span className="text-white font-semibold text-sm">{appConfig?.nombre_app || "Sistema de Gestión de Equipos"}</span>
         </div>
         <button onClick={() => setMenuOpen(!menuOpen)} className="text-white">
           {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
