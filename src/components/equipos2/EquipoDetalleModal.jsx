@@ -821,7 +821,7 @@ function BitacoraTab({ equipo, user }) {
   const [incidentes, setIncidentes] = useState([]);
   const [showConductorForm, setShowConductorForm] = useState(false);
   const [addingIncForKm, setAddingIncForKm] = useState(null); // km registro id
-  const [form, setForm] = useState({ fecha: new Date().toISOString().split("T")[0], conductor: "", km_inicial: "", observaciones: "", incidente: "", tiene_incidente: false });
+  const [form, setForm] = useState({ fecha: new Date().toISOString().split("T")[0], conductor: "", km_inicial: "", observaciones: "", incidente: "", tiene_incidente: false, tipo_incidente: "falla_mecanica", ambulancia_operativa: true });
   const [incForm, setIncForm] = useState({ observaciones: "", usuario_nombre: user?.full_name || "" });
   const [saving, setSaving] = useState(false);
   const [savingInc, setSavingInc] = useState(false);
@@ -846,7 +846,14 @@ function BitacoraTab({ equipo, user }) {
     await base44.entities.Kilometraje.create({ equipo_id: equipo.id, fecha: form.fecha, conductor: form.conductor, valor_km: kmInicial, km_inicial: kmInicial, observaciones: form.observaciones });
     // Guardar incidente si fue indicado
     if (form.tiene_incidente && form.incidente.trim()) {
-      await base44.entities.Actividad.create({ equipo_id: equipo.id, tipo: "incidente", fecha: form.fecha, observaciones: form.incidente, usuario_nombre: form.conductor });
+      await base44.functions.invoke('reportarIncidenteAmbulancia', {
+        equipo_id: equipo.id,
+        fecha: form.fecha,
+        tipo_incidente: form.tipo_incidente,
+        observaciones: form.incidente,
+        usuario_nombre: form.conductor,
+        ambulancia_operativa: form.ambulancia_operativa
+      });
     }
     setSaving(false);
     setShowConductorForm(false);
@@ -957,12 +964,40 @@ function BitacoraTab({ equipo, user }) {
           {/* Incidente opcional */}
           <div className="pt-1">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" className="rounded" checked={form.tiene_incidente} onChange={e => setForm(f => ({ ...f, tiene_incidente: e.target.checked, incidente: "" }))} />
+              <input type="checkbox" className="rounded" checked={form.tiene_incidente} onChange={e => setForm(f => ({ ...f, tiene_incidente: e.target.checked, incidente: "", tipo_incidente: "falla_mecanica", ambulancia_operativa: true }))} />
               <span className="text-xs font-medium text-slate-600">Registrar incidente en este turno</span>
             </label>
             {form.tiene_incidente && (
-              <textarea rows={2} required className="mt-2 w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 resize-none" style={{ borderColor: "#FECACA", background: "#FFF5F5" }}
-                placeholder="Describe el incidente ocurrido..." value={form.incidente} onChange={e => setForm(f => ({ ...f, incidente: e.target.value }))} />
+              <div className="mt-3 space-y-3 p-4 rounded-xl" style={{ background: "#FFF5F5", border: "1px solid #FECACA" }}>
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">Tipo de Incidente *</label>
+                  <select required className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200" style={{ borderColor: "#FECACA" }}
+                    value={form.tipo_incidente} onChange={e => setForm(f => ({ ...f, tipo_incidente: e.target.value }))}>
+                    <option value="falla_mecanica">Falla Mecánica</option>
+                    <option value="accidente">Accidente</option>
+                    <option value="otros">Otros</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">Descripción del Incidente *</label>
+                  <textarea rows={2} required className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 resize-none" style={{ borderColor: "#FECACA" }}
+                    placeholder="Describe el incidente ocurrido..." value={form.incidente} onChange={e => setForm(f => ({ ...f, incidente: e.target.value }))} />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: form.ambulancia_operativa ? "#F0FDF4" : "#FEF2F2", border: `1px solid ${form.ambulancia_operativa ? "#86EFAC" : "#FECACA"}` }}>
+                  <div>
+                    <p className="text-xs font-semibold" style={{ color: form.ambulancia_operativa ? "#16A34A" : "#DC2626" }}>
+                      {form.ambulancia_operativa ? "✓ Ambulancia Operativa" : "✗ Ambulancia Fuera de Servicio"}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {form.ambulancia_operativa ? "La ambulancia puede continuar en servicio" : "Se notificará a los administradores por correo"}
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={form.ambulancia_operativa} onChange={e => setForm(f => ({ ...f, ambulancia_operativa: e.target.checked }))} />
+                    <span className="text-xs font-medium text-slate-600">Operativa</span>
+                  </label>
+                </div>
+              </div>
             )}
           </div>
           <div className="flex gap-2">

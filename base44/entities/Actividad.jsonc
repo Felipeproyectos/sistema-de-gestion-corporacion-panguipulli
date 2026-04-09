@@ -49,6 +49,20 @@
     },
     "archivo_url": {
       "type": "string"
+    },
+    "tipo_incidente": {
+      "type": "string",
+      "enum": [
+        "falla_mecanica",
+        "accidente",
+        "otros"
+      ],
+      "description": "Tipo espec\u00edfico de incidente (solo para tipo=incidente)"
+    },
+    "ambulancia_operativa": {
+      "type": "boolean",
+      "description": "Indica si la ambulancia qued\u00f3 operativa tras el incidente",
+      "default": true
     }
   },
   "required": [
