@@ -49,8 +49,7 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
     ...(!esAmbulancia ? [{ key: "parches", label: "Parches", icon: Package }] : []),
     ...(esAmbulancia ? [
       { key: "repuestos", label: "Repuestos", icon: Gauge },
-      { key: "bitacora", label: "Bitácora", icon: BookOpen },
-      { key: "incidentes_tab", label: "Incidentes", icon: AlertTriangle }
+      { key: "bitacora", label: "Bitácora", icon: BookOpen }
     ] : [])
   ];
 
@@ -136,8 +135,7 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
             {tab === "inspecciones" && <InspeccionesTab equipo={equipo} actividades={actividades} user={user} onUpdated={reloadActividades} />}
             {tab === "parches" && <ParchesTab equipo={equipo} parches={parches} user={user} onUpdated={onActividadCreada} />}
             {tab === "repuestos" && <RepuestosTab equipo={equipo} user={user} />}
-            {tab === "bitacora" && <BitacoraTab equipo={equipo} />}
-            {tab === "incidentes_tab" && <IncidentesTab equipo={equipo} user={user} />}
+            {tab === "bitacora" && <BitacoraTab equipo={equipo} user={user} />}
           </div>
         </div>
       </div>
@@ -817,14 +815,14 @@ function IncidentesTab({ equipo, user }) {
 /* ══════════════════════════════════════════════
    BITÁCORA TAB
 ══════════════════════════════════════════════ */
-function BitacoraTab({ equipo }) {
+function BitacoraTab({ equipo, user }) {
+  const isAdmin = user?.role === "admin";
   const [registros, setRegistros] = useState([]);
-  const [showConductorForm, setShowConductorForm] = useState(false);
   const [incidentes, setIncidentes] = useState([]);
-  const [showIncidenteForm, setShowIncidenteForm] = useState(false);
-  const [editingIncidente, setEditingIncidente] = useState(null);
-  const [form, setForm] = useState({ fecha: new Date().toISOString().split("T")[0], conductor: "", km_inicial: "", observaciones: "" });
-  const [incForm, setIncForm] = useState({ fecha: new Date().toISOString().split("T")[0], observaciones: "", usuario_nombre: "" });
+  const [showConductorForm, setShowConductorForm] = useState(false);
+  const [addingIncForKm, setAddingIncForKm] = useState(null); // km registro id
+  const [form, setForm] = useState({ fecha: new Date().toISOString().split("T")[0], conductor: "", km_inicial: "", observaciones: "", incidente: "", tiene_incidente: false });
+  const [incForm, setIncForm] = useState({ observaciones: "", usuario_nombre: user?.full_name || "" });
   const [saving, setSaving] = useState(false);
   const [savingInc, setSavingInc] = useState(false);
 
@@ -846,24 +844,24 @@ function BitacoraTab({ equipo }) {
     const activo = registros.find(r => !r.km_final);
     if (activo) await base44.entities.Kilometraje.update(activo.id, { km_final: kmInicial > 0 ? kmInicial - 1 : kmInicial });
     await base44.entities.Kilometraje.create({ equipo_id: equipo.id, fecha: form.fecha, conductor: form.conductor, valor_km: kmInicial, km_inicial: kmInicial, observaciones: form.observaciones });
+    // Guardar incidente si fue indicado
+    if (form.tiene_incidente && form.incidente.trim()) {
+      await base44.entities.Actividad.create({ equipo_id: equipo.id, tipo: "incidente", fecha: form.fecha, observaciones: form.incidente, usuario_nombre: form.conductor });
+    }
     setSaving(false);
     setShowConductorForm(false);
-    setForm({ fecha: new Date().toISOString().split("T")[0], conductor: "", km_inicial: "", observaciones: "" });
+    setForm({ fecha: new Date().toISOString().split("T")[0], conductor: "", km_inicial: "", observaciones: "", incidente: "", tiene_incidente: false });
     load();
   };
 
   const handleSaveIncidente = async (e) => {
     e.preventDefault();
     setSavingInc(true);
-    if (editingIncidente) {
-      await base44.entities.Actividad.update(editingIncidente.id, { observaciones: incForm.observaciones, fecha: incForm.fecha, usuario_nombre: incForm.usuario_nombre });
-    } else {
-      await base44.entities.Actividad.create({ equipo_id: equipo.id, tipo: "incidente", ...incForm });
-    }
+    const km = registros.find(r => r.id === addingIncForKm);
+    await base44.entities.Actividad.create({ equipo_id: equipo.id, tipo: "incidente", fecha: km?.fecha || new Date().toISOString().split("T")[0], observaciones: incForm.observaciones, usuario_nombre: incForm.usuario_nombre || km?.conductor || "" });
     setSavingInc(false);
-    setShowIncidenteForm(false);
-    setEditingIncidente(null);
-    setIncForm({ fecha: new Date().toISOString().split("T")[0], observaciones: "", usuario_nombre: "" });
+    setAddingIncForKm(null);
+    setIncForm({ observaciones: "", usuario_nombre: user?.full_name || "" });
     load();
   };
 
@@ -956,6 +954,17 @@ function BitacoraTab({ equipo }) {
               <input type="date" className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" style={{ borderColor: "#E2E8F0" }} value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha: e.target.value }))} />
             </div>
           </div>
+          {/* Incidente opcional */}
+          <div className="pt-1">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" className="rounded" checked={form.tiene_incidente} onChange={e => setForm(f => ({ ...f, tiene_incidente: e.target.checked, incidente: "" }))} />
+              <span className="text-xs font-medium text-slate-600">Registrar incidente en este turno</span>
+            </label>
+            {form.tiene_incidente && (
+              <textarea rows={2} required className="mt-2 w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 resize-none" style={{ borderColor: "#FECACA", background: "#FFF5F5" }}
+                placeholder="Describe el incidente ocurrido..." value={form.incidente} onChange={e => setForm(f => ({ ...f, incidente: e.target.value }))} />
+            )}
+          </div>
           <div className="flex gap-2">
             <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: "#2563EB" }}>{saving ? "Guardando..." : "Confirmar Asignación"}</button>
             <button type="button" onClick={() => setShowConductorForm(false)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100">Cancelar</button>
@@ -1031,72 +1040,36 @@ function BitacoraTab({ equipo }) {
         )}
       </div>
 
-      {/* Incidentes */}
-      <div className="bg-white rounded-2xl overflow-hidden" style={{ border: "1px solid #E2E8F0" }}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Incidentes</p>
-            <p className="text-xs text-slate-400 mt-0.5">{incidentes.length} registro(s)</p>
+      {/* Incidentes listado */}
+      {incidentes.length > 0 && (
+        <div className="bg-white rounded-2xl overflow-hidden" style={{ border: "1px solid #FECACA" }}>
+          <div className="px-5 py-3 border-b border-red-100">
+            <p className="text-xs font-bold text-red-500 uppercase tracking-widest">Incidentes Registrados ({incidentes.length})</p>
           </div>
-          <button onClick={() => { setEditingIncidente(null); setIncForm({ fecha: new Date().toISOString().split("T")[0], observaciones: "", usuario_nombre: "" }); setShowIncidenteForm(true); }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white" style={{ background: "#EF4444" }}>
-            <Plus className="w-3.5 h-3.5" /> Registrar Incidente
-          </button>
-        </div>
-
-        {showIncidenteForm && (
-          <div className="p-5 border-b border-slate-100 bg-red-50">
-            <form onSubmit={handleSaveIncidente} className="space-y-3">
-              <p className="text-xs font-bold text-red-500 uppercase tracking-widest">{editingIncidente ? "Editar Incidente" : "Nuevo Incidente"}</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-slate-600 block mb-1">Fecha</label>
-                  <input type="date" required className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200" style={{ borderColor: "#FECACA" }}
-                    value={incForm.fecha} onChange={e => setIncForm(f => ({ ...f, fecha: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-600 block mb-1">Responsable</label>
-                  <input className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200" style={{ borderColor: "#FECACA" }}
-                    value={incForm.usuario_nombre} onChange={e => setIncForm(f => ({ ...f, usuario_nombre: e.target.value }))} />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Descripción del Incidente *</label>
-                <textarea required rows={3} className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 resize-none" style={{ borderColor: "#FECACA" }}
-                  placeholder="Ej: Se pinchó un neumático en sector Cayumapu..." value={incForm.observaciones} onChange={e => setIncForm(f => ({ ...f, observaciones: e.target.value }))} />
-              </div>
-              <div className="flex gap-2">
-                <button type="submit" disabled={savingInc} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: "#EF4444" }}>
-                  {savingInc ? "Guardando..." : editingIncidente ? "Guardar Cambios" : "Registrar Incidente"}
-                </button>
-                <button type="button" onClick={() => { setShowIncidenteForm(false); setEditingIncidente(null); }} className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100">Cancelar</button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {incidentes.length === 0 ? (
-          <EmptyState icon={AlertTriangle} text="Sin incidentes registrados" />
-        ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-red-50">
             {incidentes.map(inc => (
-              <div key={inc.id} className="flex items-start gap-3 px-5 py-4 hover:bg-slate-50">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "#FEF2F2" }}>
-                  <AlertTriangle className="w-4 h-4 text-red-500" />
-                </div>
+              <div key={inc.id} className="flex items-start gap-3 px-5 py-3.5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "#FEF2F2" }}><AlertTriangle className="w-3.5 h-3.5 text-red-500" /></div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800">{inc.observaciones || "Sin descripción"}</p>
+                  <p className="text-sm text-slate-800">{inc.observaciones}</p>
                   <p className="text-xs text-slate-400 mt-0.5">{inc.fecha}{inc.usuario_nombre && ` • ${inc.usuario_nombre}`}</p>
                 </div>
-                <button onClick={() => { setEditingIncidente(inc); setIncForm({ fecha: inc.fecha, observaciones: inc.observaciones || "", usuario_nombre: inc.usuario_nombre || "" }); setShowIncidenteForm(true); }}
-                  className="text-slate-300 hover:text-blue-500 transition-colors flex-shrink-0 p-1">
-                  <Edit className="w-4 h-4" />
-                </button>
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+      {addingIncForKm && (
+        <form onSubmit={handleSaveIncidente} className="bg-white p-5 rounded-2xl space-y-3" style={{ border: "1px solid #FECACA", background: "#FFF5F5" }}>
+          <p className="text-xs font-bold text-red-500 uppercase tracking-widest">Nuevo Incidente</p>
+          <textarea required rows={3} className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 resize-none" style={{ borderColor: "#FECACA" }}
+            placeholder="Describe el incidente..." value={incForm.observaciones} onChange={e => setIncForm(f => ({ ...f, observaciones: e.target.value }))} />
+          <div className="flex gap-2">
+            <button type="submit" disabled={savingInc} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: "#EF4444" }}>{savingInc ? "Guardando..." : "Registrar"}</button>
+            <button type="button" onClick={() => setAddingIncForKm(null)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100">Cancelar</button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
