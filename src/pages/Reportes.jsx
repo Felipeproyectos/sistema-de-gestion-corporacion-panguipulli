@@ -41,13 +41,18 @@ export default function Reportes() {
     if (filtroCentro) equiposFiltrados = equiposFiltrados.filter(e => e.centro_principal === filtroCentro);
     if (filtroTipo) equiposFiltrados = equiposFiltrados.filter(e => e.tipo === filtroTipo);
 
+    const TIPO_INC_LABEL = { falla_mecanica: "Falla Mecánica", accidente: "Accidente", otros: "Otros" };
+
     const filas = equiposFiltrados.map(eq => {
-      const parchesEq = parches.filter(p => p.equipo_id === eq.id && p.activo !== false);
-      const parcheCritico = parchesEq.find(p => p.fecha_vencimiento && differenceInDays(parseISO(p.fecha_vencimiento), hoy) <= 90);
       const estado = ESTADOS_EQUIPO.find(e => e.value === eq.estado);
       const tipo = TIPOS_EQUIPO.find(t => t.value === eq.tipo);
       const actEq = actividades.filter(a => a.equipo_id === eq.id);
+      const incEq = actEq.filter(a => a.tipo === "incidente");
       const solEq = solicitudes.filter(s => s.equipo_id === eq.id && s.estado !== "finalizada");
+      const ultimoInc = incEq.sort((a,b) => new Date(b.fecha)-new Date(a.fecha))[0];
+      const incCell = incEq.length === 0
+        ? "—"
+        : `<span style="color:#dc2626;font-weight:600">${incEq.length} incidente(s)</span><br/><span style="font-size:9px;color:#64748b">${ultimoInc?.tipo_incidente ? TIPO_INC_LABEL[ultimoInc.tipo_incidente] : "Sin clasificar"}</span>`;
       return `
         <tr>
           <td>${eq.numero_inventario || ""}</td>
@@ -55,9 +60,41 @@ export default function Reportes() {
           <td>${eq.marca} ${eq.modelo}</td>
           <td>${eq.centro_principal}${eq.subsede ? ` / ${eq.subsede}` : ""}</td>
           <td><span style="color:${estado?.color};font-weight:600">${estado?.label || eq.estado}</span></td>
-          <td>${parchesEq.length > 0 ? (parcheCritico ? `<span style="color:#dc2626">⚠ ${parcheCritico.tipo}</span>` : "✓ OK") : "Sin parches"}</td>
+          <td>${incCell}</td>
           <td>${actEq.length}</td>
           <td>${solEq.length > 0 ? `<span style="color:#d97706">${solEq.length} pendiente(s)</span>` : "—"}</td>
+        </tr>`;
+    }).join("");
+
+    const todosIncidentes = actividades
+      .filter(a => a.tipo === "incidente")
+      .filter(a => {
+        const eq = equipos.find(e => e.id === a.equipo_id);
+        if (!eq) return false;
+        if (filtroCentro && eq.centro_principal !== filtroCentro) return false;
+        if (filtroTipo && eq.tipo !== filtroTipo) return false;
+        return true;
+      })
+      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+    const filasIncidentes = todosIncidentes.map(inc => {
+      const eq = equipos.find(e => e.id === inc.equipo_id);
+      const tipoEq = TIPOS_EQUIPO.find(t => t.value === eq?.tipo);
+      const causaLabel = TIPO_INC_LABEL[inc.tipo_incidente] || "Sin clasificar";
+      const opLabel = eq?.tipo === "ambulancia"
+        ? (inc.ambulancia_operativa === false ? `<span style="color:#dc2626;font-weight:600">Fuera Servicio</span>` : `<span style="color:#16a34a;font-weight:600">Operativa</span>`)
+        : "N/A";
+      return `
+        <tr>
+          <td>${inc.fecha || ""}</td>
+          <td>${eq?.numero_inventario || ""}</td>
+          <td>${tipoEq?.label || eq?.tipo || ""}</td>
+          <td>${eq?.marca || ""} ${eq?.modelo || ""}</td>
+          <td>${eq?.centro_principal || ""}${eq?.subsede ? ` / ${eq.subsede}` : ""}</td>
+          <td><span style="background:#FEF2F2;color:#dc2626;padding:2px 5px;border-radius:4px;font-size:9px;font-weight:600">${causaLabel}</span></td>
+          <td style="word-wrap:break-word">${inc.observaciones || "—"}</td>
+          <td>${opLabel}</td>
+          <td>${inc.usuario_nombre || "—"}</td>
         </tr>`;
     }).join("");
 
@@ -104,12 +141,16 @@ export default function Reportes() {
       <th style="width:16%">Equipo</th>
       <th style="width:20%">Centro / Subsede</th>
       <th style="width:11%">Estado</th>
-      <th style="width:13%">Parches</th>
+      <th style="width:13%">Incidentes</th>
       <th style="width:8%">Activ.</th>
       <th style="width:10%">Solicitudes</th>
     </tr></thead>
     <tbody>${filas || '<tr><td colspan="8" style="text-align:center;padding:16px;color:#94a3b8">Sin equipos</td></tr>'}</tbody>
   </table>
+  <div style="margin-top:24px;">
+    <div style="background:linear-gradient(135deg,#7f1d1d,#dc2626);border-radius:8px;padding:10px 16px;margin-bottom:12px;"><h2 style="color:white;margin:0;font-size:14px;">&#9888; Detalle de Incidentes (${todosIncidentes.length})</h2><p style="color:rgba(255,255,255,0.75);margin:0;font-size:10px;">Todas las incidencias registradas${filtroCentro ? ' en ' + filtroCentro : ''}</p></div>
+    ${todosIncidentes.length === 0 ? '<p style="text-align:center;color:#94a3b8;padding:16px;font-size:11px;">Sin incidentes registrados</p>' : `<table><thead><tr><th style="width:8%">Fecha</th><th style="width:9%">Inventario</th><th style="width:10%">Tipo Equipo</th><th style="width:13%">Equipo</th><th style="width:15%">Centro</th><th style="width:10%">Causa</th><th style="width:20%">Descripción</th><th style="width:9%">Estado Amb.</th><th style="width:6%">Reportado por</th></tr></thead><tbody>${filasIncidentes}</tbody></table>`}
+  </div>
   <div class="footer">Corporación Municipal Panguipulli &nbsp;–&nbsp; Departamento Informática &nbsp;–&nbsp; Área Salud<br/>Informe generado automáticamente el ${format(hoy,"dd/MM/yyyy")} a las ${format(hoy,"HH:mm")} hrs</div>
 </div>
 <button class="print-btn no-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
