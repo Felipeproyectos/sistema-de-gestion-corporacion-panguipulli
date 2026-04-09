@@ -20,8 +20,14 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
 
   const isAdmin = user?.role === "admin";
 
-  const handleImprimirInforme = () => {
-    generarPDFEquipo({ equipo, actividades, parches });
+  const handleImprimirInforme = async () => {
+    let conductorActivo = equipo.conductor_responsable;
+    try {
+      const kms = await base44.entities.Kilometraje.filter({ equipo_id: equipo.id });
+      const activo = kms.find(r => !r.km_final);
+      if (activo?.conductor) conductorActivo = activo.conductor;
+    } catch (_) {}
+    generarPDFEquipo({ equipo: { ...equipo, conductor_responsable: conductorActivo }, actividades, parches });
   };
   const estado = ESTADOS_EQUIPO.find(e => e.value === equipo.estado) || ESTADOS_EQUIPO[0];
   const tipoLabel = TIPOS_EQUIPO.find(t => t.value === equipo.tipo)?.label || equipo.tipo;
