@@ -7,6 +7,7 @@ import {
   Loader2, ExternalLink
 } from "lucide-react";
 import { TIPOS_EQUIPO, ESTADOS_EQUIPO, TIPOS_ACTIVIDAD } from "@/lib/centros";
+import RepuestosTab from "./RepuestosTab";
 import { format, parseISO, differenceInDays } from "date-fns";
 
 const TIPO_ICONS = { dea: Zap, monitor_desfibrilador: Activity, ambulancia: Car, monitor_multiparametros: Monitor };
@@ -133,7 +134,7 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
             {tab === "mantenimiento" && <MantenimientoTab equipo={equipo} actividades={actividades} user={user} onUpdated={reloadActividades} />}
             {tab === "inspecciones" && <InspeccionesTab equipo={equipo} actividades={actividades} user={user} onUpdated={reloadActividades} />}
             {tab === "parches" && <ParchesTab equipo={equipo} parches={parches} user={user} onUpdated={onActividadCreada} />}
-            {tab === "repuestos" && <RepuestosTab equipo={equipo} />}
+            {tab === "repuestos" && <RepuestosTab equipo={equipo} user={user} />}
             {tab === "bitacora" && <BitacoraTab equipo={equipo} />}
           </div>
         </div>
@@ -593,52 +594,6 @@ function ParchesTab({ equipo, parches, user, onUpdated }) {
           })}
         </div>
       )}
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════════
-   REPUESTOS TAB
-══════════════════════════════════════════════ */
-function RepuestosTab({ equipo }) {
-  const piezas = [
-    { key: "estado_neumaticos", label: "Neumáticos", icon: "🛞" },
-    { key: "estado_luces", label: "Luces", icon: "💡" },
-    { key: "estado_bateria_vehiculo", label: "Batería Vehículo", icon: "🔋" },
-    { key: "estado_sirena", label: "Sirena", icon: "🚨" }
-  ];
-  const getConfig = (val) => ({
-    ok: { color: "#10B981", bg: "#F0FDF4", bar: 100, label: "OK" },
-    desgastado: { color: "#F59E0B", bg: "#FFFBEB", bar: 50, label: "Desgastado" },
-    baja_carga: { color: "#F59E0B", bg: "#FFFBEB", bar: 40, label: "Baja Carga" },
-    falla_leve: { color: "#F59E0B", bg: "#FFFBEB", bar: 60, label: "Falla Leve" },
-    requiere_cambio: { color: "#EF4444", bg: "#FEF2F2", bar: 15, label: "Requiere Cambio" },
-    requiere_reemplazo: { color: "#EF4444", bg: "#FEF2F2", bar: 10, label: "Reemplazar" },
-    falla_grave: { color: "#EF4444", bg: "#FEF2F2", bar: 5, label: "Falla Grave" }
-  }[val] || { color: "#94A3B8", bg: "#F8FAFC", bar: 0, label: "Sin datos" });
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="font-bold text-slate-900">Estado de Piezas Críticas</h3>
-        <p className="text-xs text-slate-400 mt-0.5">Monitoreo de componentes del vehículo</p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {piezas.map(({ key, label, icon }) => {
-          const cfg = getConfig(equipo[key]);
-          return (
-            <div key={key} className="bg-white p-4 rounded-2xl" style={{ border: `1px solid ${cfg.color}22` }}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2"><span className="text-xl">{icon}</span><p className="text-sm font-semibold text-slate-800">{label}</p></div>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ color: cfg.color, background: cfg.bg }}>{cfg.label}</span>
-              </div>
-              <div className="h-2 rounded-full" style={{ background: "#E2E8F0" }}>
-                <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${cfg.bar}%`, background: cfg.color }} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }

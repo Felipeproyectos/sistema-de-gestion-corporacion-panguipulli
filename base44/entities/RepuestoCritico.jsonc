@@ -1,0 +1,59 @@
+{
+  "name": "RepuestoCritico",
+  "type": "object",
+  "properties": {
+    "equipo_id": {
+      "type": "string"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "neumaticos",
+        "frenos",
+        "bateria",
+        "filtros",
+        "sirena",
+        "luces"
+      ]
+    },
+    "marca_modelo": {
+      "type": "string"
+    },
+    "estado_label": {
+      "type": "string",
+      "enum": [
+        "operativo",
+        "revision_requerida",
+        "excelente",
+        "suficiente",
+        "critico",
+        "agotado"
+      ]
+    },
+    "vida_util_pct": {
+      "type": "number"
+    },
+    "stock_unidades": {
+      "type": "number"
+    },
+    "ultimo_cambio": {
+      "type": "string"
+    },
+    "proximo_mantenimiento": {
+      "type": "string"
+    },
+    "notas": {
+      "type": "string"
+    },
+    "modificado_por": {
+      "type": "string"
+    },
+    "fecha_modificacion": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "equipo_id",
+    "tipo"
+  ]
+}
