@@ -13,6 +13,7 @@ export default function Configuracion() {
   const [usuarios, setUsuarios] = useState([]);
   const [invEmail, setInvEmail] = useState("");
   const [invRole, setInvRole]   = useState("user");
+  const [invCentros, setInvCentros] = useState([]);
   const [invitando, setInvitando] = useState(false);
   const [invMsg, setInvMsg]     = useState("");
   const [editingUser, setEditingUser] = useState(null);
@@ -63,20 +64,37 @@ export default function Configuracion() {
     setTimeout(() => setSaved(false), 2500);
   };
 
+  const toggleInvCentro = (nombre) => {
+    setInvCentros(prev => prev.includes(nombre) ? prev.filter(c => c !== nombre) : [...prev, nombre]);
+  };
+
   const handleInvitar = async () => {
     if (!invEmail.includes("@")) return;
     setInvitando(true);
     setInvMsg("");
     try {
       await base44.users.inviteUser(invEmail, invRole);
+      // Buscar el usuario recién creado para asignarle los centros
+      const updated = await base44.entities.User.list().catch(() => []);
+      const newUser = updated.find(u => u.email === invEmail);
+      if (newUser && invCentros.length > 0) {
+        await base44.entities.User.update(newUser.id, { centros_asignados: invCentros });
+      }
       setInvMsg("✅ Invitación enviada correctamente");
       setInvEmail("");
-      const updated = await base44.entities.User.list().catch(() => []);
-      setUsuarios(updated);
+      setInvCentros([]);
+      setUsuarios(await base44.entities.User.list().catch(() => []));
     } catch {
       setInvMsg("❌ No se pudo enviar la invitación");
     }
     setInvitando(false);
+  };
+
+  const toggleEditCentro = (nombre) => {
+    setEditingUser(prev => {
+      const current = prev.centros_asignados || [];
+      return { ...prev, centros_asignados: current.includes(nombre) ? current.filter(c => c !== nombre) : [...current, nombre] };
+    });
   };
 
   const handleUpdateUser = async (userId, data) => {
@@ -163,19 +181,37 @@ export default function Configuracion() {
           </h2>
 
           {/* Invitar */}
-          <div className="bg-blue-50 rounded-2xl p-5 border border-blue-100">
-            <p className="text-xs font-semibold text-blue-700 mb-3 flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5" /> Invitar nuevo usuario</p>
+          <div className="bg-blue-50 rounded-2xl p-5 border border-blue-100 space-y-3">
+            <p className="text-xs font-semibold text-blue-700 flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5" /> Invitar nuevo usuario</p>
             <div className="flex gap-2 flex-wrap">
               <input type="email" className="flex-1 min-w-48 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white" placeholder="correo@ejemplo.cl" value={invEmail} onChange={e => setInvEmail(e.target.value)} />
               <select className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300" value={invRole} onChange={e => setInvRole(e.target.value)}>
                 <option value="user">Usuario</option>
                 <option value="admin">Administrador</option>
               </select>
-              <button onClick={handleInvitar} disabled={invitando || !invEmail} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60" style={{ background: "#2563eb" }}>
-                {invitando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />} Invitar
-              </button>
             </div>
-            {invMsg && <p className={`mt-2 text-xs ${invMsg.startsWith("✅") ? "text-green-600" : "text-red-600"}`}>{invMsg}</p>}
+            {invRole === "user" && (
+              <div>
+                <p className="text-xs font-medium text-blue-700 mb-2">Centros que puede visualizar (selecciona uno o más):</p>
+                <div className="flex flex-wrap gap-2">
+                  {centros.map(c => (
+                    <button key={c} type="button" onClick={() => toggleInvCentro(c)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                        invCentros.includes(c)
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-slate-600 border-slate-200 hover:border-blue-400"
+                      }`}>
+                      {c}
+                    </button>
+                  ))}
+                </div>
+                {invCentros.length === 0 && <p className="text-xs text-amber-600 mt-1">⚠ Sin centros asignados verá todos los equipos</p>}
+              </div>
+            )}
+            <button onClick={handleInvitar} disabled={invitando || !invEmail} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60" style={{ background: "#2563eb" }}>
+              {invitando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />} Enviar Invitación
+            </button>
+            {invMsg && <p className={`text-xs ${invMsg.startsWith("✅") ? "text-green-600" : "text-red-600"}`}>{invMsg}</p>}
           </div>
 
           {/* Lista usuarios */}
@@ -183,23 +219,45 @@ export default function Configuracion() {
             {usuarios.map(u => (
               <div key={u.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:bg-slate-50">
                 {editingUser?.id === u.id ? (
-                  <div className="flex-1 flex items-center gap-3 flex-wrap">
-                    <select className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs" value={editingUser.role} onChange={e => setEditingUser(prev => ({...prev, role: e.target.value}))}>
-                      <option value="user">Usuario</option>
-                      <option value="admin">Administrador</option>
-                    </select>
-                    <select className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs flex-1 min-w-32" value={editingUser.centro_asignado || ""} onChange={e => setEditingUser(prev => ({...prev, centro_asignado: e.target.value}))}>
-                      <option value="">Sin centro asignado</option>
-                      {centros.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                    <button onClick={() => handleUpdateUser(u.id, { role: editingUser.role, centro_asignado: editingUser.centro_asignado })} className="p-1.5 rounded-lg bg-green-100 text-green-700 hover:bg-green-200"><Check className="w-4 h-4" /></button>
-                    <button onClick={() => setEditingUser(null)} className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200"><X className="w-4 h-4" /></button>
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <select className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs" value={editingUser.role} onChange={e => setEditingUser(prev => ({...prev, role: e.target.value}))}>
+                        <option value="user">Usuario</option>
+                        <option value="admin">Administrador</option>
+                      </select>
+                      <button onClick={() => handleUpdateUser(u.id, { role: editingUser.role, centros_asignados: editingUser.centros_asignados || [] })} className="p-1.5 rounded-lg bg-green-100 text-green-700 hover:bg-green-200"><Check className="w-4 h-4" /></button>
+                      <button onClick={() => setEditingUser(null)} className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200"><X className="w-4 h-4" /></button>
+                    </div>
+                    {editingUser.role === "user" && (
+                      <div>
+                        <p className="text-xs font-medium text-slate-600 mb-1.5">Centros asignados:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {centros.map(c => (
+                            <button key={c} type="button" onClick={() => toggleEditCentro(c)}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                                (editingUser.centros_asignados || []).includes(c)
+                                  ? "bg-blue-600 text-white border-blue-600"
+                                  : "bg-white text-slate-600 border-slate-200 hover:border-blue-400"
+                              }`}>
+                              {c}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
                     <div>
                       <p className="text-sm font-semibold text-slate-800">{u.full_name || u.email}</p>
-                      <p className="text-xs text-slate-400">{u.email} · <span className={u.role === "admin" ? "text-blue-600 font-medium" : "text-slate-500"}>{u.role === "admin" ? "Administrador" : "Usuario"}</span>{u.centro_asignado ? ` · ${u.centro_asignado}` : ""}</p>
+                        <p className="text-xs text-slate-400">{u.email} · <span className={u.role === "admin" ? "text-blue-600 font-medium" : "text-slate-500"}>{u.role === "admin" ? "Administrador" : "Usuario"}</span></p>
+                        {u.role !== "admin" && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {(u.centros_asignados?.length > 0) ? u.centros_asignados.map(c => (
+                              <span key={c} className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "#EFF6FF", color: "#2563EB" }}>{c}</span>
+                            )) : <span className="text-xs text-amber-500">Sin centros asignados (ve todos)</span>}
+                          </div>
+                        )}
                     </div>
                     <button onClick={() => setEditingUser({ ...u })} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600">
                       <Edit2 className="w-4 h-4" />

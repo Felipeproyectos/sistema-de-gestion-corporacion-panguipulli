@@ -12,7 +12,14 @@
     },
     "centro_asignado": {
       "type": "string",
-      "description": "Centro de salud asignado al usuario (solo para rol user)"
+      "description": "Centro de salud asignado (legacy)"
+    },
+    "centros_asignados": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Centros de salud que puede visualizar el usuario"
     }
   },
   "required": []

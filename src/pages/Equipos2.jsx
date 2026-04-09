@@ -23,9 +23,7 @@ export default function Equipos2() {
     base44.auth.me().then(u => {
       setUser(u);
       // usuario normal: asignar su centro automáticamente
-      if (u?.role !== "admin" && u?.centro) {
-        setCentroSeleccionado(u.centro);
-      }
+      // Para usuarios no admin, no pre-filtrar por centro (el filtro se aplica en equiposFiltrados)
     }).catch(() => {});
     Promise.all([
       base44.entities.Equipo.list(),
@@ -46,7 +44,10 @@ export default function Equipos2() {
 
   const isAdmin = user?.role === "admin";
 
+  const centrosPermitidos = !isAdmin && user?.centros_asignados?.length > 0 ? user.centros_asignados : null;
+
   const equiposFiltrados = equipos.filter(e => {
+    if (centrosPermitidos && !centrosPermitidos.includes(e.centro_principal)) return false;
     if (centroSeleccionado && e.centro_principal !== centroSeleccionado) return false;
     if (filtroEstado !== "todos" && e.estado !== filtroEstado) return false;
     if (filtroTipo !== "todos" && e.tipo !== filtroTipo) return false;
