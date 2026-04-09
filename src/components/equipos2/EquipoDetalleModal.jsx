@@ -49,7 +49,8 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
     ...(!esAmbulancia ? [{ key: "parches", label: "Parches", icon: Package }] : []),
     ...(esAmbulancia ? [
       { key: "repuestos", label: "Repuestos", icon: Gauge },
-      { key: "bitacora", label: "Bitácora", icon: BookOpen }
+      { key: "bitacora", label: "Bitácora", icon: BookOpen },
+      { key: "incidentes_tab", label: "Incidentes", icon: AlertTriangle }
     ] : [])
   ];
 
@@ -136,6 +137,7 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
             {tab === "parches" && <ParchesTab equipo={equipo} parches={parches} user={user} onUpdated={onActividadCreada} />}
             {tab === "repuestos" && <RepuestosTab equipo={equipo} user={user} />}
             {tab === "bitacora" && <BitacoraTab equipo={equipo} />}
+            {tab === "incidentes_tab" && <IncidentesTab equipo={equipo} user={user} />}
           </div>
         </div>
       </div>
@@ -313,11 +315,11 @@ function MantenimientoTab({ equipo, actividades, user, onUpdated }) {
   const [saving, setSaving] = useState(false);
 
   const mantenimientos = actividades
-    .filter(a => ["mantenimiento_preventivo", "mantenimiento_correctivo", "cambio_parches"].includes(a.tipo))
+    .filter(a => ["mantenimiento_preventivo", "mantenimiento_correctivo", "otros"].includes(a.tipo))
     .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-  const tipoLabel = { mantenimiento_preventivo: "Mantenimiento Preventivo", mantenimiento_correctivo: "Mantenimiento Correctivo", cambio_parches: "Cambio de Parches" };
-  const tipoColor = { mantenimiento_preventivo: "#2563EB", mantenimiento_correctivo: "#EF4444", cambio_parches: "#10B981" };
+  const tipoLabel = { mantenimiento_preventivo: "Mantenimiento Preventivo", mantenimiento_correctivo: "Mantenimiento Correctivo", otros: "Otros" };
+  const tipoColor = { mantenimiento_preventivo: "#2563EB", mantenimiento_correctivo: "#EF4444", otros: "#8B5CF6" };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -335,10 +337,11 @@ function MantenimientoTab({ equipo, actividades, user, onUpdated }) {
       {showForm && (
         <ActividadForm
           form={form} setForm={setForm} saving={saving} onSave={handleSave} onCancel={() => setShowForm(false)}
+          showFileUpload
           tipoOptions={[
             { value: "mantenimiento_preventivo", label: "Mantenimiento Preventivo" },
             { value: "mantenimiento_correctivo", label: "Mantenimiento Correctivo" },
-            { value: "cambio_parches", label: "Cambio de Parches" }
+            { value: "otros", label: "Otros" }
           ]}
         />
       )}
@@ -357,7 +360,7 @@ function MantenimientoTab({ equipo, actividades, user, onUpdated }) {
 
       {mantenimientos.length === 0
         ? <EmptyState icon={Wrench} text="Sin registros de mantenimiento" />
-        : mantenimientos.map(act => <ActivityCard key={act.id} act={act} tipoLabel={tipoLabel} tipoColor={tipoColor} />)
+        : mantenimientos.map(act => <ActivityCard key={act.id} act={act} tipoLabel={tipoLabel} tipoColor={tipoColor} showArchivo />)
       }
     </div>
   );
@@ -708,12 +711,116 @@ function ParchesTab({ equipo, parches, user, onUpdated }) {
 }
 
 /* ══════════════════════════════════════════════
+   INCIDENTES TAB (standalone)
+══════════════════════════════════════════════ */
+function IncidentesTab({ equipo, user }) {
+  const [incidentes, setIncidentes] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingInc, setEditingInc] = useState(null);
+  const [form, setForm] = useState({ fecha: new Date().toISOString().split("T")[0], observaciones: "", usuario_nombre: user?.full_name || "" });
+  const [saving, setSaving] = useState(false);
+
+  const load = () => base44.entities.Actividad.filter({ equipo_id: equipo.id })
+    .then(acts => setIncidentes(acts.filter(a => a.tipo === "incidente").sort((a,b) => new Date(b.fecha)-new Date(a.fecha))));
+
+  useEffect(() => { load(); }, [equipo.id]);
+
+  const openNew = () => { setEditingInc(null); setForm({ fecha: new Date().toISOString().split("T")[0], observaciones: "", usuario_nombre: user?.full_name || "" }); setShowForm(true); };
+  const openEdit = (inc) => { setEditingInc(inc); setForm({ fecha: inc.fecha, observaciones: inc.observaciones || "", usuario_nombre: inc.usuario_nombre || "" }); setShowForm(true); };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    if (editingInc) {
+      await base44.entities.Actividad.update(editingInc.id, form);
+    } else {
+      await base44.entities.Actividad.create({ equipo_id: equipo.id, tipo: "incidente", ...form });
+    }
+    setSaving(false);
+    setShowForm(false);
+    setEditingInc(null);
+    load();
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("¿Eliminar este incidente?")) return;
+    await base44.entities.Actividad.delete(id);
+    load();
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">Incidentes</h2>
+          <p className="text-xs text-slate-500 mt-0.5">{incidentes.length} registro(s)</p>
+        </div>
+        <button onClick={openNew} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: "#EF4444" }}>
+          <Plus className="w-4 h-4" /> Registrar Incidente
+        </button>
+      </div>
+
+      {showForm && (
+        <form onSubmit={handleSave} className="bg-white p-5 rounded-2xl space-y-3" style={{ border: "1px solid #FECACA", background: "#FFF5F5" }}>
+          <p className="text-xs font-bold text-red-500 uppercase tracking-widest">{editingInc ? "Editar Incidente" : "Nuevo Incidente"}</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-slate-600 block mb-1">Fecha</label>
+              <input type="date" required className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200" style={{ borderColor: "#FECACA" }}
+                value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-600 block mb-1">Responsable</label>
+              <input className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200" style={{ borderColor: "#FECACA" }}
+                value={form.usuario_nombre} onChange={e => setForm(f => ({ ...f, usuario_nombre: e.target.value }))} />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-600 block mb-1">Descripción del Incidente *</label>
+            <textarea required rows={3} className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 resize-none" style={{ borderColor: "#FECACA" }}
+              placeholder="Ej: Se pinchó un neumático en sector..." value={form.observaciones} onChange={e => setForm(f => ({ ...f, observaciones: e.target.value }))} />
+          </div>
+          <div className="flex gap-2">
+            <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: "#EF4444" }}>
+              {saving ? "Guardando..." : editingInc ? "Guardar Cambios" : "Registrar"}
+            </button>
+            <button type="button" onClick={() => { setShowForm(false); setEditingInc(null); }} className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100">Cancelar</button>
+          </div>
+        </form>
+      )}
+
+      {incidentes.length === 0 ? (
+        <EmptyState icon={AlertTriangle} text="Sin incidentes registrados" />
+      ) : (
+        <div className="space-y-2.5">
+          {incidentes.map(inc => (
+            <div key={inc.id} className="bg-white flex items-start gap-3 p-4 rounded-2xl" style={{ border: "1px solid #FECACA" }}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "#FEF2F2" }}>
+                <AlertTriangle className="w-4 h-4 text-red-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-800">{inc.observaciones || "Sin descripción"}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{inc.fecha}{inc.usuario_nombre && ` • ${inc.usuario_nombre}`}</p>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button onClick={() => openEdit(inc)} className="p-1.5 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-500"><Edit className="w-4 h-4" /></button>
+                <button onClick={() => handleDelete(inc.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
    BITÁCORA TAB
 ══════════════════════════════════════════════ */
 function BitacoraTab({ equipo }) {
   const [registros, setRegistros] = useState([]);
-  const [incidentes, setIncidentes] = useState([]);
   const [showConductorForm, setShowConductorForm] = useState(false);
+  const [incidentes, setIncidentes] = useState([]);
   const [showIncidenteForm, setShowIncidenteForm] = useState(false);
   const [editingIncidente, setEditingIncidente] = useState(null);
   const [form, setForm] = useState({ fecha: new Date().toISOString().split("T")[0], conductor: "", km_inicial: "", observaciones: "" });
@@ -1009,7 +1116,19 @@ function SectionHeader({ title, count, onAdd, addLabel = "Registrar" }) {
   );
 }
 
-function ActividadForm({ form, setForm, saving, onSave, onCancel, tipoOptions }) {
+function ActividadForm({ form, setForm, saving, onSave, onCancel, tipoOptions, showFileUpload }) {
+  const fileRef = useRef();
+  const [uploading, setUploading] = useState(false);
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setForm(f => ({ ...f, archivo_url: file_url }));
+    setUploading(false);
+  };
+
   return (
     <div className="bg-white p-5 rounded-2xl space-y-3" style={{ border: "1px solid #E2E8F0" }}>
       <form onSubmit={onSave} className="space-y-3">
@@ -1037,8 +1156,28 @@ function ActividadForm({ form, setForm, saving, onSave, onCancel, tipoOptions })
           <textarea rows={2} className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none" style={{ borderColor: "#E2E8F0" }}
             value={form.observaciones} onChange={e => setForm(f => ({ ...f, observaciones: e.target.value }))} />
         </div>
+        {showFileUpload && (
+          <div>
+            <label className="text-xs font-medium text-slate-600 block mb-1">Adjuntar Documento (opcional)</label>
+            <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.jpg,.png" className="hidden" onChange={handleFile} />
+            {form.archivo_url ? (
+              <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span className="text-xs text-green-700 font-medium flex-1">Archivo cargado</span>
+                <a href={form.archivo_url} target="_blank" rel="noreferrer" className="text-xs text-green-700 underline flex items-center gap-1">Ver <ExternalLink className="w-3 h-3" /></a>
+                <button type="button" onClick={() => setForm(f => ({ ...f, archivo_url: "" }))} className="text-slate-400 hover:text-red-400"><X className="w-3.5 h-3.5" /></button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
+                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl text-sm font-medium"
+                style={{ border: "2px dashed #CBD5E1", color: "#64748B", background: "#F8FAFC" }}>
+                {uploading ? <><Loader2 className="w-4 h-4 animate-spin" /> Subiendo...</> : <><Upload className="w-4 h-4" /> Seleccionar documento</>}
+              </button>
+            )}
+          </div>
+        )}
         <div className="flex gap-2">
-          <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: "#2563EB" }}>
+          <button type="submit" disabled={saving || uploading} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: "#2563EB" }}>
             {saving ? "Guardando..." : "Guardar"}
           </button>
           <button type="button" onClick={onCancel} className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100">Cancelar</button>

@@ -8,7 +8,7 @@
     "tipo": {
       "type": "string",
       "enum": [
-        "cambio_parches",
+        "otros",
         "mantenimiento_preventivo",
         "mantenimiento_correctivo",
         "error_calibracion",
