@@ -4,7 +4,7 @@ import {
   X, Edit, Trash2, Plus, Info, Wrench, ClipboardCheck, Package, BookOpen,
   MapPin, Calendar, User, Upload, AlertTriangle, Activity, Car, Zap, Monitor,
   Hash, Gauge, FileText, Download, Shield, CheckCircle, Clock, ArrowLeft,
-  Loader2, ExternalLink, Printer, ChevronDown, ChevronRight
+  Loader2, ExternalLink, Printer, ChevronDown, ChevronRight, Fuel
 } from "lucide-react";
 import { TIPOS_EQUIPO, ESTADOS_EQUIPO, TIPOS_ACTIVIDAD } from "@/lib/centros";
 import RepuestosTab from "./RepuestosTab";
@@ -756,6 +756,8 @@ function InspeccionesTab({ equipo, actividades, user, onUpdated }) {
 
 function InspeccionCard({ act }) {
   const [expanded, setExpanded] = useState(false);
+  const [inspeccionData, setInspeccionData] = useState(null);
+  const [loadingData, setLoadingData] = useState(false);
 
   const TIPO_CFG = {
     inspeccion_semanal:    { label: "Pauta Semanal",        icon: CheckCircle,   color: "#10B981", bg: "#F0FDF4" },
@@ -772,24 +774,11 @@ function InspeccionCard({ act }) {
     ? new Date(act.created_date).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })
     : "";
 
-  // Parsear las observaciones estructuradas (separadas por " | ")
-  const detalleLineas = act.observaciones?.split(" | ").filter(Boolean) || [];
-
-  // Detectar fallas
   const hasFallas = act.observaciones?.includes("Fallas:");
-
-  // Detectar resultado de pautas genéricas
   const resultadoMatch = act.observaciones?.match(/Resultado:\s*(aprobado|observaciones|rechazado)/i);
   const resultadoLabel = resultadoMatch?.[1];
-
-  // Extraer categoría si viene del formulario genérico
-  const categoriaMatch = act.observaciones?.match(/\[([^\]]+)\]/);
-  const categoriaLabel = categoriaMatch?.[1]; // ej: "Pauta Diaria - Ambulancias"
-
-  // Detectar daños
   const tieneDanos = act.observaciones?.includes("Daños reportados:");
 
-  // Badge de resultado
   const resultBadge = hasFallas || resultadoLabel === "rechazado"
     ? { label: "Con fallas", color: "#DC2626", bg: "#FEF2F2" }
     : resultadoLabel === "observaciones"
@@ -798,7 +787,31 @@ function InspeccionCard({ act }) {
     ? { label: "Sin fallas", color: "#16A34A", bg: "#DCFCE7" }
     : null;
 
-  const hasDetails = detalleLineas.length > 0;
+  const esSemanal = act.tipo === "inspeccion_semanal";
+
+  const handleToggle = async () => {
+    const next = !expanded;
+    setExpanded(next);
+    // Si es pauta semanal, buscar los datos completos del formulario
+    if (next && esSemanal && !inspeccionData) {
+      setLoadingData(true);
+      try {
+        // Buscar en InspeccionPendiente por equipo_id y fecha
+        const pendientes = await base44.entities.InspeccionPendiente.filter({
+          equipo_id: act.equipo_id,
+          tipo_formulario: "inspeccion_semanal",
+        });
+        // Encontrar el que coincida mejor con fecha y conductor
+        const match = pendientes.find(p =>
+          p.fecha === act.fecha && p.conductor === act.usuario_nombre
+        ) || pendientes.find(p => p.fecha === act.fecha) || null;
+        if (match?.datos_json) {
+          setInspeccionData(JSON.parse(match.datos_json));
+        }
+      } catch (_) {}
+      setLoadingData(false);
+    }
+  };
 
   return (
     <div className="rounded-xl overflow-hidden" style={{
@@ -806,18 +819,14 @@ function InspeccionCard({ act }) {
       background: act.tipo === "incidente" ? "#FFF5F5" : "white"
     }}>
       {/* Header row */}
-      <div className="flex items-start gap-3 p-3.5">
+      <div className="flex items-start gap-3 p-3.5 cursor-pointer" onClick={handleToggle}>
         <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: cfg.bg }}>
-          <CfgIcon className="w-4.5 h-4.5" style={{ color: hasFallas || resultadoLabel === "rechazado" ? "#EF4444" : cfg.color }} />
+          <CfgIcon className="w-4 h-4" style={{ color: hasFallas ? "#EF4444" : cfg.color }} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-semibold text-slate-800 text-sm">{cfg.label}</p>
-            {categoriaLabel && (
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "#EFF6FF", color: "#2563EB" }}>
-                {categoriaLabel}
-              </span>
-            )}
+          {/* Tipo + badges */}
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <p className="font-bold text-slate-800 text-sm">{cfg.label}</p>
             {resultBadge && (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: resultBadge.bg, color: resultBadge.color }}>
                 {resultBadge.label}
@@ -829,51 +838,152 @@ function InspeccionCard({ act }) {
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            {act.fecha}{hora && ` • ${hora}`}
-            {act.usuario_nombre && ` • ${act.usuario_nombre}`}
+          {/* Conductor destacado */}
+          {act.usuario_nombre && (
+            <p className="text-base font-bold text-slate-800 flex items-center gap-1.5 mb-0.5">
+              <User className="w-4 h-4 text-blue-400 flex-shrink-0" />
+              {act.usuario_nombre}
+            </p>
+          )}
+          {/* Fecha y hora */}
+          <p className="text-xs text-slate-400">
+            {act.fecha}{hora && ` · ${hora}`}
           </p>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {act.archivo_url && (
-            <a href={act.archivo_url} target="_blank" rel="noreferrer"
+            <a href={act.archivo_url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
               className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-blue-50 text-blue-400">
               <FileText className="w-4 h-4" />
             </a>
           )}
-          {hasDetails && (
-            <button onClick={() => setExpanded(e => !e)}
-              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">
-              <ChevronDown className="w-4 h-4" style={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
-            </button>
-          )}
+          <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">
+            <ChevronDown className="w-4 h-4" style={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+          </button>
         </div>
       </div>
 
       {/* Detalle expandido */}
-      {expanded && hasDetails && (
-        <div className="border-t border-slate-100 px-4 py-3 space-y-1.5" style={{ background: "#FAFBFC" }}>
-          {detalleLineas.map((linea, i) => {
-            const isFalla = linea.startsWith("[") && linea.includes("Fallas:");
-            const isDano = linea.startsWith("Daños");
-            const isKm = linea.startsWith("KM");
-            const isCombustible = linea.startsWith("Combustible");
-            const isResultado = linea.startsWith("[") && linea.includes("Resultado:");
-            return (
-              <div key={i} className="flex items-start gap-2 py-1 rounded-lg px-2"
-                style={{
-                  background: isFalla ? "#FFF5F5" : isDano ? "#FFF5F5" : isResultado ? "#F0FDF4" : "transparent",
-                  border: isFalla || isDano ? "1px solid #FECACA" : isResultado ? "1px solid #BBF7D0" : "none"
-                }}>
-                <span className="flex-shrink-0 mt-0.5" style={{ color: isFalla || isDano ? "#EF4444" : isResultado ? "#16A34A" : "#94A3B8" }}>
-                  {isFalla || isDano ? "⚠" : isResultado ? "✓" : "•"}
-                </span>
-                <p className="text-xs leading-relaxed" style={{ color: isFalla || isDano ? "#DC2626" : "#475569" }}>
-                  {linea}
-                </p>
+      {expanded && (
+        <div className="border-t border-slate-100 px-4 py-3 space-y-3" style={{ background: "#FAFBFC" }}>
+          {loadingData && (
+            <p className="text-xs text-slate-400 text-center py-2">Cargando datos del formulario...</p>
+          )}
+
+          {/* Vista completa del formulario semanal */}
+          {esSemanal && inspeccionData && (
+            <div className="space-y-2">
+              {/* Info conductor/km/combustible */}
+              <div className="flex flex-wrap gap-2">
+                {inspeccionData.km_inicial && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                    style={{ background: "#EFF6FF", color: "#2563EB", border: "1px solid #BFDBFE" }}>
+                    <Gauge className="w-3.5 h-3.5" /> KM Inicial: {Number(inspeccionData.km_inicial).toLocaleString()}
+                  </div>
+                )}
+                {inspeccionData.combustible && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                    style={{ background: "#FFFBEB", color: "#B45309", border: "1px solid #FDE68A" }}>
+                    ⛽ Combustible: {inspeccionData.combustible}
+                  </div>
+                )}
               </div>
-            );
-          })}
+
+              {/* Checklists */}
+              {["luces", "motor", "accesorios", "documentos"].map(cat => {
+                const data = inspeccionData[cat];
+                if (!data) return null;
+                const items = Object.entries(data);
+                const malos = items.filter(([, v]) => v?.estado === "malo");
+                const ICONS = { luces: "⚡", motor: "🔧", accesorios: "📦", documentos: "📄" };
+                const NAMES = { luces: "Luces", motor: "Motor", accesorios: "Accesorios", documentos: "Documentos" };
+                return (
+                  <div key={cat} className="rounded-xl overflow-hidden" style={{ border: "1px solid #E2E8F0" }}>
+                    <div className="flex items-center justify-between px-3 py-2" style={{ background: malos.length > 0 ? "#FFF5F5" : "#F8FAFC" }}>
+                      <span className="text-xs font-bold text-slate-600">{ICONS[cat]} {NAMES[cat]}</span>
+                      {malos.length > 0
+                        ? <span className="text-xs font-bold text-red-600">{malos.length} falla(s)</span>
+                        : <span className="text-xs text-green-600 font-semibold">✓ Todo OK</span>
+                      }
+                    </div>
+                    {malos.length > 0 && (
+                      <div className="px-3 py-2 space-y-1">
+                        {malos.map(([item, v]) => (
+                          <div key={item} className="text-xs flex items-start gap-1.5">
+                            <span className="text-red-400 flex-shrink-0">✗</span>
+                            <span className="font-semibold text-red-700">{item}</span>
+                            {v.obs && <span className="text-red-500"> — {v.obs}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Daños visuales */}
+              {(() => {
+                const danos = inspeccionData.danos;
+                if (!danos) return null;
+                const lista = Object.entries(danos).filter(([, v]) => v?.marcado);
+                if (lista.length === 0) return (
+                  <div className="text-xs text-green-700 flex items-center gap-1.5 px-3 py-2 rounded-xl"
+                    style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
+                    <CheckCircle className="w-3.5 h-3.5" /> Sin daños visuales
+                  </div>
+                );
+                return (
+                  <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #FECACA" }}>
+                    <div className="px-3 py-2" style={{ background: "#FFF5F5" }}>
+                      <span className="text-xs font-bold text-red-600">⚠ Daños Visuales ({lista.length})</span>
+                    </div>
+                    <div className="px-3 py-2 space-y-1.5">
+                      {lista.map(([zoneId, v]) => (
+                        <div key={zoneId} className="flex items-start gap-2 text-xs">
+                          {v.foto_url && <img src={v.foto_url} alt="daño" className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />}
+                          <div>
+                            <p className="font-bold text-red-700">{zoneId.replace(/_/g, " ")}</p>
+                            <p className="text-slate-600">{v.descripcion}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Para otros tipos: observaciones simples */}
+          {!esSemanal && act.observaciones && (
+            <div className="space-y-1.5">
+              {act.observaciones.split(" | ").filter(Boolean).map((linea, i) => {
+                const isFalla = linea.includes("Fallas:");
+                const isDano = linea.startsWith("Daños");
+                return (
+                  <div key={i} className="flex items-start gap-2 py-1 rounded-lg px-2"
+                    style={{
+                      background: isFalla || isDano ? "#FFF5F5" : "transparent",
+                      border: isFalla || isDano ? "1px solid #FECACA" : "none"
+                    }}>
+                    <span className="flex-shrink-0 mt-0.5" style={{ color: isFalla || isDano ? "#EF4444" : "#94A3B8" }}>
+                      {isFalla || isDano ? "⚠" : "•"}
+                    </span>
+                    <p className="text-xs leading-relaxed" style={{ color: isFalla || isDano ? "#DC2626" : "#475569" }}>
+                      {linea}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Sin datos de formulario */}
+          {esSemanal && !loadingData && !inspeccionData && (
+            <p className="text-xs text-slate-400 italic text-center py-1">
+              Datos detallados no disponibles para este registro.
+            </p>
+          )}
         </div>
       )}
     </div>
