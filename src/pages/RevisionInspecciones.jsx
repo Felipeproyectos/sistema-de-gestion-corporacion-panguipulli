@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, AlertTriangle, Car, ClipboardCheck, User } from "lucide-react";
+import {
+  CheckCircle, XCircle, Clock, ChevronDown, ChevronUp,
+  AlertTriangle, ClipboardCheck, Car, MapPin, User, Calendar,
+  Fuel, Gauge, Zap, Wrench, Package, FileText, AlertCircle
+} from "lucide-react";
 
 const TIPO_LABEL = {
   inspeccion_semanal: "Pauta Semanal",
@@ -9,11 +13,104 @@ const TIPO_LABEL = {
   inspeccion_anual: "Pauta Anual",
 };
 
+const TIPO_EQUIPO_LABEL = {
+  ambulancia: "Ambulancia",
+  dea: "DEA",
+  monitor_desfibrilador: "Monitor Desfibrilador",
+  monitor_multiparametros: "Monitor Multiparámetros",
+};
+
 const ESTADO_CFG = {
   pendiente: { label: "Pendiente", color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" },
   aprobado: { label: "Aprobado", color: "#16A34A", bg: "#F0FDF4", border: "#BBF7D0" },
   rechazado: { label: "Rechazado", color: "#DC2626", bg: "#FEF2F2", border: "#FECACA" },
 };
+
+function formatFecha(fechaStr) {
+  if (!fechaStr) return "-";
+  const [y, m, d] = fechaStr.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function formatHora(isoStr) {
+  if (!isoStr) return "-";
+  const d = new Date(isoStr);
+  return d.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+}
+
+function ChecklistDetail({ titulo, icon: Icon, color, data }) {
+  if (!data) return null;
+  const items = Object.entries(data);
+  const malos = items.filter(([, v]) => v?.estado === "malo");
+  const buenos = items.filter(([, v]) => v?.estado === "bueno");
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #E2E8F0" }}>
+      <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: `${color}12` }}>
+        <Icon className="w-4 h-4" style={{ color }} />
+        <span className="text-xs font-bold" style={{ color }}>{titulo}</span>
+        <span className="ml-auto text-xs text-slate-400">{buenos.length}/{items.length} OK</span>
+        {malos.length > 0 && (
+          <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ background: "#FEF2F2", color: "#DC2626" }}>
+            {malos.length} falla{malos.length > 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+      {malos.length > 0 && (
+        <div className="px-4 py-2 space-y-1.5">
+          {malos.map(([item, v]) => (
+            <div key={item} className="flex items-start gap-2 text-xs">
+              <span className="text-red-400 mt-0.5 flex-shrink-0">✗</span>
+              <div>
+                <span className="font-semibold text-red-700">{item}</span>
+                {v.obs && <span className="text-red-500"> — {v.obs}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {malos.length === 0 && (
+        <div className="px-4 py-2">
+          <span className="text-xs text-green-600 flex items-center gap-1">
+            <CheckCircle className="w-3.5 h-3.5" /> Todo en buen estado
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DanosDetail({ danos }) {
+  if (!danos) return null;
+  const lista = Object.entries(danos).filter(([, v]) => v?.marcado);
+  if (lista.length === 0) return (
+    <div className="rounded-xl px-4 py-3 text-xs text-green-700 flex items-center gap-2"
+      style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
+      <CheckCircle className="w-4 h-4" /> Sin daños visuales reportados
+    </div>
+  );
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #FECACA" }}>
+      <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: "#FFF5F5" }}>
+        <AlertCircle className="w-4 h-4 text-red-500" />
+        <span className="text-xs font-bold text-red-600">Daños Visuales ({lista.length})</span>
+      </div>
+      <div className="px-4 py-2 space-y-2">
+        {lista.map(([zoneId, v]) => (
+          <div key={zoneId} className="flex items-start gap-3">
+            {v.foto_url && (
+              <img src={v.foto_url} alt="daño" className="w-14 h-14 object-cover rounded-lg flex-shrink-0" />
+            )}
+            <div>
+              <p className="text-xs font-bold text-red-700">{zoneId.replace(/_/g, " ")}</p>
+              <p className="text-xs text-slate-600">{v.descripcion}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function InspeccionCard({ insp, onActualizar }) {
   const [expanded, setExpanded] = useState(false);
@@ -21,8 +118,15 @@ function InspeccionCard({ insp, onActualizar }) {
   const [processing, setProcessing] = useState(false);
 
   const estado = ESTADO_CFG[insp.estado] || ESTADO_CFG.pendiente;
-  const lineas = insp.observaciones?.split(" | ").filter(Boolean) || [];
-  const hasFallas = insp.observaciones?.includes("Fallas:");
+  const hasFallas = insp.observaciones?.includes("Fallas:") || insp.observaciones?.includes("Daños");
+
+  // Parsear datos_json
+  const datos = (() => {
+    try { return insp.datos_json ? JSON.parse(insp.datos_json) : {}; } catch { return {}; }
+  })();
+
+  const equipo = datos.equipo || {};
+  const horaRegistro = datos.hora_registro;
 
   const handleAccion = async (accion) => {
     setProcessing(true);
@@ -36,59 +140,126 @@ function InspeccionCard({ insp, onActualizar }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden" style={{ border: `1px solid ${estado.border}` }}>
+    <div className="bg-white rounded-2xl overflow-hidden" style={{ border: `1px solid ${estado.border}`, boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}>
+
       {/* Header */}
-      <div className="p-4 flex items-start gap-4">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: estado.bg }}>
-          <ClipboardCheck className="w-5 h-5" style={{ color: estado.color }} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-bold text-slate-800">{TIPO_LABEL[insp.tipo_formulario] || insp.tipo_formulario}</p>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-              style={{ background: estado.bg, color: estado.color }}>
-              {estado.label}
-            </span>
-            {hasFallas && (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#FEF2F2", color: "#DC2626" }}>
-                Con fallas
-              </span>
-            )}
+      <div className="p-4 cursor-pointer" onClick={() => setExpanded(e => !e)}>
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: estado.bg }}>
+            <ClipboardCheck className="w-5 h-5" style={{ color: estado.color }} />
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {insp.equipo_label || insp.equipo_id} · {insp.fecha}
-            {insp.conductor && ` · ${insp.conductor}`}
-          </p>
-          {insp.km_inicial && (
-            <p className="text-xs text-blue-600 mt-0.5">KM Inicial: {Number(insp.km_inicial).toLocaleString()}</p>
-          )}
+          <div className="flex-1 min-w-0">
+            {/* Título y estado */}
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <p className="font-bold text-slate-800">{TIPO_LABEL[insp.tipo_formulario] || insp.tipo_formulario}</p>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                style={{ background: estado.bg, color: estado.color }}>
+                {estado.label}
+              </span>
+              {hasFallas && (
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#FEF2F2", color: "#DC2626" }}>
+                  ⚠ Con fallas
+                </span>
+              )}
+            </div>
+
+            {/* Tipo y nombre del equipo */}
+            <div className="flex items-center gap-1.5 mb-1">
+              <Car className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+              <span className="text-sm font-semibold text-blue-700">
+                {equipo.tipo ? TIPO_EQUIPO_LABEL[equipo.tipo] || equipo.tipo : "Equipo"}
+                {" · "}
+                {insp.equipo_label || insp.equipo_id}
+                {equipo.patente && <span className="font-normal text-blue-500"> ({equipo.patente})</span>}
+              </span>
+            </div>
+
+            {/* Centro */}
+            {(equipo.centro_principal || equipo.subsede) && (
+              <div className="flex items-center gap-1.5 mb-1">
+                <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                <span className="text-xs text-slate-600">
+                  {equipo.centro_principal}
+                  {equipo.subsede && ` · ${equipo.subsede}`}
+                </span>
+              </div>
+            )}
+
+            {/* Conductor, Fecha y Hora */}
+            <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+              {insp.conductor && (
+                <div className="flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-xs text-slate-600">{insp.conductor}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-xs text-slate-600">
+                  {formatFecha(insp.fecha)}
+                  {horaRegistro && ` · ${formatHora(horaRegistro)}`}
+                </span>
+              </div>
+              {insp.km_inicial && (
+                <div className="flex items-center gap-1.5">
+                  <Gauge className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-xs text-slate-600">KM {Number(insp.km_inicial).toLocaleString()}</span>
+                </div>
+              )}
+              {insp.combustible && (
+                <div className="flex items-center gap-1.5">
+                  <Fuel className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-xs text-slate-600">{insp.combustible}</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <button className="text-slate-400 hover:text-slate-600 flex-shrink-0 mt-1">
+            {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          </button>
         </div>
-        <button onClick={() => setExpanded(e => !e)} className="text-slate-400 hover:text-slate-600 flex-shrink-0">
-          {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-        </button>
       </div>
 
       {/* Detalle expandido */}
       {expanded && (
         <div className="border-t border-slate-100 p-4 space-y-3" style={{ background: "#FAFBFC" }}>
-          {/* Observaciones */}
-          {lineas.length > 0 && (
+
+          {/* Info del equipo */}
+          {equipo.centro_principal && (
+            <div className="p-3 rounded-xl text-xs space-y-1" style={{ background: "#EFF6FF", border: "1px solid #BFDBFE" }}>
+              <p className="font-bold text-blue-700 mb-1.5 flex items-center gap-1.5">
+                <Car className="w-3.5 h-3.5" /> Información del Equipo
+              </p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-700">
+                <span><span className="font-semibold">Tipo:</span> {TIPO_EQUIPO_LABEL[equipo.tipo] || equipo.tipo || "-"}</span>
+                <span><span className="font-semibold">Inventario:</span> {equipo.numero_inventario || "-"}</span>
+                <span><span className="font-semibold">Marca/Modelo:</span> {equipo.marca} {equipo.modelo}</span>
+                {equipo.patente && <span><span className="font-semibold">Patente:</span> {equipo.patente}</span>}
+                <span className="col-span-2"><span className="font-semibold">Centro:</span> {equipo.centro_principal}{equipo.subsede ? ` · ${equipo.subsede}` : ""}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Checklists de la pauta semanal */}
+          {insp.tipo_formulario === "inspeccion_semanal" && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Revisión de Ítems</p>
+              <ChecklistDetail titulo="Luces" icon={Zap} color="#F59E0B" data={datos.luces} />
+              <ChecklistDetail titulo="Motor" icon={Wrench} color="#2563EB" data={datos.motor} />
+              <ChecklistDetail titulo="Accesorios" icon={Package} color="#7C3AED" data={datos.accesorios} />
+              <ChecklistDetail titulo="Documentos" icon={FileText} color="#059669" data={datos.documentos} />
+              <DanosDetail danos={datos.danos} />
+            </div>
+          )}
+
+          {/* Para turno chofer: observaciones */}
+          {insp.tipo_formulario === "turno_chofer" && insp.observaciones && (
             <div className="space-y-1.5">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Detalles de la Inspección</p>
-              {lineas.map((linea, i) => (
-                <div key={i} className="flex items-start gap-2 py-1.5 px-3 rounded-lg text-xs"
-                  style={{
-                    background: linea.includes("Fallas:") || linea.startsWith("Daños") ? "#FFF5F5" : "white",
-                    border: linea.includes("Fallas:") || linea.startsWith("Daños") ? "1px solid #FECACA" : "1px solid #E2E8F0",
-                    color: linea.includes("Fallas:") || linea.startsWith("Daños") ? "#DC2626" : "#475569"
-                  }}>
-                  <span className="flex-shrink-0 mt-0.5">
-                    {linea.includes("Fallas:") || linea.startsWith("Daños") ? "⚠" : "•"}
-                  </span>
-                  <p className="leading-relaxed">{linea}</p>
-                </div>
-              ))}
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Observaciones</p>
+              <div className="p-3 rounded-xl text-xs text-slate-700 bg-white" style={{ border: "1px solid #E2E8F0" }}>
+                {insp.observaciones}
+              </div>
             </div>
           )}
 
@@ -97,6 +268,7 @@ function InspeccionCard({ insp, onActualizar }) {
             <div className="p-3 rounded-xl text-sm" style={{ background: estado.bg, border: `1px solid ${estado.border}` }}>
               <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: estado.color }}>
                 {insp.estado === "aprobado" ? "✓ Aprobado" : "✗ Rechazado"} por {insp.revisor_nombre || insp.revisor_email}
+                {insp.fecha_revision && ` · ${formatFecha(insp.fecha_revision)}`}
               </p>
               {insp.nota_revision && <p className="text-xs" style={{ color: estado.color }}>{insp.nota_revision}</p>}
             </div>
@@ -115,14 +287,14 @@ function InspeccionCard({ insp, onActualizar }) {
                 <button
                   onClick={() => handleAccion("rechazar")}
                   disabled={processing}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
                   style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" }}>
                   <XCircle className="w-4 h-4" /> Rechazar
                 </button>
                 <button
                   onClick={() => handleAccion("aprobar")}
                   disabled={processing}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50"
                   style={{ background: "#16A34A" }}>
                   <CheckCircle className="w-4 h-4" /> Aprobar y Sincronizar
                 </button>
@@ -186,7 +358,7 @@ export default function RevisionInspecciones() {
         </div>
 
         {/* Filtros */}
-        <div className="flex gap-2 mb-5">
+        <div className="flex gap-2 mb-5 flex-wrap">
           {[
             { value: "pendiente", label: "Pendientes" },
             { value: "aprobado", label: "Aprobados" },

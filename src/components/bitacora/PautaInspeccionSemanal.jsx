@@ -421,6 +421,11 @@ export default function PautaInspeccionSemanal({ equipos, onSuccess, equipoFijo 
         km_inicial: form.km_inicial ? Number(form.km_inicial) : undefined,
         combustible: form.combustible,
         observaciones: observaciones || "",
+        luces,
+        motor,
+        accesorios,
+        documentos,
+        danos,
       });
       if (!res.data?.ok) throw new Error(res.data?.error || "Error al guardar");
 
