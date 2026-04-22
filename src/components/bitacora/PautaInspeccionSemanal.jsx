@@ -398,6 +398,12 @@ export default function PautaInspeccionSemanal({ equipos, onSuccess, equipoFijo 
     setError("");
     setSaving(true);
 
+    if (!form.equipo_id) {
+      setSaving(false);
+      setError("No se pudo identificar el equipo. Recarga e intenta de nuevo.");
+      return;
+    }
+
     try {
       const observaciones = buildObservaciones();
       const hasFallas = Object.values(allItems).some(v => v.estado === "malo");
@@ -406,8 +412,8 @@ export default function PautaInspeccionSemanal({ equipos, onSuccess, equipoFijo 
         equipo_id: form.equipo_id,
         tipo: "inspeccion_semanal",
         fecha: form.fecha,
-        usuario_nombre: form.conductor,
-        observaciones,
+        usuario_nombre: form.conductor || "",
+        observaciones: observaciones || "",
       });
 
       // Guardar kilometraje solo si se ingresó KM (no bloquea el flujo si falla)
@@ -436,7 +442,9 @@ export default function PautaInspeccionSemanal({ equipos, onSuccess, equipoFijo 
       onSuccess && onSuccess({ hasFallas, conductor: form.conductor });
     } catch (err) {
       setSaving(false);
-      setError(`Error al guardar: ${err?.message || "Por favor intenta nuevamente."}`);
+      console.error("Error pauta semanal:", err);
+      const msg = err?.response?.data?.message || err?.message || "Error desconocido";
+      setError(`Error al guardar: ${msg}`);
     }
   };
 
