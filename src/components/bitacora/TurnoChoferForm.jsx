@@ -27,18 +27,23 @@ export default function TurnoChoferForm({ equipos, loading, onSuccess, equipoFij
       ? `${equipoFijo.marca} ${equipoFijo.modelo}${equipoFijo.patente ? ` — ${equipoFijo.patente}` : ""}`
       : form.equipo_id;
 
-    await base44.entities.InspeccionPendiente.create({
-      tipo_formulario: "turno_chofer",
-      equipo_id: form.equipo_id,
-      equipo_label: equipoLabel,
-      conductor: form.conductor,
-      fecha: form.fecha,
-      km_inicial: Number(form.km_inicial),
-      observaciones: form.observaciones || `KM Inicial: ${form.km_inicial}`,
-      estado: "pendiente",
-    });
-    setSaving(false);
-    onSuccess("Registro de turno enviado para revisión.");
+    try {
+      const res = await base44.functions.invoke("guardarInspeccionPendiente", {
+        tipo_formulario: "turno_chofer",
+        equipo_id: form.equipo_id,
+        equipo_label: equipoLabel,
+        conductor: form.conductor,
+        fecha: form.fecha,
+        km_inicial: Number(form.km_inicial),
+        observaciones: form.observaciones || `KM Inicial: ${form.km_inicial}`,
+      });
+      if (!res.data?.ok) throw new Error(res.data?.error || "Error al guardar");
+      setSaving(false);
+      onSuccess("Registro de turno enviado para revisión.");
+    } catch (err) {
+      setSaving(false);
+      setError(`Error al guardar: ${err?.message || "Intenta de nuevo."}`);
+    }
   };
 
   const inputCls = "w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-slate-50";

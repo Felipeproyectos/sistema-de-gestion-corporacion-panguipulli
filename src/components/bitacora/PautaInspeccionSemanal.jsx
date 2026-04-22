@@ -411,8 +411,8 @@ export default function PautaInspeccionSemanal({ equipos, onSuccess, equipoFijo 
         ? `${equipoFijo.marca} ${equipoFijo.modelo}${equipoFijo.patente ? ` — ${equipoFijo.patente}` : ""}`
         : form.equipo_id;
 
-      // Guardar en InspeccionPendiente para revisión del admin
-      await base44.entities.InspeccionPendiente.create({
+      // Guardar en InspeccionPendiente via backend (sin autenticación requerida)
+      const res = await base44.functions.invoke("guardarInspeccionPendiente", {
         tipo_formulario: "inspeccion_semanal",
         equipo_id: form.equipo_id,
         equipo_label: equipoLabel,
@@ -421,8 +421,8 @@ export default function PautaInspeccionSemanal({ equipos, onSuccess, equipoFijo 
         km_inicial: form.km_inicial ? Number(form.km_inicial) : undefined,
         combustible: form.combustible,
         observaciones: observaciones || "",
-        estado: "pendiente",
       });
+      if (!res.data?.ok) throw new Error(res.data?.error || "Error al guardar");
 
       setSaving(false);
       onSuccess && onSuccess({ hasFallas, conductor: form.conductor });
