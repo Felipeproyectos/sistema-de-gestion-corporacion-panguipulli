@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { Monitor, AlertTriangle, Package, ClipboardList, Activity, ArrowRight, Zap, Car, Wrench, CheckCircle, Clock, Bell, User, MapPin, ChevronRight } from "lucide-react";
+import { Monitor, AlertTriangle, Package, ClipboardList, Activity, ArrowRight, Zap, Car, Wrench, CheckCircle, Clock, Bell, User, MapPin, ChevronRight, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, parseISO, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import usePullToRefresh from "@/hooks/usePullToRefresh";
 
 export default function Dashboard() {
   const [equipos, setEquipos] = useState([]);
@@ -14,30 +15,30 @@ export default function Dashboard() {
   const [alertas, setAlertas] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const containerRef = useRef(null);
+
+  const fetchData = useCallback(async () => {
+    const u = await base44.auth.me().catch(() => null);
+    setUser(u);
+    const [allEquipos, allParches, allSolicitudes, allActividades, allAlertas] = await Promise.all([
+      base44.entities.Equipo.list('-updated_date', 100).catch(() => []),
+      base44.entities.Parche.list().catch(() => []),
+      base44.entities.Solicitud.list().catch(() => []),
+      base44.entities.Actividad.list('-created_date', 20).catch(() => []),
+      base44.entities.Alerta.filter({ estado: 'activa' }).catch(() => []),
+    ]);
+    setEquipos(allEquipos);
+    setParches(allParches);
+    setSolicitudes(allSolicitudes);
+    setActividades(allActividades);
+    setAlertas(allAlertas);
+  }, []);
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const u = await base44.auth.me().catch(() => null);
-        setUser(u);
-        const [allEquipos, allParches, allSolicitudes, allActividades, allAlertas] = await Promise.all([
-          base44.entities.Equipo.list('-updated_date', 100).catch(() => []),
-          base44.entities.Parche.list().catch(() => []),
-          base44.entities.Solicitud.list().catch(() => []),
-          base44.entities.Actividad.list('-created_date', 20).catch(() => []),
-          base44.entities.Alerta.filter({ estado: 'activa' }).catch(() => []),
-        ]);
-        setEquipos(allEquipos);
-        setParches(allParches);
-        setSolicitudes(allSolicitudes);
-        setActividades(allActividades);
-        setAlertas(allAlertas);
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
-  }, []);
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
+
+  const { refreshing } = usePullToRefresh(fetchData, containerRef);
 
   const hoy = new Date();
   const porVencer = parches.filter(p => {
@@ -87,7 +88,12 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="min-h-screen" style={{ background: "#e8f4fd" }}>
+    <div ref={containerRef} className="min-h-screen" style={{ background: "#e8f4fd", overscrollBehavior: "none" }}>
+      {refreshing && (
+        <div className="flex items-center justify-center py-3 lg:hidden">
+          <RefreshCw className="w-5 h-5 text-blue-500 animate-spin" />
+        </div>
+      )}
       {/* Header */}
       <div className="relative overflow-hidden px-6 lg:px-10 pt-12 pb-8" style={{ background: "linear-gradient(135deg, #0f2d6b 0%, #1565c0 40%, #29b6f6 100%)" }}>
         <div className="absolute right-8 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full opacity-20 border-4 border-white" style={{ background: "radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)" }} />

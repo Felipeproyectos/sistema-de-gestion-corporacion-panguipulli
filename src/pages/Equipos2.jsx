@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { Monitor, Plus, Search, Filter, ChevronRight, AlertTriangle, CheckCircle, Wrench, X } from "lucide-react";
+import { Monitor, Plus, Search, Filter, ChevronRight, AlertTriangle, CheckCircle, Wrench, X, RefreshCw } from "lucide-react";
+import usePullToRefresh from "@/hooks/usePullToRefresh";
 import { CENTROS_ESTRUCTURA, TIPOS_EQUIPO, ESTADOS_EQUIPO } from "@/lib/centros";
 import EquipoCard from "@/components/equipos2/EquipoCard";
 import EquipoFormModal from "@/components/equipos2/EquipoFormModal";
@@ -18,29 +19,23 @@ export default function Equipos2() {
   const [showForm, setShowForm] = useState(false);
   const [equipoEditar, setEquipoEditar] = useState(null);
   const [equipoDetalle, setEquipoDetalle] = useState(null);
+  const containerRef = useRef(null);
 
-  useEffect(() => {
-    base44.auth.me().then(u => {
-      setUser(u);
-      // usuario normal: asignar su centro automáticamente
-      // Para usuarios no admin, no pre-filtrar por centro (el filtro se aplica en equiposFiltrados)
-    }).catch(() => {});
-    Promise.all([
+  const reload = useCallback(async () => {
+    const [eq, pa] = await Promise.all([
       base44.entities.Equipo.list(),
       base44.entities.Parche.list()
-    ]).then(([eq, pa]) => {
-      setEquipos(eq);
-      setParches(pa);
-      setLoading(false);
-    });
+    ]);
+    setEquipos(eq);
+    setParches(pa);
   }, []);
 
-  const reload = () => {
-    Promise.all([
-      base44.entities.Equipo.list(),
-      base44.entities.Parche.list()
-    ]).then(([eq, pa]) => { setEquipos(eq); setParches(pa); });
-  };
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+    reload().finally(() => setLoading(false));
+  }, [reload]);
+
+  const { refreshing } = usePullToRefresh(reload, containerRef);
 
   const isAdmin = user?.role === "admin";
 
@@ -68,7 +63,12 @@ export default function Equipos2() {
   );
 
   return (
-    <div className="min-h-screen" style={{ background: "#e8f4fd" }}>
+    <div ref={containerRef} className="min-h-screen" style={{ background: "#e8f4fd", overscrollBehavior: "none" }}>
+      {refreshing && (
+        <div className="flex items-center justify-center py-3 lg:hidden">
+          <RefreshCw className="w-5 h-5 text-blue-500 animate-spin" />
+        </div>
+      )}
       {/* Header */}
       <div className="relative overflow-hidden px-6 lg:px-10 pt-10 pb-8" style={{ background: "linear-gradient(135deg, #0f2d6b 0%, #1565c0 40%, #29b6f6 100%)" }}>
         <div className="relative max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">

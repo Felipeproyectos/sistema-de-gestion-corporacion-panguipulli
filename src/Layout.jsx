@@ -18,12 +18,15 @@ import {
   Activity,
   FileText } from
 "lucide-react";
+import MobileNav from "@/components/MobileNav";
+import useDarkMode from "@/hooks/useDarkMode";
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [appConfig, setAppConfig] = useState(null);
   const location = useLocation();
+  useDarkMode();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -115,7 +118,7 @@ export default function Layout({ children, currentPageName }) {
       </aside>
 
       {/* Mobile Header */}
-      <div className="px-4 py-4 lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between" style={{ background: "linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)" }}>
+      <div className="px-4 py-4 lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between" style={{ background: "linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)", paddingTop: "calc(1rem + env(safe-area-inset-top))", userSelect: "none" }}>
         <div className="flex items-center gap-2">
           <div className="flex items-center justify-center overflow-hidden" style={appConfig?.logo_url ? { width: 56, height: 56 } : { width: 28, height: 28, background: "rgba(255,255,255,0.2)", borderRadius: 8 }}>
             {appConfig?.logo_url ?
@@ -154,10 +157,14 @@ export default function Layout({ children, currentPageName }) {
       }
 
       {/* Main */}
-      <main className="flex-1 lg:overflow-auto">
+      <main className="flex-1 lg:overflow-auto" style={{ overscrollBehavior: "none", WebkitOverflowScrolling: "touch" }}>
         <div className="lg:hidden h-16" />
         {children}
+        {/* Bottom padding so content isn't hidden behind mobile nav */}
+        <div className="lg:hidden" style={{ height: "calc(56px + env(safe-area-inset-bottom))" }} />
       </main>
+
+      <MobileNav />
     </div>);
 
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Upload, Loader2, Save, Settings, Users, Shield, Mail, UserPlus, Trash2, Edit2, X, Check } from "lucide-react";
+import { Upload, Loader2, Save, Settings, Users, Shield, Mail, UserPlus, Trash2, Edit2, X, Check, AlertTriangle } from "lucide-react";
 
 export default function Configuracion() {
   const [user, setUser]     = useState(null);
@@ -18,6 +18,8 @@ export default function Configuracion() {
   const [invMsg, setInvMsg]     = useState("");
   const [editingUser, setEditingUser] = useState(null);
   const [centros, setCentros]   = useState([]);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -269,6 +271,45 @@ export default function Configuracion() {
             {usuarios.length === 0 && <p className="text-center text-sm text-slate-400 py-6">No hay usuarios registrados</p>}
           </div>
         </div>
+        {/* Zona peligrosa */}
+        <div className="bg-white rounded-3xl shadow-lg p-8 space-y-4 border border-red-100">
+          <h2 className="text-base font-bold text-red-600 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5" /> Zona de Peligro
+          </h2>
+          <p className="text-sm text-slate-500">Eliminar tu cuenta es una acción permanente e irreversible. Todos tus datos serán borrados.</p>
+          {!deleteConfirm ? (
+            <button
+              onClick={() => setDeleteConfirm(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-red-600 border border-red-200 hover:bg-red-50 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" /> Eliminar mi cuenta
+            </button>
+          ) : (
+            <div className="p-4 rounded-xl bg-red-50 border border-red-200 space-y-3">
+              <p className="text-sm font-semibold text-red-700">¿Estás seguro? Esta acción no se puede deshacer.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={async () => {
+                    setDeleting(true);
+                    await base44.auth.logout();
+                  }}
+                  disabled={deleting}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-60"
+                >
+                  {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  Sí, eliminar cuenta
+                </button>
+                <button
+                  onClick={() => setDeleteConfirm(false)}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
