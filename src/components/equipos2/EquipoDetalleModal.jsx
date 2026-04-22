@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   X, Edit, Trash2, Plus, Info, Wrench, ClipboardCheck, Package, BookOpen,
   MapPin, Calendar, User, Upload, AlertTriangle, Activity, Car, Zap, Monitor,
   Hash, Gauge, FileText, Download, Shield, CheckCircle, Clock, ArrowLeft,
-  Loader2, ExternalLink, Printer
+  Loader2, ExternalLink, Printer, ChevronDown
 } from "lucide-react";
 import { TIPOS_EQUIPO, ESTADOS_EQUIPO, TIPOS_ACTIVIDAD } from "@/lib/centros";
 import RepuestosTab from "./RepuestosTab";
@@ -396,6 +396,7 @@ function InspeccionesTab({ equipo, actividades, user, onUpdated }) {
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [verDetalleId, setVerDetalleId] = useState(null);
   const fileRef = useRef();
 
   const inspecciones = actividades
@@ -597,38 +598,72 @@ function InspeccionesTab({ equipo, actividades, user, onUpdated }) {
 }
 
 function InspeccionCard({ act }) {
+  const [expanded, setExpanded] = useState(false);
+
   const TIPO_CFG = {
-    inspeccion_semanal: { label: "Inspección Semanal", icon: CheckCircle, color: "#10B981" },
+    inspeccion_semanal: { label: "Pauta Semanal", icon: CheckCircle, color: "#10B981" },
     inspeccion_anual:   { label: "Inspección Anual",   icon: CheckCircle, color: "#2563EB" },
     incidente:          { label: "Incidente",           icon: AlertTriangle, color: "#EF4444" },
     inspeccion:         { label: "Inspección",          icon: CheckCircle, color: "#10B981" },
     error_calibracion:  { label: "Error de Calibración",icon: AlertTriangle, color: "#EF4444" },
   };
   const cfg = TIPO_CFG[act.tipo] || { label: act.tipo, icon: CheckCircle, color: "#94A3B8" };
-  const Icon = cfg.icon;
+  const CfgIcon = cfg.icon;
   const hora = act.created_date
     ? new Date(act.created_date).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })
     : "";
+
+  // Detectar fallas en observaciones de pauta semanal
+  const hasFallas = act.tipo === "inspeccion_semanal" && act.observaciones?.includes("Fallas:");
+  const detalleLineas = act.observaciones?.split(" | ").filter(Boolean) || [];
+
   return (
-    <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ border: "1px solid #E2E8F0", background: act.tipo === "incidente" ? "#FFF5F5" : "white" }}>
-      <div className="flex-shrink-0">
-        <Icon className="w-6 h-6" style={{ color: cfg.color }} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-slate-800 text-sm">{cfg.label}</p>
-        <p className="text-xs text-slate-400 mt-0.5">{act.fecha}{hora && ` • ${hora}`}</p>
-        {act.observaciones && <p className="text-xs text-slate-500 mt-0.5 truncate">{act.observaciones}</p>}
-      </div>
-      {act.usuario_nombre && (
-        <div className="text-right flex-shrink-0">
-          <p className="text-sm font-semibold text-slate-800">{act.usuario_nombre}</p>
-          <p className="text-xs text-slate-400 uppercase tracking-wide">Responsable</p>
+    <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${hasFallas ? "#FECACA" : "#E2E8F0"}`, background: act.tipo === "incidente" ? "#FFF5F5" : "white" }}>
+      <div className="flex items-center gap-3 p-3.5">
+        <div className="flex-shrink-0">
+          <CfgIcon className="w-6 h-6" style={{ color: hasFallas ? "#EF4444" : cfg.color }} />
         </div>
-      )}
-      {act.archivo_url && (
-        <a href={act.archivo_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-700 flex-shrink-0">
-          <FileText className="w-4 h-4" />
-        </a>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-semibold text-slate-800 text-sm">{cfg.label}</p>
+            {hasFallas && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#FEF2F2", color: "#DC2626" }}>Con fallas</span>
+            )}
+            {act.tipo === "inspeccion_semanal" && !hasFallas && act.observaciones && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#DCFCE7", color: "#16A34A" }}>Sin fallas</span>
+            )}
+          </div>
+          <p className="text-xs text-slate-400 mt-0.5">{act.fecha}{hora && ` • ${hora}`}</p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {act.usuario_nombre && (
+            <div className="text-right hidden sm:block">
+              <p className="text-xs font-semibold text-slate-700">{act.usuario_nombre}</p>
+              <p className="text-xs text-slate-400">Responsable</p>
+            </div>
+          )}
+          {act.archivo_url && (
+            <a href={act.archivo_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-700">
+              <FileText className="w-4 h-4" />
+            </a>
+          )}
+          {act.tipo === "inspeccion_semanal" && detalleLineas.length > 0 && (
+            <button onClick={() => setExpanded(e => !e)}
+              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">
+              <ChevronDown className="w-4 h-4" style={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+            </button>
+          )}
+        </div>
+      </div>
+      {expanded && detalleLineas.length > 0 && (
+        <div className="px-4 pb-3 space-y-1.5 border-t border-slate-100 pt-3">
+          {detalleLineas.map((linea, i) => (
+            <p key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
+              <span className="text-slate-300 mt-0.5">•</span>
+              {linea}
+            </p>
+          ))}
+        </div>
       )}
     </div>
   );

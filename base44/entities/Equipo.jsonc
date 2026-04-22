@@ -145,6 +145,23 @@
       "type": "string",
       "format": "date",
       "description": "Fecha de vencimiento del permiso de circulaci\u00f3n"
+    },
+    "fecha_ultimo_informe_externo": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha del \u00faltimo informe de mantenimiento externo"
+    },
+    "url_ultimo_informe_externo": {
+      "type": "string",
+      "description": "URL del \u00faltimo informe de mantenimiento externo"
+    },
+    "responsable_carga_informe_externo": {
+      "type": "string",
+      "description": "Email del usuario que carg\u00f3 el informe externo"
+    },
+    "empresa_responsable_informe_externo": {
+      "type": "string",
+      "description": "Empresa o persona responsable del informe externo"
     }
   },
   "required": [
