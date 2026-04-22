@@ -410,29 +410,33 @@ export default function PautaInspeccionSemanal({ equipos, onSuccess, equipoFijo 
         observaciones,
       });
 
-      // Guardar kilometraje solo si se ingresó KM
+      // Guardar kilometraje solo si se ingresó KM (no bloquea el flujo si falla)
       if (form.km_inicial) {
-        const kmInicial = Number(form.km_inicial);
-        const activos = await base44.entities.Kilometraje.filter({ equipo_id: form.equipo_id });
-        const activo = activos.find(r => !r.km_final);
-        if (activo) {
-          await base44.entities.Kilometraje.update(activo.id, { km_final: kmInicial });
+        try {
+          const kmInicial = Number(form.km_inicial);
+          const activos = await base44.entities.Kilometraje.filter({ equipo_id: form.equipo_id });
+          const activo = activos.find(r => !r.km_final);
+          if (activo) {
+            await base44.entities.Kilometraje.update(activo.id, { km_final: kmInicial });
+          }
+          await base44.entities.Kilometraje.create({
+            equipo_id: form.equipo_id,
+            fecha: form.fecha,
+            conductor: form.conductor,
+            valor_km: kmInicial,
+            km_inicial: kmInicial,
+            observaciones,
+          });
+        } catch (_) {
+          // Error en kilometraje no bloquea el guardado de la inspección
         }
-        await base44.entities.Kilometraje.create({
-          equipo_id: form.equipo_id,
-          fecha: form.fecha,
-          conductor: form.conductor,
-          valor_km: kmInicial,
-          km_inicial: kmInicial,
-          observaciones,
-        });
       }
 
       setSaving(false);
       onSuccess && onSuccess({ hasFallas, conductor: form.conductor });
     } catch (err) {
       setSaving(false);
-      setError("Error al guardar. Por favor intenta nuevamente.");
+      setError(`Error al guardar: ${err?.message || "Por favor intenta nuevamente."}`);
     }
   };
 
