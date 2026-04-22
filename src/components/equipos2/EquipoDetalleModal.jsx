@@ -53,11 +53,13 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
   const estadoColor = { operativo: "#10B981", mantenimiento: "#F59E0B", fuera_de_servicio: "#EF4444" }[equipo.estado] || "#94A3B8";
   const estadoBg = { operativo: "#ECFDF5", mantenimiento: "#FFFBEB", fuera_de_servicio: "#FEF2F2" }[equipo.estado] || "#F8FAFC";
 
+  const sinParches = ["monitor_multiparametros", "monitor_desfibrilador"].includes(equipo.tipo);
+
   const navItems = [
     { key: "info", label: "Información", icon: Info },
-    { key: "mantenimiento", label: "Mantenimiento", icon: Wrench },
-    { key: "inspecciones", label: "Inspecciones", icon: ClipboardCheck },
-    ...(!esAmbulancia ? [{ key: "parches", label: "Parches", icon: Package }] : []),
+    { key: "mantenimiento", label: "Mantenimiento Externo", icon: Wrench },
+    { key: "inspecciones", label: "Mantenimiento Interno", icon: ClipboardCheck },
+    ...(!esAmbulancia && !sinParches ? [{ key: "parches", label: "Parches", icon: Package }] : []),
     ...(esAmbulancia ? [
       { key: "repuestos", label: "Repuestos", icon: Gauge },
       { key: "bitacora", label: "Bitácora", icon: BookOpen }
