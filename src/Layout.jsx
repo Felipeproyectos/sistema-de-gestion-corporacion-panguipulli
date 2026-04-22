@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Monitor,
   ClipboardList,
+  ClipboardCheck,
   Users,
   Menu,
   X,
@@ -45,7 +46,8 @@ export default function Layout({ children, currentPageName }) {
   { label: "Solicitudes", page: "SolicitudesV2", icon: ClipboardList, adminOnly: false },
   { label: "Reportes", page: "Reportes", icon: FileText, adminOnly: false },
   { label: "Historial", page: "Historial", icon: History, adminOnly: true },
-  { label: "Configuración", page: "Configuracion", icon: Settings, adminOnly: true }];
+  { label: "Configuración", page: "Configuracion", icon: Settings, adminOnly: true },
+  { label: "Revisión Bitácora", page: "RevisionInspecciones", icon: ClipboardList, adminOnly: true }];
 
 
   const visibleItems = navItems.filter((i) => !i.adminOnly || isAdmin);

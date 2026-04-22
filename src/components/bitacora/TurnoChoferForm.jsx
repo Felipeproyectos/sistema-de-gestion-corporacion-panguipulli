@@ -23,26 +23,22 @@ export default function TurnoChoferForm({ equipos, loading, onSuccess, equipoFij
     }
     setError("");
     setSaving(true);
-    const res = await base44.functions.invoke("submitPublicBitacora", {
-      ...form,
+    const equipoLabel = equipoFijo
+      ? `${equipoFijo.marca} ${equipoFijo.modelo}${equipoFijo.patente ? ` — ${equipoFijo.patente}` : ""}`
+      : form.equipo_id;
+
+    await base44.entities.InspeccionPendiente.create({
+      tipo_formulario: "turno_chofer",
+      equipo_id: form.equipo_id,
+      equipo_label: equipoLabel,
+      conductor: form.conductor,
+      fecha: form.fecha,
       km_inicial: Number(form.km_inicial),
-      valor_km: Number(form.km_inicial),
+      observaciones: form.observaciones || `KM Inicial: ${form.km_inicial}`,
+      estado: "pendiente",
     });
-    if (res.data?.ok) {
-      // Registrar también como actividad para que aparezca en Mantenimiento Interno
-      await base44.entities.Actividad.create({
-        equipo_id: form.equipo_id,
-        tipo: "inspeccion_rutinaria",
-        fecha: form.fecha,
-        usuario_nombre: form.conductor,
-        observaciones: form.observaciones || `KM Inicial: ${form.km_inicial}`,
-      });
-      setSaving(false);
-      onSuccess("Registro de turno guardado correctamente.");
-    } else {
-      setSaving(false);
-      setError("Ocurrió un error al guardar. Por favor intenta de nuevo.");
-    }
+    setSaving(false);
+    onSuccess("Registro de turno enviado para revisión.");
   };
 
   const inputCls = "w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-slate-50";

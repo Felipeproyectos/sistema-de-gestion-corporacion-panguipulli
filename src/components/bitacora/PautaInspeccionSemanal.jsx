@@ -407,36 +407,22 @@ export default function PautaInspeccionSemanal({ equipos, onSuccess, equipoFijo 
     try {
       const observaciones = buildObservaciones();
       const hasFallas = Object.values(allItems).some(v => v.estado === "malo");
+      const equipoLabel = equipoFijo
+        ? `${equipoFijo.marca} ${equipoFijo.modelo}${equipoFijo.patente ? ` — ${equipoFijo.patente}` : ""}`
+        : form.equipo_id;
 
-      await base44.entities.Actividad.create({
+      // Guardar en InspeccionPendiente para revisión del admin
+      await base44.entities.InspeccionPendiente.create({
+        tipo_formulario: "inspeccion_semanal",
         equipo_id: form.equipo_id,
-        tipo: "inspeccion_semanal",
+        equipo_label: equipoLabel,
+        conductor: form.conductor,
         fecha: form.fecha,
-        usuario_nombre: form.conductor || "",
+        km_inicial: form.km_inicial ? Number(form.km_inicial) : undefined,
+        combustible: form.combustible,
         observaciones: observaciones || "",
+        estado: "pendiente",
       });
-
-      // Guardar kilometraje solo si se ingresó KM (no bloquea el flujo si falla)
-      if (form.km_inicial) {
-        try {
-          const kmInicial = Number(form.km_inicial);
-          const activos = await base44.entities.Kilometraje.filter({ equipo_id: form.equipo_id });
-          const activo = activos.find(r => !r.km_final);
-          if (activo) {
-            await base44.entities.Kilometraje.update(activo.id, { km_final: kmInicial });
-          }
-          await base44.entities.Kilometraje.create({
-            equipo_id: form.equipo_id,
-            fecha: form.fecha,
-            conductor: form.conductor,
-            valor_km: kmInicial,
-            km_inicial: kmInicial,
-            observaciones,
-          });
-        } catch (_) {
-          // Error en kilometraje no bloquea el guardado de la inspección
-        }
-      }
 
       setSaving(false);
       onSuccess && onSuccess({ hasFallas, conductor: form.conductor });
