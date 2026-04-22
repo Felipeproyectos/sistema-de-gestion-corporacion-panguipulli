@@ -398,35 +398,42 @@ export default function PautaInspeccionSemanal({ equipos, onSuccess, equipoFijo 
     setError("");
     setSaving(true);
 
-    const observaciones = buildObservaciones();
-    const hasFallas = Object.values(allItems).some(v => v.estado === "malo");
+    try {
+      const observaciones = buildObservaciones();
+      const hasFallas = Object.values(allItems).some(v => v.estado === "malo");
 
-    await base44.entities.Actividad.create({
-      equipo_id: form.equipo_id,
-      tipo: "inspeccion_semanal",
-      fecha: form.fecha,
-      usuario_nombre: form.conductor,
-      observaciones,
-    });
+      await base44.entities.Actividad.create({
+        equipo_id: form.equipo_id,
+        tipo: "inspeccion_semanal",
+        fecha: form.fecha,
+        usuario_nombre: form.conductor,
+        observaciones,
+      });
 
-    // Guardar kilometraje — cierra el turno anterior y abre uno nuevo
-    const kmInicial = Number(form.km_inicial);
-    const activos = await base44.entities.Kilometraje.filter({ equipo_id: form.equipo_id });
-    const activo = activos.find(r => !r.km_final);
-    if (activo) {
-      await base44.entities.Kilometraje.update(activo.id, { km_final: kmInicial });
+      // Guardar kilometraje solo si se ingresó KM
+      if (form.km_inicial) {
+        const kmInicial = Number(form.km_inicial);
+        const activos = await base44.entities.Kilometraje.filter({ equipo_id: form.equipo_id });
+        const activo = activos.find(r => !r.km_final);
+        if (activo) {
+          await base44.entities.Kilometraje.update(activo.id, { km_final: kmInicial });
+        }
+        await base44.entities.Kilometraje.create({
+          equipo_id: form.equipo_id,
+          fecha: form.fecha,
+          conductor: form.conductor,
+          valor_km: kmInicial,
+          km_inicial: kmInicial,
+          observaciones,
+        });
+      }
+
+      setSaving(false);
+      onSuccess && onSuccess({ hasFallas, conductor: form.conductor });
+    } catch (err) {
+      setSaving(false);
+      setError("Error al guardar. Por favor intenta nuevamente.");
     }
-    await base44.entities.Kilometraje.create({
-      equipo_id: form.equipo_id,
-      fecha: form.fecha,
-      conductor: form.conductor,
-      valor_km: kmInicial,
-      km_inicial: kmInicial,
-      observaciones,
-    });
-
-    setSaving(false);
-    onSuccess && onSuccess({ hasFallas, conductor: form.conductor });
   };
 
   return (
