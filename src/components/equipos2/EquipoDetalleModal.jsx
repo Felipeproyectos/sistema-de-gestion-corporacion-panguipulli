@@ -170,6 +170,19 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
 function InfoTab({ equipo }) {
   const hoy = new Date();
   const esAmbulancia = equipo.tipo === "ambulancia";
+  const [ultimaSemanal, setUltimaSemanal] = useState(null);
+
+  useEffect(() => {
+    if (!esAmbulancia) return;
+    base44.entities.Actividad.filter({ equipo_id: equipo.id })
+      .then(acts => {
+        const semanales = acts
+          .filter(a => a.tipo === "inspeccion_semanal")
+          .sort((a, b) => new Date(b.created_date || b.fecha) - new Date(a.created_date || a.fecha));
+        setUltimaSemanal(semanales[0] || null);
+      })
+      .catch(() => {});
+  }, [equipo.id, esAmbulancia]);
 
   const semaforoDoc = (estado, fechaVence) => {
     if (!estado && !fechaVence) return { color: "#94A3B8", bg: "#F8FAFC", label: "Sin datos", barColor: "#CBD5E1" };
@@ -321,6 +334,130 @@ function InfoTab({ equipo }) {
           {equipo.notas}
         </div>
       )}
+
+      {/* Resumen última pauta semanal (solo ambulancias) */}
+      {esAmbulancia && <ResumenUltimaSemanal actividad={ultimaSemanal} />}
+    </div>
+  );
+}
+
+function ResumenUltimaSemanal({ actividad }) {
+  if (!actividad) {
+    return (
+      <div className="p-4 rounded-2xl" style={{ background: "#F8FAFC", border: "1px solid #E2E8F0" }}>
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-2">
+          <ClipboardCheck className="w-3.5 h-3.5" /> Última Pauta Semanal
+        </p>
+        <p className="text-sm text-slate-400 italic">Sin inspecciones semanales registradas.</p>
+      </div>
+    );
+  }
+
+  // Parsear observaciones: separadas por " | "
+  const lineas = actividad.observaciones?.split(" | ").filter(Boolean) || [];
+
+  const fallas = lineas.filter(l => l.includes("Fallas:"));
+  const danos = lineas.filter(l => l.startsWith("Daños reportados:"));
+  const kmLinea = lineas.find(l => l.startsWith("KM Inicial:"));
+  const combustibleLinea = lineas.find(l => l.startsWith("Combustible:"));
+
+  const kmValor = kmLinea?.replace("KM Inicial:", "").trim();
+  const combustible = combustibleLinea?.replace("Combustible:", "").trim();
+  const sinFallas = fallas.length === 0 && danos.length === 0;
+
+  const resultColor = sinFallas ? "#16A34A" : "#DC2626";
+  const resultBg = sinFallas ? "#F0FDF4" : "#FEF2F2";
+  const resultBorder = sinFallas ? "#BBF7D0" : "#FECACA";
+  const resultLabel = sinFallas ? "Sin fallas detectadas" : "Con observaciones";
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${resultBorder}` }}>
+      {/* Header */}
+      <div className="px-5 py-3.5 flex items-center justify-between"
+        style={{ background: resultBg }}>
+        <div className="flex items-center gap-2">
+          <ClipboardCheck className="w-4 h-4 flex-shrink-0" style={{ color: resultColor }} />
+          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: resultColor }}>
+            Última Pauta Semanal
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-bold px-2.5 py-1 rounded-full"
+            style={{ background: "white", color: resultColor, border: `1px solid ${resultBorder}` }}>
+            {resultLabel}
+          </span>
+          <span className="text-xs text-slate-400">
+            {actividad.fecha}{actividad.usuario_nombre ? ` · ${actividad.usuario_nombre}` : ""}
+          </span>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="bg-white px-5 py-4 space-y-3">
+        {/* KM y combustible */}
+        <div className="flex items-center gap-4 flex-wrap">
+          {kmValor && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: "#EFF6FF", border: "1px solid #BFDBFE" }}>
+              <Gauge className="w-3.5 h-3.5 text-blue-500" />
+              <span className="text-xs font-semibold text-blue-700">KM Inicial: {Number(kmValor).toLocaleString()}</span>
+            </div>
+          )}
+          {combustible && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: "#FFFBEB", border: "1px solid #FDE68A" }}>
+              <span className="text-xs font-bold text-amber-600">⛽ Combustible: {combustible}</span>
+            </div>
+          )}
+          {sinFallas && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
+              <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+              <span className="text-xs font-semibold text-green-700">Todos los ítems en orden</span>
+            </div>
+          )}
+        </div>
+
+        {/* Fallas */}
+        {fallas.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-1">
+              <AlertTriangle className="w-3.5 h-3.5" /> Fallas detectadas
+            </p>
+            {fallas.map((f, i) => {
+              // Extraer nombre de sección y lista de fallas
+              const secMatch = f.match(/\[([^\]]+)\]\s*Fallas:\s*(.+)/);
+              const seccion = secMatch?.[1] || "";
+              const items = secMatch?.[2] || f;
+              return (
+                <div key={i} className="flex items-start gap-2 p-2.5 rounded-xl"
+                  style={{ background: "#FFF5F5", border: "1px solid #FECACA" }}>
+                  <span className="text-red-400 font-bold text-xs flex-shrink-0 mt-0.5">⚠</span>
+                  <div>
+                    {seccion && <p className="text-xs font-bold text-red-600 mb-0.5">{seccion}</p>}
+                    <p className="text-xs text-red-700 leading-relaxed">{items}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Daños visuales */}
+        {danos.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-1">
+              <Car className="w-3.5 h-3.5" /> Daños visuales reportados
+            </p>
+            {danos.map((d, i) => {
+              const txt = d.replace("Daños reportados:", "").trim();
+              return (
+                <div key={i} className="p-2.5 rounded-xl text-xs text-red-700 leading-relaxed"
+                  style={{ background: "#FFF5F5", border: "1px solid #FECACA" }}>
+                  {txt}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
