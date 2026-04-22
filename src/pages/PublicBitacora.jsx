@@ -8,6 +8,7 @@ import PautaInspeccionSemanal from "@/components/bitacora/PautaInspeccionSemanal
 import PautaPlaceholder from "@/components/bitacora/PautaPlaceholder";
 import TurnoChoferForm from "@/components/bitacora/TurnoChoferForm";
 import PautaSemanalDesfibrilador from "@/components/bitacora/PautaSemanalDesfibrilador";
+import PautaSemanalMultiparametros from "@/components/bitacora/PautaSemanalMultiparametros";
 
 // Categorías principales
 const CATEGORIAS = [
@@ -255,10 +256,22 @@ export default function PublicBitacora() {
               />
             )}
 
+            {/* Monitor Multiparámetros — Pauta Semanal */}
+            {categoria === "monitor_multiparametros" && pauta === "semanal" && (
+              <PautaSemanalMultiparametros
+                equipos={equiposFiltrados}
+                loading={loadingEquipos}
+                onSuccess={({ hasFallas, conductor }) =>
+                  handleSuccess(`Pauta semanal registrada por ${conductor}.${hasFallas ? " Se detectaron fallas." : " Equipo en buen estado."}`)
+                }
+              />
+            )}
+
             {/* Cualquier otra combinación → Placeholder */}
             {!(categoria === "turno_chofer") &&
              !(categoria === "ambulancia" && pauta === "semanal") &&
-             !(categoria === "monitor_desfibrilador" && pauta === "semanal") && (
+             !(categoria === "monitor_desfibrilador" && pauta === "semanal") &&
+             !(categoria === "monitor_multiparametros" && pauta === "semanal") && (
               <PautaPlaceholder
                 categoria={categoriaObj}
                 pauta={pautaObj}

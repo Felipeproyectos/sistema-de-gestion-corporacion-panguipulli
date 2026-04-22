@@ -12,6 +12,7 @@ import PautaInspeccionSemanal from "@/components/bitacora/PautaInspeccionSemanal
 import PautaPlaceholder from "@/components/bitacora/PautaPlaceholder";
 import TurnoChoferForm from "@/components/bitacora/TurnoChoferForm";
 import PautaSemanalDesfibrilador from "@/components/bitacora/PautaSemanalDesfibrilador";
+import PautaSemanalMultiparametros from "@/components/bitacora/PautaSemanalMultiparametros";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { generarPDFEquipo } from "@/utils/generarPDFEquipo";
 
@@ -660,11 +661,27 @@ function InspeccionesTab({ equipo, actividades, user, onUpdated }) {
         </div>
       )}
 
+      {/* Pauta Semanal Monitor Multiparámetros */}
+      {pautaActiva === "semanal" && equipo.tipo === "monitor_multiparametros" && (
+        <div className="space-y-2">
+          <button onClick={() => setPautaActiva("selector")}
+            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-1">
+            <ArrowLeft className="w-4 h-4" /> Volver
+          </button>
+          <PautaSemanalMultiparametros
+            equipos={[]}
+            equipoFijo={equipo}
+            onSuccess={handlePautaSuccess}
+          />
+        </div>
+      )}
+
       {/* Pauta genérica (diaria/anual para no-ambulancia, o anual para ambulancia) */}
       {pautaActiva && pautaActiva !== "selector" &&
         !(pautaActiva === "diaria" && esAmbulancia) &&
         !(pautaActiva === "semanal" && esAmbulancia) &&
-        !(pautaActiva === "semanal" && equipo.tipo === "monitor_desfibrilador") && (
+        !(pautaActiva === "semanal" && equipo.tipo === "monitor_desfibrilador") &&
+        !(pautaActiva === "semanal" && equipo.tipo === "monitor_multiparametros") && (
         <div className="space-y-2">
           <button onClick={() => setPautaActiva("selector")}
             className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-1">
