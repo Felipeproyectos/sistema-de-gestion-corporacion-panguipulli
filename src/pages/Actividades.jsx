@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Activity, Search, Filter } from "lucide-react";
 import { TIPOS_ACTIVIDAD, CENTROS_ESTRUCTURA } from "@/lib/centros";
 import { format } from "date-fns";
+import NativePicker from "@/components/NativePicker";
 
 const TIPO_COLORS = {
   cambio_parches: { bg: "#eff6ff", text: "#1d4ed8" },
@@ -79,14 +80,20 @@ export default function Actividades() {
               onChange={e => setBusqueda(e.target.value)}
             />
           </div>
-          <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} className="px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
-            <option value="todos">Todos los tipos</option>
-            {TIPOS_ACTIVIDAD.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
-          <select value={filtroCentro} onChange={e => setFiltroCentro(e.target.value)} className="px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
-            <option value="todos">Todos los centros</option>
-            {CENTROS_ESTRUCTURA.map(c => <option key={c.nombre} value={c.nombre}>{c.nombre}</option>)}
-          </select>
+          <NativePicker
+            value={filtroTipo}
+            onChange={setFiltroTipo}
+            placeholder="Todos los tipos"
+            className="px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 w-full lg:w-auto"
+            options={[{ value: "todos", label: "Todos los tipos" }, ...TIPOS_ACTIVIDAD]}
+          />
+          <NativePicker
+            value={filtroCentro}
+            onChange={setFiltroCentro}
+            placeholder="Todos los centros"
+            className="px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 w-full lg:w-auto"
+            options={[{ value: "todos", label: "Todos los centros" }, ...CENTROS_ESTRUCTURA.map(c => ({ value: c.nombre, label: c.nombre }))]}
+          />
         </div>
 
         <div className="space-y-3">

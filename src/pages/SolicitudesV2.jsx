@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { ClipboardList, Plus, Search, Loader2, X, CheckCircle, Clock, AlertTriangle } from "lucide-react";
 import { TIPOS_SOLICITUD, CENTROS_ESTRUCTURA } from "@/lib/centros";
 import { format } from "date-fns";
+import NativePicker from "@/components/NativePicker";
 
 const ESTADO_CONFIG = {
   pendiente: { label: "Pendiente", color: "#d97706", bg: "#fffbeb" },
@@ -34,6 +35,11 @@ export default function SolicitudesV2() {
   }, []);
 
   const reload = () => base44.entities.Solicitud.list("-fecha", 200).then(setSolicitudes);
+
+  // Optimistic update helper for status changes
+  const optimisticUpdate = (id, data) => {
+    setSolicitudes(prev => prev.map(s => s.id === id ? { ...s, ...data } : s));
+  };
 
   const isAdmin = user?.role === "admin";
   // Usuario normal solo ve sus propias solicitudes
@@ -144,10 +150,21 @@ export default function SolicitudesV2() {
       </div>
 
       {showForm && (
-        <SolicitudForm equipos={equipos} user={user} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); reload(); }} />
+        <SolicitudForm
+          equipos={equipos}
+          user={user}
+          onClose={() => setShowForm(false)}
+          onOptimistic={(data) => setSolicitudes(prev => [{ id: `temp-${Date.now()}`, ...data }, ...prev])}
+          onSaved={() => { setShowForm(false); reload(); }}
+        />
       )}
       {editando && (
-        <GestionarModal solicitud={editando} onClose={() => setEditando(null)} onSaved={() => { setEditando(null); reload(); }} />
+        <GestionarModal
+          solicitud={editando}
+          onClose={() => setEditando(null)}
+          onOptimistic={(data) => optimisticUpdate(editando.id, data)}
+          onSaved={() => { setEditando(null); reload(); }}
+        />
       )}
     </div>
   );
@@ -218,7 +235,7 @@ const TIPO_EQUIPO_LABEL = {
   monitor_multiparametros: "Monitor Multiparámetros"
 };
 
-function SolicitudForm({ equipos, user, onClose, onSaved }) {
+function SolicitudForm({ equipos, user, onClose, onSaved, onOptimistic }) {
   const centroDefault = user?.centro_asignado || "";
   const isAdmin = user?.role === "admin";
 
@@ -252,13 +269,16 @@ function SolicitudForm({ equipos, user, onClose, onSaved }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-    await base44.entities.Solicitud.create({
+    const payload = {
       ...form, estado: "pendiente",
       usuario_email: user?.email || "",
       usuario_nombre: user?.full_name || user?.email || ""
-    });
-    setSaving(false);
+    };
+    // Optimistic: close immediately and add temp record
+    onOptimistic?.(payload);
     onSaved();
+    // Persist in background
+    base44.entities.Solicitud.create(payload).catch(() => {});
   };
 
   return (
@@ -274,10 +294,13 @@ function SolicitudForm({ equipos, user, onClose, onSaved }) {
           <div>
             <label className="text-xs font-semibold text-slate-600 block mb-1">Centro</label>
             {isAdmin ? (
-              <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.centro} onChange={e => set("centro", e.target.value)}>
-                <option value="">Seleccionar...</option>
-                {CENTROS_ESTRUCTURA.map(c => <option key={c.nombre} value={c.nombre}>{c.nombre}</option>)}
-              </select>
+              <NativePicker
+                value={form.centro}
+                onChange={v => set("centro", v)}
+                placeholder="Seleccionar centro..."
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm"
+                options={[{ value: "", label: "Seleccionar..." }, ...CENTROS_ESTRUCTURA.map(c => ({ value: c.nombre, label: c.nombre }))]}
+              />
             ) : (
               <div className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50 text-slate-700 flex items-center gap-2">
                 <span className="text-slate-400">🏥</span>
@@ -289,14 +312,19 @@ function SolicitudForm({ equipos, user, onClose, onSaved }) {
           {/* Equipo - filtrado por centro */}
           <div>
             <label className="text-xs font-semibold text-slate-600 block mb-1">Equipo *</label>
-            <select required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.equipo_id} onChange={e => handleEquipoChange(e.target.value)}>
-              <option value="">Seleccionar equipo...</option>
-              {equiposFiltrados.map(eq => (
-                <option key={eq.id} value={eq.id}>
-                  [{TIPO_EQUIPO_LABEL[eq.tipo] || eq.tipo}] {eq.marca} {eq.modelo} #{eq.numero_inventario}
-                </option>
-              ))}
-            </select>
+            <NativePicker
+              value={form.equipo_id}
+              onChange={handleEquipoChange}
+              placeholder="Seleccionar equipo..."
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm"
+              options={[
+                { value: "", label: "Seleccionar equipo..." },
+                ...equiposFiltrados.map(eq => ({
+                  value: eq.id,
+                  label: `[${TIPO_EQUIPO_LABEL[eq.tipo] || eq.tipo}] ${eq.marca} ${eq.modelo} #${eq.numero_inventario}`
+                }))
+              ]}
+            />
             {!form.equipo_id && centroDefault && equiposFiltrados.length === 0 && (
               <p className="text-xs text-amber-600 mt-1">No hay equipos registrados para este centro</p>
             )}
@@ -313,9 +341,13 @@ function SolicitudForm({ equipos, user, onClose, onSaved }) {
                 Primero selecciona un equipo
               </div>
             ) : (
-              <select required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.tipo} onChange={e => set("tipo", e.target.value)}>
-                {tiposDisponibles.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
+              <NativePicker
+                value={form.tipo}
+                onChange={v => set("tipo", v)}
+                placeholder="Seleccionar tipo..."
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm"
+                options={tiposDisponibles}
+              />
             )}
           </div>
 
@@ -340,20 +372,23 @@ function SolicitudForm({ equipos, user, onClose, onSaved }) {
   );
 }
 
-function GestionarModal({ solicitud, onClose, onSaved }) {
+function GestionarModal({ solicitud, onClose, onSaved, onOptimistic }) {
   const [estado, setEstado] = useState(solicitud.estado);
   const [respuesta, setRespuesta] = useState(solicitud.respuesta_admin || "");
   const [saving, setSaving] = useState(false);
 
-  const handleSave = async () => {
+  const handleSave = () => {
     setSaving(true);
-    await base44.entities.Solicitud.update(solicitud.id, { estado, respuesta_admin: respuesta });
-    // Si se finaliza y tiene alerta vinculada, resolverla automáticamente
-    if (estado === "finalizada" && solicitud.alerta_id) {
-      await base44.entities.Alerta.update(solicitud.alerta_id, { estado: "resuelta", fecha_resolucion: new Date().toISOString().split("T")[0] }).catch(() => {});
-    }
-    setSaving(false);
+    const data = { estado, respuesta_admin: respuesta };
+    // Optimistic close
+    onOptimistic?.(data);
     onSaved();
+    // Persist in background
+    base44.entities.Solicitud.update(solicitud.id, data).then(() => {
+      if (estado === "finalizada" && solicitud.alerta_id) {
+        base44.entities.Alerta.update(solicitud.alerta_id, { estado: "resuelta", fecha_resolucion: new Date().toISOString().split("T")[0] }).catch(() => {});
+      }
+    }).catch(() => {});
   };
 
   return (
@@ -371,9 +406,13 @@ function GestionarModal({ solicitud, onClose, onSaved }) {
           </div>
           <div>
             <label className="text-xs font-semibold text-slate-600 block mb-1">Estado</label>
-            <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={estado} onChange={e => setEstado(e.target.value)}>
-              {Object.entries(ESTADO_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-            </select>
+            <NativePicker
+              value={estado}
+              onChange={setEstado}
+              placeholder="Seleccionar estado..."
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm"
+              options={Object.entries(ESTADO_CONFIG).map(([k, v]) => ({ value: k, label: v.label }))}
+            />
           </div>
           <div>
             <label className="text-xs font-semibold text-slate-600 block mb-1">Respuesta / Comentario</label>

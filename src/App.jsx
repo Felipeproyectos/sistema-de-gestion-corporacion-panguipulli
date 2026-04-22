@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -21,6 +22,29 @@ const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
   : <>{children}</>;
+
+const PageWrapper = ({ children }) => (
+  <motion.div
+    initial={{ opacity: 0, x: 24 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: -24 }}
+    transition={{ duration: 0.22, ease: "easeInOut" }}
+    style={{ width: "100%" }}
+  >
+    {children}
+  </motion.div>
+);
+
+const AnimatedRoutes = ({ children }) => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
+        {children}
+      </Routes>
+    </AnimatePresence>
+  );
+};
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -47,10 +71,10 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
-    <Routes>
+    <AnimatedRoutes>
       <Route path="/" element={
         <LayoutWrapper currentPageName={mainPageKey}>
-          <MainPage />
+          <PageWrapper><MainPage /></PageWrapper>
         </LayoutWrapper>
       } />
       {Object.entries(Pages).map(([path, Page]) => (
@@ -59,20 +83,20 @@ const AuthenticatedApp = () => {
           path={`/${path}`}
           element={
             <LayoutWrapper currentPageName={path}>
-              <Page />
+              <PageWrapper><Page /></PageWrapper>
             </LayoutWrapper>
           }
         />
       ))}
-      <Route path="/Centros" element={<LayoutWrapper currentPageName="Centros"><Centros /></LayoutWrapper>} />
-      <Route path="/Historial" element={<LayoutWrapper currentPageName="Historial"><Historial /></LayoutWrapper>} />
-      <Route path="/Equipos2" element={<LayoutWrapper currentPageName="Equipos2"><Equipos2 /></LayoutWrapper>} />
-      <Route path="/Actividades" element={<LayoutWrapper currentPageName="Actividades"><Actividades /></LayoutWrapper>} />
-      <Route path="/AlertasV2" element={<LayoutWrapper currentPageName="AlertasV2"><AlertasV2 /></LayoutWrapper>} />
-      <Route path="/SolicitudesV2" element={<LayoutWrapper currentPageName="SolicitudesV2"><SolicitudesV2 /></LayoutWrapper>} />
-      <Route path="/Reportes" element={<LayoutWrapper currentPageName="Reportes"><Reportes /></LayoutWrapper>} />
+      <Route path="/Centros" element={<LayoutWrapper currentPageName="Centros"><PageWrapper><Centros /></PageWrapper></LayoutWrapper>} />
+      <Route path="/Historial" element={<LayoutWrapper currentPageName="Historial"><PageWrapper><Historial /></PageWrapper></LayoutWrapper>} />
+      <Route path="/Equipos2" element={<LayoutWrapper currentPageName="Equipos2"><PageWrapper><Equipos2 /></PageWrapper></LayoutWrapper>} />
+      <Route path="/Actividades" element={<LayoutWrapper currentPageName="Actividades"><PageWrapper><Actividades /></PageWrapper></LayoutWrapper>} />
+      <Route path="/AlertasV2" element={<LayoutWrapper currentPageName="AlertasV2"><PageWrapper><AlertasV2 /></PageWrapper></LayoutWrapper>} />
+      <Route path="/SolicitudesV2" element={<LayoutWrapper currentPageName="SolicitudesV2"><PageWrapper><SolicitudesV2 /></PageWrapper></LayoutWrapper>} />
+      <Route path="/Reportes" element={<LayoutWrapper currentPageName="Reportes"><PageWrapper><Reportes /></PageWrapper></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
-    </Routes>
+    </AnimatedRoutes>
   );
 };
 

@@ -88,6 +88,11 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  button, a, [role="button"] {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
   /* Safe area support for iOS notch/home bar */
   :root {
     --safe-area-inset-top: env(safe-area-inset-top);
