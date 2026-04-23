@@ -93,6 +93,10 @@
     -webkit-user-select: none;
   }
 
+  input, select, textarea {
+    color: #0f172a;
+  }
+
   /* Safe area support for iOS notch/home bar */
   :root {
     --safe-area-inset-top: env(safe-area-inset-top);

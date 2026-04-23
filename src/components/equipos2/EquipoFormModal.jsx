@@ -27,6 +27,9 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  const inputCls = "w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300";
+  const selectCls = "w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300";
+
   const centroData = CENTROS_ESTRUCTURA.find(c => c.nombre === form.centro_principal);
   const subsedes = centroData?.subsedes || [];
 
@@ -63,29 +66,29 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1">N° Inventario *</label>
-              <input required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" value={form.numero_inventario} onChange={e => set("numero_inventario", e.target.value)} />
+              <input required className={inputCls} value={form.numero_inventario} onChange={e => set("numero_inventario", e.target.value)} />
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1">Tipo de Equipo *</label>
-              <select required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" value={form.tipo} onChange={e => set("tipo", e.target.value)}>
+              <select required className={selectCls} value={form.tipo} onChange={e => set("tipo", e.target.value)}>
                 {TIPOS_EQUIPO.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1">Marca *</label>
-              <input required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" value={form.marca} onChange={e => set("marca", e.target.value)} />
+              <input required className={inputCls} value={form.marca} onChange={e => set("marca", e.target.value)} />
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1">Modelo *</label>
-              <input required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" value={form.modelo} onChange={e => set("modelo", e.target.value)} />
+              <input required className={inputCls} value={form.modelo} onChange={e => set("modelo", e.target.value)} />
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1">N° de Serie</label>
-              <input className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" value={form.numero_serie} onChange={e => set("numero_serie", e.target.value)} />
+              <input className={inputCls} value={form.numero_serie} onChange={e => set("numero_serie", e.target.value)} />
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1">Estado *</label>
-              <select required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" value={form.estado} onChange={e => set("estado", e.target.value)}>
+              <select required className={selectCls} value={form.estado} onChange={e => set("estado", e.target.value)}>
                 {ESTADOS_EQUIPO.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
               </select>
             </div>
@@ -95,17 +98,17 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1">Centro Principal *</label>
               {isAdmin ? (
-                <select required className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" value={form.centro_principal} onChange={e => { set("centro_principal", e.target.value); set("subsede", ""); }}>
+                <select required className={selectCls} value={form.centro_principal} onChange={e => { set("centro_principal", e.target.value); set("subsede", ""); }}>
                   <option value="">Seleccionar...</option>
                   {CENTROS_ESTRUCTURA.map(c => <option key={c.nombre} value={c.nombre}>{c.nombre}</option>)}
                 </select>
               ) : (
-                <input readOnly className="w-full border border-slate-100 bg-slate-50 rounded-xl px-3 py-2 text-sm" value={form.centro_principal} />
+                <input readOnly className="w-full border border-slate-100 bg-slate-50 rounded-xl px-3 py-2 text-sm text-slate-900" value={form.centro_principal} />
               )}
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1">Subsede</label>
-              <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" value={form.subsede} onChange={e => set("subsede", e.target.value)} disabled={subsedes.length === 0}>
+              <select className={selectCls} value={form.subsede} onChange={e => set("subsede", e.target.value)} disabled={subsedes.length === 0}>
                 <option value="">Sin subsede</option>
                 {subsedes.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
@@ -114,18 +117,18 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
 
           <div>
             <label className="text-xs font-semibold text-slate-600 block mb-1">Ubicación Específica</label>
-            <input className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" placeholder="Ej: Sala de Urgencias, Morbilidad..." value={form.ubicacion_especifica} onChange={e => set("ubicacion_especifica", e.target.value)} />
+            <input className={inputCls} placeholder="Ej: Sala de Urgencias, Morbilidad..." value={form.ubicacion_especifica} onChange={e => set("ubicacion_especifica", e.target.value)} />
           </div>
 
           {form.tipo === "ambulancia" && (<>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold text-slate-600 block mb-1">Patente</label>
-                <input className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" value={form.patente} onChange={e => set("patente", e.target.value)} />
+                <input className={inputCls} value={form.patente} onChange={e => set("patente", e.target.value)} />
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600 block mb-1">Conductor Responsable</label>
-                <input className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" placeholder="Nombre del conductor..." value={form.conductor_responsable} onChange={e => set("conductor_responsable", e.target.value)} />
+                <input className={inputCls} placeholder="Nombre del conductor..." value={form.conductor_responsable} onChange={e => set("conductor_responsable", e.target.value)} />
               </div>
             </div>
 
@@ -134,7 +137,7 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">Neumáticos</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.estado_neumaticos} onChange={e => set("estado_neumaticos", e.target.value)}>
+                  <select className={selectCls} value={form.estado_neumaticos} onChange={e => set("estado_neumaticos", e.target.value)}>
                     <option value="ok">OK</option>
                     <option value="desgastado">Desgastado</option>
                     <option value="requiere_cambio">Requiere Cambio</option>
@@ -142,7 +145,7 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">Luces</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.estado_luces} onChange={e => set("estado_luces", e.target.value)}>
+                  <select className={selectCls} value={form.estado_luces} onChange={e => set("estado_luces", e.target.value)}>
                     <option value="ok">OK</option>
                     <option value="falla_leve">Falla Leve</option>
                     <option value="falla_grave">Falla Grave</option>
@@ -150,7 +153,7 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">Batería Vehículo</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.estado_bateria_vehiculo} onChange={e => set("estado_bateria_vehiculo", e.target.value)}>
+                  <select className={selectCls} value={form.estado_bateria_vehiculo} onChange={e => set("estado_bateria_vehiculo", e.target.value)}>
                     <option value="ok">OK</option>
                     <option value="baja_carga">Baja Carga</option>
                     <option value="requiere_reemplazo">Requiere Reemplazo</option>
@@ -158,7 +161,7 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">Sirena</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.estado_sirena} onChange={e => set("estado_sirena", e.target.value)}>
+                  <select className={selectCls} value={form.estado_sirena} onChange={e => set("estado_sirena", e.target.value)}>
                     <option value="ok">OK</option>
                     <option value="falla_leve">Falla Leve</option>
                     <option value="falla_grave">Falla Grave</option>
@@ -169,7 +172,7 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
               <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-100">
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">Revisión Técnica</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.estado_revision_tecnica} onChange={e => set("estado_revision_tecnica", e.target.value)}>
+                  <select className={selectCls} value={form.estado_revision_tecnica} onChange={e => set("estado_revision_tecnica", e.target.value)}>
                     <option value="ok">OK</option>
                     <option value="en_gestion">En Gestión</option>
                     <option value="pendiente">Pendiente</option>
@@ -178,11 +181,11 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">Vencimiento Rev. Técnica</label>
-                  <input type="date" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.fecha_vencimiento_revision_tecnica} onChange={e => set("fecha_vencimiento_revision_tecnica", e.target.value)} />
+                  <input type="date" className={inputCls} value={form.fecha_vencimiento_revision_tecnica} onChange={e => set("fecha_vencimiento_revision_tecnica", e.target.value)} />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">Permiso Circulación</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.estado_permiso_circulacion} onChange={e => set("estado_permiso_circulacion", e.target.value)}>
+                  <select className={selectCls} value={form.estado_permiso_circulacion} onChange={e => set("estado_permiso_circulacion", e.target.value)}>
                     <option value="ok">OK</option>
                     <option value="en_gestion">En Gestión</option>
                     <option value="pendiente">Pendiente</option>
@@ -191,7 +194,7 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">Vencimiento Permiso</label>
-                  <input type="date" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" value={form.fecha_vencimiento_permiso_circulacion} onChange={e => set("fecha_vencimiento_permiso_circulacion", e.target.value)} />
+                  <input type="date" className={inputCls} value={form.fecha_vencimiento_permiso_circulacion} onChange={e => set("fecha_vencimiento_permiso_circulacion", e.target.value)} />
                 </div>
               </div>
             </div>
@@ -200,22 +203,22 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1">Año Adquisición</label>
-              <input type="number" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" value={form.anio_adquisicion} onChange={e => set("anio_adquisicion", e.target.value)} />
+              <input type="number" className={inputCls} value={form.anio_adquisicion} onChange={e => set("anio_adquisicion", e.target.value)} />
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1">Fecha de Fabricación</label>
-              <input type="date" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" value={form.fecha_fabricacion || ""} onChange={e => set("fecha_fabricacion", e.target.value)} />
+              <input type="date" className={inputCls} value={form.fecha_fabricacion || ""} onChange={e => set("fecha_fabricacion", e.target.value)} />
             </div>
           </div>
 
           <div>
             <label className="text-xs font-semibold text-slate-600 block mb-1">Proveedor</label>
-            <input className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" placeholder="Empresa o persona que vendió el equipo..." value={form.proveedor || ""} onChange={e => set("proveedor", e.target.value)} />
+            <input className={inputCls} placeholder="Empresa o persona que vendió el equipo..." value={form.proveedor || ""} onChange={e => set("proveedor", e.target.value)} />
           </div>
 
           <div>
             <label className="text-xs font-semibold text-slate-600 block mb-1">Notas</label>
-            <textarea rows={3} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" value={form.notas} onChange={e => set("notas", e.target.value)} />
+            <textarea rows={3} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300" value={form.notas} onChange={e => set("notas", e.target.value)} />
           </div>
 
           <div>
