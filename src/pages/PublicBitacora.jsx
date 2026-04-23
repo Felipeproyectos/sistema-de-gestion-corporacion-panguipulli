@@ -337,8 +337,9 @@ export default function PublicBitacora() {
           </div>
         )}
 
-        <p className="text-center text-blue-200 text-xs mt-6 opacity-60">
-          Sistema de Gestión de Equipos Médicos
+        <p className="text-center text-blue-200 text-xs mt-6 opacity-60 leading-relaxed px-4">
+          Sistema elaborado por el Departamento de Informática de la<br />
+          Corporación Municipal de Panguipulli
         </p>
       </div>
     </div>

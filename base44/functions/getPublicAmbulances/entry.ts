@@ -1,8 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 Deno.serve(async (req) => {
+  // Allow CORS for public access
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' } });
+  }
+
   try {
-    const base44 = createClientFromRequest(req);
+    const base44 = createClientFromRequest(req, { allowUnauthenticated: true });
 
     const equipos = await base44.asServiceRole.entities.Equipo.list();
 
@@ -18,8 +23,8 @@ Deno.serve(async (req) => {
       estado: e.estado || "operativo"
     }));
 
-    return Response.json({ equipos: result });
+    return Response.json({ equipos: result }, { headers: { 'Access-Control-Allow-Origin': '*' } });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error.message }, { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } });
   }
 });
