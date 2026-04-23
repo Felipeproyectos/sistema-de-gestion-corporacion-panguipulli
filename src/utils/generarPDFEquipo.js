@@ -225,6 +225,9 @@ export function generarPDFEquipo({ equipo, actividades, parches }) {
       <table style="width:100%;font-size:9.5px;border-collapse:collapse">
         <tr><td style="padding:3px 0;color:#94a3b8;width:35%">N° Serie</td><td style="padding:3px 0;font-weight:600">${equipo.numero_serie||"—"}</td></tr>
         <tr><td style="padding:3px 0;color:#94a3b8">Año Adquisición</td><td style="padding:3px 0;font-weight:600">${equipo.anio_adquisicion||"—"}</td></tr>
+        ${equipo.fecha_fabricacion ? `<tr><td style="padding:3px 0;color:#94a3b8">Fecha Fabricación</td><td style="padding:3px 0;font-weight:600">${format(parseISO(equipo.fecha_fabricacion),"dd/MM/yyyy")}</td></tr>` : ""}
+        ${equipo.pais_origen ? `<tr><td style="padding:3px 0;color:#94a3b8">País de Origen</td><td style="padding:3px 0;font-weight:600">${equipo.pais_origen}</td></tr>` : ""}
+        ${equipo.proveedor ? `<tr><td style="padding:3px 0;color:#94a3b8">Proveedor</td><td style="padding:3px 0;font-weight:600">${equipo.proveedor}</td></tr>` : ""}
         ${equipo.patente ? `<tr><td style="padding:3px 0;color:#94a3b8">Patente</td><td style="padding:3px 0;font-weight:700;color:#1d4ed8">${equipo.patente}</td></tr>` : ""}
         ${equipo.conductor_responsable ? `<tr><td style="padding:3px 0;color:#94a3b8">Conductor</td><td style="padding:3px 0;font-weight:600">${equipo.conductor_responsable}</td></tr>` : ""}
         ${equipo.numero_inventario ? `<tr><td style="padding:3px 0;color:#94a3b8">N° Inventario</td><td style="padding:3px 0;font-weight:600">${equipo.numero_inventario}</td></tr>` : ""}
