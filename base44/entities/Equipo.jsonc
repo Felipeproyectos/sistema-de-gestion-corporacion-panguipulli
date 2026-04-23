@@ -37,6 +37,10 @@
       "type": "string",
       "description": "Empresa o persona que vendi\u00f3 el equipo"
     },
+    "pais_origen": {
+      "type": "string",
+      "description": "Pa\u00eds de origen o fabricaci\u00f3n del equipo"
+    },
     "estado": {
       "type": "string",
       "enum": [

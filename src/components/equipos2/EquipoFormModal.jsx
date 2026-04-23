@@ -211,9 +211,15 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
             </div>
           </div>
 
-          <div>
-            <label className="text-xs font-semibold text-slate-600 block mb-1">Proveedor</label>
-            <input className={inputCls} placeholder="Empresa o persona que vendió el equipo..." value={form.proveedor || ""} onChange={e => set("proveedor", e.target.value)} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Proveedor</label>
+              <input className={inputCls} placeholder="Empresa o persona que vendió el equipo..." value={form.proveedor || ""} onChange={e => set("proveedor", e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">País de Origen</label>
+              <input className={inputCls} placeholder="Ej: Estados Unidos, Alemania..." value={form.pais_origen || ""} onChange={e => set("pais_origen", e.target.value)} />
+            </div>
           </div>
 
           <div>
