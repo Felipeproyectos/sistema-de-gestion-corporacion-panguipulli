@@ -181,7 +181,8 @@ function SeccionAccordion({ seccion, momento, checklist, onChange, expanded, onT
 }
 
 // momento: "inicio" | "termino"
-export default function PautaDiariaAmbulancia({ equipoFijo, equipos, onSuccess, momento = "inicio" }) {
+export default function PautaDiariaAmbulancia({ equipoFijo, equipos = [], onSuccess, momento = "inicio" }) {
+  const [equipoId, setEquipoId] = useState(equipoFijo?.id || "");
   const [conductor, setConductor] = useState("");
   const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
   const [observacionesGenerales, setObservacionesGenerales] = useState("");
@@ -202,58 +203,58 @@ export default function PautaDiariaAmbulancia({ equipoFijo, equipos, onSuccess, 
     setChecklist(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
   };
 
+  const equipoSeleccionado = equipoFijo || equipos.find(e => e.id === equipoId);
+
   const handleSubmit = async () => {
+    if (!equipoSeleccionado && !equipoFijo) { setError("Selecciona una ambulancia."); return; }
     if (!conductor.trim()) { setError("Ingresa el nombre del responsable."); return; }
     const pendientes = Object.values(checklist).filter(v => !v.estado).length;
     if (pendientes > 0) { setError(`Faltan ${pendientes} ítems sin revisar.`); return; }
-    const incorrectos = Object.values(checklist).filter(v => v.estado === "incorrecto");
-    const incConObs = incorrectos.filter(v => !v.obs?.trim());
+    const incConObs = Object.values(checklist).filter(v => v.estado === "incorrecto" && !v.obs?.trim());
     if (incConObs.length > 0) { setError(`${incConObs.length} ítem(s) incorrecto(s) requieren observación.`); return; }
 
     setError("");
     setSaving(true);
 
-    const equipoLabel = equipoFijo
-      ? `${equipoFijo.marca} ${equipoFijo.modelo}${equipoFijo.patente ? ` — ${equipoFijo.patente}` : ""}`
-      : "";
+    try {
+      const eq = equipoSeleccionado;
+      const equipoLabel = eq
+        ? `${eq.marca} ${eq.modelo}${eq.patente ? ` — ${eq.patente}` : ""}`
+        : equipoId;
 
-    // Construir observaciones
-    const lineas = [];
-    SECCIONES.forEach(sec => {
-      const malos = sec.items.filter(item => checklist[`${sec.id}__${item}`]?.estado === "incorrecto");
-      if (malos.length > 0) {
-        lineas.push(`[${sec.label}] Incorrectos: ${malos.map(i => {
-          const obs = checklist[`${sec.id}__${i}`]?.obs;
-          return obs ? `${i} (${obs})` : i;
-        }).join(", ")}`);
-      }
-    });
-    if (problemasDetectados) lineas.push(`Problemas detectados: ${problemasDetectados}`);
-    if (accionesTomadas) lineas.push(`Acciones tomadas: ${accionesTomadas}`);
-    lineas.push(`Momento: ${momentoLabel}`);
+      const lineas = [];
+      SECCIONES.forEach(sec => {
+        const malos = sec.items.filter(item => checklist[`${sec.id}__${item}`]?.estado === "incorrecto");
+        if (malos.length > 0) {
+          lineas.push(`[${sec.label}] Incorrectos: ${malos.map(i => {
+            const obs = checklist[`${sec.id}__${i}`]?.obs;
+            return obs ? `${i} (${obs})` : i;
+          }).join(", ")}`);
+        }
+      });
+      if (problemasDetectados) lineas.push(`Problemas detectados: ${problemasDetectados}`);
+      if (accionesTomadas) lineas.push(`Acciones tomadas: ${accionesTomadas}`);
+      lineas.push(`Momento: ${momentoLabel}`);
 
-    const hasFallas = Object.values(checklist).some(v => v.estado === "incorrecto");
+      const hasFallas = Object.values(checklist).some(v => v.estado === "incorrecto");
 
-    const res = await base44.functions.invoke("guardarInspeccionPendiente", {
-      tipo_formulario: "inspeccion_diaria",
-      equipo_id: equipoFijo?.id || "",
-      equipo_label: equipoLabel,
-      conductor,
-      fecha,
-      observaciones: lineas.join(" | "),
-      datos_json: JSON.stringify({
-        momento,
+      const res = await base44.functions.invoke("guardarInspeccionPendiente", {
+        tipo_formulario: "inspeccion_diaria",
+        equipo_id: eq?.id || equipoId,
+        equipo_label: equipoLabel,
         conductor,
         fecha,
-        checklist,
-        problemasDetectados,
-        accionesTomadas,
-      }),
-    });
+        observaciones: lineas.join(" | "),
+        momento,
+      });
 
-    setSaving(false);
-    if (!res.data?.ok) { setError(res.data?.error || "Error al guardar."); return; }
-    onSuccess && onSuccess({ hasFallas, conductor });
+      setSaving(false);
+      if (!res.data?.ok) { setError(res.data?.error || "Error al guardar."); return; }
+      onSuccess && onSuccess({ hasFallas, conductor });
+    } catch (err) {
+      setSaving(false);
+      setError("Error al guardar. Intenta nuevamente.");
+    }
   };
 
   return (
@@ -276,6 +277,26 @@ export default function PautaDiariaAmbulancia({ equipoFijo, equipos, onSuccess, 
       {/* Datos básicos */}
       <div className="bg-white rounded-2xl p-5 space-y-4" style={{ border: "1px solid #E2E8F0" }}>
         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Datos del Responsable</p>
+
+        {/* Selector de ambulancia si no viene fija */}
+        {!equipoFijo && equipos.length > 0 && (
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Ambulancia *</label>
+            <select
+              value={equipoId}
+              onChange={e => setEquipoId(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            >
+              <option value="">Selecciona una ambulancia...</option>
+              {equipos.map(eq => (
+                <option key={eq.id} value={eq.id}>
+                  {eq.marca} {eq.modelo}{eq.patente ? ` — ${eq.patente}` : ""} ({eq.centro_principal})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5">Nombre del Responsable *</label>
