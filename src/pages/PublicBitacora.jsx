@@ -9,6 +9,7 @@ import PautaPlaceholder from "@/components/bitacora/PautaPlaceholder";
 import TurnoChoferForm from "@/components/bitacora/TurnoChoferForm";
 import PautaSemanalDesfibrilador from "@/components/bitacora/PautaSemanalDesfibrilador";
 import PautaSemanalMultiparametros from "@/components/bitacora/PautaSemanalMultiparametros";
+import PautaDiariaAmbulancia from "@/components/bitacora/PautaDiariaAmbulancia";
 
 // Categorías principales
 const CATEGORIAS = [
@@ -83,6 +84,8 @@ export default function PublicBitacora() {
   const [categoria, setCategoria] = useState(null);
   const [pauta, setPauta] = useState(null);
 
+  const [momentoDiario, setMomentoDiario] = useState(null); // "inicio" | "termino"
+
   const [success, setSuccess] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [error, setError] = useState("");
@@ -103,6 +106,7 @@ export default function PublicBitacora() {
     setSuccess(false);
     setCategoria(null);
     setPauta(null);
+    setMomentoDiario(null);
     setError("");
   };
 
@@ -221,7 +225,11 @@ export default function PublicBitacora() {
         ) : (
           /* NIVEL 3: Formulario de la pauta */
           <div>
-            <button onClick={() => categoriaObj?.pautas ? setPauta(null) : setCategoria(null)}
+            <button onClick={() => {
+              if (momentoDiario) { setMomentoDiario(null); }
+              else if (categoriaObj?.pautas) { setPauta(null); }
+              else { setCategoria(null); }
+            }}
               className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white mb-4 transition-colors">
               <ArrowLeft className="w-4 h-4" /> Volver
             </button>
@@ -232,6 +240,51 @@ export default function PublicBitacora() {
                 equipos={equiposFiltrados}
                 loading={loadingEquipos}
                 onSuccess={(msg) => handleSuccess(msg)}
+              />
+            )}
+
+            {/* Ambulancia — Pauta Diaria: selector de momento */}
+            {categoria === "ambulancia" && pauta === "diaria" && !momentoDiario && (
+              <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+                <div className="px-6 py-5 border-b border-slate-100">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Pauta Diaria · Ambulancia</p>
+                  <p className="font-bold text-slate-800 mt-0.5">¿Cuándo se realiza esta inspección?</p>
+                </div>
+                <div className="p-5 grid grid-cols-2 gap-3">
+                  <button onClick={() => setMomentoDiario("inicio")}
+                    className="flex flex-col items-center gap-3 p-5 rounded-2xl transition-all hover:shadow-md active:scale-95"
+                    style={{ border: "1px solid #BFDBFE", background: "#EFF6FF" }}>
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "#DBEAFE" }}>
+                      <CheckCircle className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold text-slate-800">Inicio de Turno</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Antes del turno</p>
+                    </div>
+                  </button>
+                  <button onClick={() => setMomentoDiario("termino")}
+                    className="flex flex-col items-center gap-3 p-5 rounded-2xl transition-all hover:shadow-md active:scale-95"
+                    style={{ border: "1px solid #A7F3D0", background: "#ECFDF5" }}>
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "#D1FAE5" }}>
+                      <CheckCircle className="w-6 h-6 text-emerald-600" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold text-slate-800">Término de Turno</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Después del turno</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Ambulancia — Pauta Diaria: formulario */}
+            {categoria === "ambulancia" && pauta === "diaria" && momentoDiario && (
+              <PautaDiariaAmbulancia
+                equipos={equiposFiltrados}
+                momento={momentoDiario}
+                onSuccess={({ conductor }) =>
+                  handleSuccess(`Pauta diaria (${momentoDiario === "inicio" ? "inicio" : "término"} de turno) registrada${conductor ? ` por ${conductor}` : ""}.`)
+                }
               />
             )}
 
@@ -269,6 +322,7 @@ export default function PublicBitacora() {
 
             {/* Cualquier otra combinación → Placeholder */}
             {!(categoria === "turno_chofer") &&
+             !(categoria === "ambulancia" && pauta === "diaria") &&
              !(categoria === "ambulancia" && pauta === "semanal") &&
              !(categoria === "monitor_desfibrilador" && pauta === "semanal") &&
              !(categoria === "monitor_multiparametros" && pauta === "semanal") && (
