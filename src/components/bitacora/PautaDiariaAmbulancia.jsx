@@ -238,6 +238,16 @@ export default function PautaDiariaAmbulancia({ equipoFijo, equipos = [], onSucc
 
       const hasFallas = Object.values(checklist).some(v => v.estado === "incorrecto");
 
+      // Serializar el checklist por sección para mostrarlo en la revisión
+      const checklistPorSeccion = {};
+      SECCIONES.forEach(sec => {
+        checklistPorSeccion[sec.id] = {};
+        sec.items.forEach(item => {
+          const key = `${sec.id}__${item}`;
+          checklistPorSeccion[sec.id][item] = checklist[key];
+        });
+      });
+
       const res = await base44.functions.invoke("guardarInspeccionPendiente", {
         tipo_formulario: "inspeccion_diaria",
         equipo_id: eq?.id || equipoId,
@@ -246,6 +256,15 @@ export default function PautaDiariaAmbulancia({ equipoFijo, equipos = [], onSucc
         fecha,
         observaciones: lineas.join(" | "),
         momento,
+        // Enviar cada sección con su nombre para que guardarInspeccionPendiente las guarde
+        exterior: checklistPorSeccion.exterior,
+        interior: checklistPorSeccion.interior,
+        equipo_medico: checklistPorSeccion.equipos_medicos,
+        accesorios_diaria: checklistPorSeccion.accesorios,
+        saneamiento: checklistPorSeccion.limpieza,
+        documentacion: checklistPorSeccion.documentacion,
+        problemasDetectados,
+        accionesTomadas,
       });
 
       setSaving(false);

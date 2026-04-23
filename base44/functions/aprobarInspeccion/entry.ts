@@ -16,13 +16,47 @@ Deno.serve(async (req) => {
     if (accion === 'aprobar') {
       const datos = inspeccion.datos_json ? JSON.parse(inspeccion.datos_json) : {};
 
-      // Crear actividad según tipo de formulario
+      // Mapear tipo_formulario a tipo de actividad válido en el enum
+      const tipoActividadMap = {
+        inspeccion_semanal: 'inspeccion_semanal',
+        inspeccion_diaria: 'inspeccion',
+        turno_chofer: 'inspeccion',
+        inspeccion_anual: 'inspeccion_anual',
+      };
+      const tipoActividad = tipoActividadMap[inspeccion.tipo_formulario] || 'inspeccion';
+
+      // Crear actividad
       await base44.asServiceRole.entities.Actividad.create({
         equipo_id: inspeccion.equipo_id,
-        tipo: inspeccion.tipo_formulario === 'turno_chofer' ? 'inspeccion_rutinaria' : inspeccion.tipo_formulario,
+        tipo: tipoActividad,
         fecha: inspeccion.fecha,
         usuario_nombre: inspeccion.conductor || '',
+        usuario_email: inspeccion.revisor_email || user.email,
         observaciones: inspeccion.observaciones || '',
+      });
+
+      // Crear registro en HistorialMantenimiento
+      const tipoMantenimientoMap = {
+        inspeccion_semanal: 'inspeccion_rutinaria',
+        inspeccion_diaria: 'inspeccion_rutinaria',
+        turno_chofer: 'inspeccion_rutinaria',
+        inspeccion_anual: 'inspeccion_rutinaria',
+      };
+
+      // Calcular si hay fallas en el checklist
+      const hasFallas = inspeccion.observaciones?.includes('Incorrectos:') ||
+                        inspeccion.observaciones?.includes('Fallas:') ||
+                        inspeccion.observaciones?.includes('Daños');
+
+      await base44.asServiceRole.entities.HistorialMantenimiento.create({
+        equipo_id: inspeccion.equipo_id,
+        fecha_inspeccion: inspeccion.fecha,
+        tipo_mantenimiento: tipoMantenimientoMap[inspeccion.tipo_formulario] || 'inspeccion_rutinaria',
+        resultado: hasFallas ? 'aprobado_con_observaciones' : 'aprobado',
+        observaciones: inspeccion.observaciones || '',
+        tecnico_responsable: inspeccion.conductor || inspeccion.conductor || '',
+        cargado_por_email: user.email,
+        empresa_responsable: 'Registro automático — Bitácora',
       });
 
       // Si tiene kilometraje, registrarlo

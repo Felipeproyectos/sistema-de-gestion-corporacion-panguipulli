@@ -80,6 +80,48 @@ function ChecklistDetail({ titulo, icon: Icon, color, data }) {
   );
 }
 
+// Componente para checklist diaria (usa "correcto"/"incorrecto" en lugar de "bueno"/"malo")
+function ChecklistDiarioDetail({ titulo, color, data }) {
+  if (!data) return null;
+  const items = Object.entries(data);
+  const incorrectos = items.filter(([, v]) => v?.estado === "incorrecto");
+  const correctos = items.filter(([, v]) => v?.estado === "correcto");
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #E2E8F0" }}>
+      <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: `${color}12` }}>
+        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
+        <span className="text-xs font-bold" style={{ color }}>{titulo}</span>
+        <span className="ml-auto text-xs text-slate-400">{correctos.length}/{items.length} OK</span>
+        {incorrectos.length > 0 && (
+          <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ background: "#FEF2F2", color: "#DC2626" }}>
+            {incorrectos.length} falla{incorrectos.length > 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+      {incorrectos.length > 0 ? (
+        <div className="px-4 py-2 space-y-1.5">
+          {incorrectos.map(([item, v]) => (
+            <div key={item} className="flex items-start gap-2 text-xs">
+              <span className="text-red-400 mt-0.5 flex-shrink-0">✗</span>
+              <div>
+                <span className="font-semibold text-red-700">{item}</span>
+                {v.obs && <span className="text-red-500"> — {v.obs}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="px-4 py-2">
+          <span className="text-xs text-green-600 flex items-center gap-1">
+            <CheckCircle className="w-3.5 h-3.5" /> Todo correcto
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DanosDetail({ danos }) {
   if (!danos) return null;
   const lista = Object.entries(danos).filter(([, v]) => v?.marcado);
@@ -250,6 +292,35 @@ function InspeccionCard({ insp, onActualizar }) {
               <ChecklistDetail titulo="Accesorios" icon={Package} color="#7C3AED" data={datos.accesorios} />
               <ChecklistDetail titulo="Documentos" icon={FileText} color="#059669" data={datos.documentos} />
               <DanosDetail danos={datos.danos} />
+            </div>
+          )}
+
+          {/* Checklist de la pauta diaria */}
+          {insp.tipo_formulario === "inspeccion_diaria" && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Revisión de Ítems</p>
+              <ChecklistDiarioDetail titulo="1. Revisión Exterior" color="#2563EB" data={datos.exterior} />
+              <ChecklistDiarioDetail titulo="2. Revisión Interior" color="#7C3AED" data={datos.interior} />
+              <ChecklistDiarioDetail titulo="3. Equipos Médicos" color="#059669" data={datos.equipo_medico} />
+              <ChecklistDiarioDetail titulo="4. Accesorios" color="#D97706" data={datos.accesorios_diaria} />
+              <ChecklistDiarioDetail titulo="5. Limpieza Básica" color="#0891B2" data={datos.saneamiento} />
+              <ChecklistDiarioDetail titulo="6. Documentación" color="#DC2626" data={datos.documentacion} />
+              {(datos.problemasDetectados || datos.accionesTomadas) && (
+                <div className="rounded-xl p-3 space-y-1.5" style={{ background: "#FFFBEB", border: "1px solid #FDE68A" }}>
+                  <p className="text-xs font-bold text-amber-700">Observaciones Generales</p>
+                  {datos.problemasDetectados && (
+                    <p className="text-xs text-slate-700"><span className="font-semibold">Problemas:</span> {datos.problemasDetectados}</p>
+                  )}
+                  {datos.accionesTomadas && (
+                    <p className="text-xs text-slate-700"><span className="font-semibold">Acciones tomadas:</span> {datos.accionesTomadas}</p>
+                  )}
+                </div>
+              )}
+              {!datos.exterior && insp.observaciones && (
+                <div className="p-3 rounded-xl text-xs text-slate-700 bg-white" style={{ border: "1px solid #E2E8F0" }}>
+                  {insp.observaciones}
+                </div>
+              )}
             </div>
           )}
 

@@ -52,6 +52,8 @@ Deno.serve(async (req) => {
         accesorios_diaria: data.accesorios_diaria || null,
         saneamiento: data.saneamiento || null,
         documentacion: data.documentacion || null,
+        problemasDetectados: data.problemasDetectados || null,
+        accionesTomadas: data.accionesTomadas || null,
       }),
       estado: 'pendiente',
     });
