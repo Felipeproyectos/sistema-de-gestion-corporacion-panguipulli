@@ -23,8 +23,13 @@ export default function MobileNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around bg-white border-t border-slate-200"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)", height: "calc(56px + env(safe-area-inset-bottom))", userSelect: "none" }}
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around bg-white border-t border-slate-100"
+      style={{
+        paddingBottom: "env(safe-area-inset-bottom)",
+        height: "calc(64px + env(safe-area-inset-bottom))",
+        userSelect: "none",
+        boxShadow: "0 -4px 24px rgba(15,45,107,0.10)"
+      }}
     >
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
@@ -37,11 +42,34 @@ export default function MobileNav() {
             key={item.path}
             href={item.path}
             onClick={(e) => handleTap(e, item, isActive)}
-            className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors select-none"
-            style={{ color: isActive ? "#2563EB" : "#94A3B8", userSelect: "none", WebkitUserSelect: "none" }}
+            className="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all select-none relative"
+            style={{ userSelect: "none", WebkitUserSelect: "none" }}
           >
-            <Icon className="w-5 h-5" />
-            <span className="text-[10px] font-semibold">{item.label}</span>
+            {isActive && (
+              <span
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-10 rounded-b-full"
+                style={{ height: 3, background: "#2563EB" }}
+              />
+            )}
+            <div
+              className="flex items-center justify-center rounded-2xl transition-all"
+              style={{
+                width: 42,
+                height: 32,
+                background: isActive ? "#EFF6FF" : "transparent",
+              }}
+            >
+              <Icon
+                className="w-5 h-5 transition-colors"
+                style={{ color: isActive ? "#2563EB" : "#94A3B8" }}
+              />
+            </div>
+            <span
+              className="text-[10px] font-bold transition-colors"
+              style={{ color: isActive ? "#2563EB" : "#94A3B8" }}
+            >
+              {item.label}
+            </span>
           </a>
         );
       })}

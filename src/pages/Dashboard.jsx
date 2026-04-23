@@ -98,28 +98,35 @@ export default function Dashboard() {
       )}
 
       {/* Header */}
-      <div className="relative overflow-hidden px-6 lg:px-10 pt-12 pb-8"
+      <div className="relative overflow-hidden px-4 lg:px-10 pt-6 lg:pt-12 pb-6 lg:pb-8"
         style={{ background: "linear-gradient(135deg, #0f2d6b 0%, #1565c0 40%, #29b6f6 100%)" }}>
-        <div className="absolute right-8 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full opacity-20 border-4 border-white"
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full opacity-20 border-4 border-white hidden lg:block"
           style={{ background: "radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)" }} />
-        <div className="absolute right-32 top-1/3 w-36 h-36 rounded-full opacity-15 border-4 border-cyan-200" />
         <div className="relative max-w-6xl mx-auto">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.2)" }}>
-              <Activity className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.2)" }}>
+                <Activity className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-cyan-200 text-[10px] lg:text-xs font-semibold uppercase tracking-widest hidden sm:block">Sistema de Gestión de Equipos</p>
+                <h1 className="text-xl lg:text-4xl font-bold text-white leading-tight">Dashboard</h1>
+                <p className="text-blue-100 text-xs lg:text-sm mt-0.5">Hola, {user?.full_name?.split(" ")[0] || "Usuario"}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-cyan-200 text-xs font-semibold uppercase tracking-widest">Sistema de Gestión de Equipos</p>
-              <h1 className="text-3xl lg:text-4xl font-bold text-white">Dashboard</h1>
-              <p className="text-blue-100 text-sm mt-0.5">Bienvenido, {user?.full_name || user?.email}</p>
-            </div>
+            {totalNotif > 0 && (
+              <div className="lg:hidden flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: "rgba(220,38,38,0.25)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                <Bell className="w-4 h-4 text-white" />
+                <span className="text-white font-bold text-sm">{totalNotif}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="max-w-6xl mx-auto px-6 lg:px-10 pt-6 mb-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="max-w-6xl mx-auto px-4 lg:px-10 pt-4 lg:pt-6 mb-4 lg:mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           {[
             { label: "Actividades Hoy", value: actividades.filter(a => a.fecha === hoy.toISOString().split("T")[0]).length, icon: TrendingUp, color: "#2563eb", bg: "#eff6ff" },
             { label: "Equipos Operativos", value: operativos.length, total: equipos.length, icon: Monitor, color: "#16a34a", bg: "#dcfce7" },
@@ -128,14 +135,18 @@ export default function Dashboard() {
           ].map((s, i) => {
             const Icon = s.icon;
             return (
-              <div key={i} className="bg-white rounded-2xl p-5 shadow-xl hover:shadow-2xl transition-all duration-300"
-                style={{ boxShadow: "0 8px 32px rgba(21,101,192,0.12)" }}>
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3" style={{ background: s.bg }}>
-                  <Icon className="w-5 h-5" style={{ color: s.color }} />
+              <div key={i} className="bg-white rounded-2xl p-4 lg:p-5 transition-all duration-300"
+                style={{ boxShadow: "0 4px 20px rgba(21,101,192,0.10)" }}>
+                <div className="flex items-center gap-3 lg:block">
+                  <div className="w-9 h-9 lg:w-11 lg:h-11 rounded-xl flex items-center justify-center flex-shrink-0 lg:mb-3" style={{ background: s.bg }}>
+                    <Icon className="w-4 h-4 lg:w-5 lg:h-5" style={{ color: s.color }} />
+                  </div>
+                  <div>
+                    <p className="text-2xl lg:text-3xl font-bold" style={{ color: s.color }}>{s.value}</p>
+                    <p className="text-xs text-slate-500 font-medium leading-tight">{s.label}</p>
+                    {s.total !== undefined && <p className="text-xs text-slate-400 hidden lg:block mt-0.5">de {s.total} totales</p>}
+                  </div>
                 </div>
-                <p className="text-3xl font-bold" style={{ color: s.color }}>{s.value}</p>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">{s.label}</p>
-                {s.total !== undefined && <p className="text-xs text-slate-400 mt-0.5">de {s.total} totales</p>}
               </div>
             );
           })}
@@ -143,7 +154,7 @@ export default function Dashboard() {
       </div>
 
       {/* Contenido principal */}
-      <div className="max-w-6xl mx-auto px-6 lg:px-10 pb-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-6xl mx-auto px-4 lg:px-10 pb-10 grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
 
         {/* ===== COLUMNA PRINCIPAL: Actividades ===== */}
         <div className="lg:col-span-2 space-y-6">
