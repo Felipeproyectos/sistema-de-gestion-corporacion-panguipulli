@@ -19,8 +19,8 @@ Deno.serve(async (req) => {
       // Mapear tipo_formulario a tipo de actividad válido en el enum
       const tipoActividadMap = {
         inspeccion_semanal: 'inspeccion_semanal',
-        inspeccion_diaria: 'inspeccion',
-        turno_chofer: 'inspeccion',
+        inspeccion_diaria: 'inspeccion_rutinaria',
+        turno_chofer: 'inspeccion_rutinaria',
         inspeccion_anual: 'inspeccion_anual',
       };
       const tipoActividad = tipoActividadMap[inspeccion.tipo_formulario] || 'inspeccion';

@@ -746,7 +746,7 @@ function InspeccionesTab({ equipo, actividades, user, onUpdated }) {
       {esAmbulancia && (
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Pautas Diarias", count: inspecciones.filter(i => i.tipo === "inspeccion_rutinaria").length, color: "#7C3AED", bg: "#F5F3FF" },
+            { label: "Pautas Diarias", count: inspecciones.filter(i => i.tipo === "inspeccion_rutinaria" || i.tipo === "inspeccion").length, color: "#7C3AED", bg: "#F5F3FF" },
             { label: "Pautas Semanales", count: inspecciones.filter(i => i.tipo === "inspeccion_semanal").length, color: "#2563EB", bg: "#EFF6FF" },
             { label: "Pautas Anuales", count: inspecciones.filter(i => i.tipo === "inspeccion_anual").length, color: "#059669", bg: "#F0FDF4" },
           ].map(s => (
@@ -866,7 +866,7 @@ function InspeccionCard({ act }) {
     : null;
 
   const esSemanal = act.tipo === "inspeccion_semanal";
-  const esDiaria = act.tipo === "inspeccion_rutinaria";
+  const esDiaria = act.tipo === "inspeccion_rutinaria" || act.tipo === "inspeccion";
 
   const handleToggle = async () => {
     const next = !expanded;
