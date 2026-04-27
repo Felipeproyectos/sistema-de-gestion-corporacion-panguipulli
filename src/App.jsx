@@ -50,17 +50,6 @@ const AnimatedRoutes = ({ children }) => {
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
-  const isPublicRoute = window.location.pathname === '/bitacora-publica';
-
-  // On public routes, never block with spinner or redirect
-  if (isPublicRoute) {
-    return (
-      <AnimatedRoutes>
-        <Route path="/bitacora-publica" element={<PublicBitacora />} />
-        <Route path="*" element={<PublicBitacora />} />
-      </AnimatedRoutes>
-    );
-  }
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -117,13 +106,27 @@ const AuthenticatedApp = () => {
 
 
 function App() {
+  // Detect public route BEFORE any auth logic runs
+  const isPublicBitacora = typeof window !== 'undefined' && window.location.pathname === '/bitacora-publica';
+
+  if (isPublicBitacora) {
+    return (
+      <QueryClientProvider client={queryClientInstance}>
+        <Router>
+          <Routes>
+            <Route path="/bitacora-publica" element={<PublicBitacora />} />
+          </Routes>
+        </Router>
+        <Toaster />
+      </QueryClientProvider>
+    );
+  }
 
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <Routes>
-            <Route path="/bitacora-publica" element={<PublicBitacora />} />
             <Route path="*" element={<AuthenticatedApp />} />
           </Routes>
         </Router>
