@@ -65,6 +65,10 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
+      // Don't redirect if on a public route
+      if (window.location.pathname === '/bitacora-publica') {
+        return <PublicBitacora />;
+      }
       // Redirect to login automatically
       navigateToLogin();
       return null;
