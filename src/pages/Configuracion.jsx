@@ -293,7 +293,14 @@ export default function Configuracion() {
 function BitacoraPublicaLink() {
   const [copied, setCopied] = useState(false);
   const qrRef = useRef(null);
-  const url = `https://gestion.apscolab.com/bitacora-publica`;
+  // Usa el dominio real de la app publicada. Si hay dominio personalizado configurado,
+  // usarlo; de lo contrario usa el origen actual.
+  const customDomain = "gestion.apscolab.com";
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  // Si estamos en el dominio personalizado o en producción publicada, usar ese; si no, usar el origen actual
+  const isPreview = origin.includes("preview-sandbox") || origin.includes("localhost");
+  const baseUrl = isPreview ? origin : `https://${customDomain}`;
+  const url = `${baseUrl}/bitacora-publica`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(url);
@@ -335,6 +342,13 @@ function BitacoraPublicaLink() {
         </p>
       </div>
 
+      {isPreview && (
+        <div className="rounded-xl p-3 text-xs text-amber-700 flex items-start gap-2" style={{ background: "#FFFBEB", border: "1px solid #FDE68A" }}>
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span>Estás en el entorno de <strong>preview</strong>. El QR apuntará a este entorno. Para generar el QR definitivo, accede desde el dominio publicado <strong>{customDomain}</strong>.</span>
+        </div>
+      )}
+
       <div>
         <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">Enlace del formulario</p>
         <div className="flex items-center gap-2">
@@ -346,7 +360,7 @@ function BitacoraPublicaLink() {
             style={{ background: copied ? "#10B981" : "#2563EB" }}>
             {copied ? <><CheckCircle className="w-4 h-4" /> Copiado</> : <><Copy className="w-4 h-4" /> Copiar</>}
           </button>
-          <a href="/bitacora-publica" target="_blank" rel="noreferrer"
+          <a href={url} target="_blank" rel="noreferrer"
             className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-blue-600 transition-colors flex-shrink-0">
             <ExternalLink className="w-4 h-4" />
           </a>

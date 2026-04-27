@@ -50,6 +50,17 @@ const AnimatedRoutes = ({ children }) => {
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const isPublicRoute = window.location.pathname === '/bitacora-publica';
+
+  // On public routes, never block with spinner or redirect
+  if (isPublicRoute) {
+    return (
+      <AnimatedRoutes>
+        <Route path="/bitacora-publica" element={<PublicBitacora />} />
+        <Route path="*" element={<PublicBitacora />} />
+      </AnimatedRoutes>
+    );
+  }
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -65,10 +76,6 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Don't redirect if on a public route
-      if (window.location.pathname === '/bitacora-publica') {
-        return <PublicBitacora />;
-      }
       // Redirect to login automatically
       navigateToLogin();
       return null;
@@ -123,7 +130,7 @@ function App() {
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
-  )
+  );
 }
 
 export default App
