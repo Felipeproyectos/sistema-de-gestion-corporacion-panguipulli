@@ -13,6 +13,8 @@ export const AuthProvider = ({ children }) => {
   const [authError, setAuthError] = useState(null);
   const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
 
+  const isPublicRoute = window.location.pathname === '/bitacora-publica';
+
   useEffect(() => {
     checkAppState();
   }, []);
@@ -47,6 +49,13 @@ export const AuthProvider = ({ children }) => {
         setIsLoadingPublicSettings(false);
       } catch (appError) {
         console.error('App state check failed:', appError);
+
+        if (isPublicRoute) {
+          // En rutas públicas, ignorar errores de autenticación
+          setIsLoadingPublicSettings(false);
+          setIsLoadingAuth(false);
+          return;
+        }
         
         // Handle app-level errors
         if (appError.status === 403 && appError.data?.extra_data?.reason) {
@@ -78,10 +87,12 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Unexpected error:', error);
-      setAuthError({
-        type: 'unknown',
-        message: error.message || 'An unexpected error occurred'
-      });
+      if (!isPublicRoute) {
+        setAuthError({
+          type: 'unknown',
+          message: error.message || 'An unexpected error occurred'
+        });
+      }
       setIsLoadingPublicSettings(false);
       setIsLoadingAuth(false);
     }
@@ -101,7 +112,7 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       
       // If user auth fails, it might be an expired token
-      if (error.status === 401 || error.status === 403) {
+      if (!isPublicRoute && (error.status === 401 || error.status === 403)) {
         setAuthError({
           type: 'auth_required',
           message: 'Authentication required'
