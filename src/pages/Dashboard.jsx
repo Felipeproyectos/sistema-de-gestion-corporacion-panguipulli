@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   Monitor, AlertTriangle, ClipboardList, Activity, Zap, Car, Wrench,
   CheckCircle, Clock, Bell, User, MapPin, ChevronRight, RefreshCw,
-  Package, ClipboardCheck, TrendingUp, ArrowRight
+  Package, ClipboardCheck, TrendingUp, ArrowRight, QrCode
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, parseISO, formatDistanceToNow } from "date-fns";
@@ -467,8 +468,58 @@ export default function Dashboard() {
               </div>
             </div>
           )}
+          {/* QR Bitácora Pública */}
+          <QRBitacoraCard />
+
         </div>
 
+      </div>
+    </div>
+  );
+}
+
+function QRBitacoraCard() {
+  const qrRef = useRef(null);
+  const url = "https://gestion.apscolab.com/bitacora-publica";
+
+  const handleDownload = () => {
+    const svg = qrRef.current?.querySelector("svg");
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    canvas.width = 300; canvas.height = 300;
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.onload = () => {
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, 300, 300);
+      ctx.drawImage(img, 0, 0, 300, 300);
+      const a = document.createElement("a");
+      a.download = "qr-bitacora.png";
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden" style={{ boxShadow: "0 8px 32px rgba(21,101,192,0.10)" }}>
+      <div className="px-5 py-4 border-b border-blue-50 flex items-center gap-2" style={{ background: "#eff6ff" }}>
+        <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center">
+          <QrCode className="w-3.5 h-3.5 text-blue-600" />
+        </div>
+        <h2 className="font-bold text-blue-800 text-sm">Pautas de Inspección</h2>
+      </div>
+      <div className="px-5 py-4 flex flex-col items-center gap-3">
+        <p className="text-xs text-slate-500 text-center">Escanea este QR para completar una pauta de inspección sin necesidad de cuenta.</p>
+        <div ref={qrRef} className="p-3 border-2 border-slate-200 rounded-xl bg-white">
+          <QRCodeSVG value={url} size={140} bgColor="#ffffff" fgColor="#1e293b" level="H" />
+        </div>
+        <button onClick={handleDownload}
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold text-white"
+          style={{ background: "#2563eb" }}>
+          Descargar QR
+        </button>
       </div>
     </div>
   );
