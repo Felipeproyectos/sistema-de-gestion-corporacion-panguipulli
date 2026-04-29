@@ -17,6 +17,7 @@ import SolicitudesV2 from './pages/SolicitudesV2';
 import Reportes from './pages/Reportes';
 import PublicBitacora from './pages/PublicBitacora';
 import RevisionInspecciones from './pages/RevisionInspecciones';
+import Bienvenida from './pages/Bienvenida';
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
@@ -65,10 +66,15 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      navigateToLogin();
-      return null;
+      // Mostrar página de bienvenida personalizada en lugar del login de Base44
+      return (
+        <Router>
+          <Routes>
+            <Route path="*" element={<Bienvenida />} />
+          </Routes>
+        </Router>
+      );
     } else {
-      // For other errors (unknown), still redirect to login
       navigateToLogin();
       return null;
     }
@@ -101,6 +107,7 @@ const AuthenticatedApp = () => {
       <Route path="/SolicitudesV2" element={<LayoutWrapper currentPageName="SolicitudesV2"><PageWrapper><SolicitudesV2 /></PageWrapper></LayoutWrapper>} />
       <Route path="/Reportes" element={<LayoutWrapper currentPageName="Reportes"><PageWrapper><Reportes /></PageWrapper></LayoutWrapper>} />
       <Route path="/bitacora-publica" element={<PublicBitacora />} />
+      <Route path="/bienvenida" element={<Bienvenida />} />
       <Route path="/RevisionInspecciones" element={<LayoutWrapper currentPageName="RevisionInspecciones"><PageWrapper><RevisionInspecciones /></PageWrapper></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </AnimatedRoutes>
