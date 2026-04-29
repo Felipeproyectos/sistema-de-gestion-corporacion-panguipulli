@@ -67,13 +67,7 @@ const AuthenticatedApp = () => {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
       // Mostrar página de bienvenida personalizada en lugar del login de Base44
-      return (
-        <Router>
-          <Routes>
-            <Route path="*" element={<Bienvenida />} />
-          </Routes>
-        </Router>
-      );
+      return <Bienvenida />;
     } else {
       navigateToLogin();
       return null;
