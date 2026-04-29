@@ -2,11 +2,16 @@ import { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 
-const LOGO_URL = "https://base44.app/api/apps/69d7d4a3a315ab3667225ef2/files/mp/public/69d7d4a3a315ab3667225ef2/92f1994ca_logosalud.png";
-
 export default function Bienvenida() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
+  const [logoUrl, setLogoUrl] = useState(null);
+
+  useEffect(() => {
+    base44.entities.AppConfig.list().then((list) => {
+      if (list.length > 0 && list[0].logo_url) setLogoUrl(list[0].logo_url);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     // Si ya está autenticado, ir al dashboard
@@ -64,14 +69,16 @@ export default function Bienvenida() {
         >
           {/* Logo */}
           <div className="flex items-center justify-center" style={{ width: 100, height: 100 }}>
-            <img
-              src={LOGO_URL}
-              alt="Logo Corporación de Salud"
-              className="w-full h-full object-contain"
-              onError={(e) => {
-                e.target.parentElement.innerHTML = `<div style="font-size:40px">🏥</div>`;
-              }}
-            />
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="Logo"
+                className="w-full h-full object-contain"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            ) : (
+              <div style={{ fontSize: 40 }}>🏥</div>
+            )}
           </div>
 
           {/* Título institucional */}
