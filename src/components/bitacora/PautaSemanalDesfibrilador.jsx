@@ -2,42 +2,18 @@ import { useState } from "react";
 import { invokePublic } from "@/lib/publicFetch";
 import { Loader2, AlertTriangle, Send, CheckCircle, ChevronDown, ChevronUp, Activity } from "lucide-react";
 
-const GRUPOS_CHECKLIST = [
-  {
-    label: "Inspección General y Accesibilidad",
-    items: [
-      "Presente en ubicación señalada",
-      "Acceso expedito, libre de obstáculos",
-      "Gabinete / vitrina en buen estado",
-    ],
-  },
-  {
-    label: "Estado Operativo",
-    items: [
-      "Indicador de estado en condición operativa",
-      "Sin alarmas activas",
-      "Equipo sin daños físicos visibles",
-    ],
-  },
-  {
-    label: "Batería / Pilas",
-    items: [
-      "Baterías/pilas instaladas correctamente",
-      "Nivel de carga adecuado",
-      "Fecha de vencimiento vigente",
-    ],
-  },
-  {
-    label: "Electrodos",
-    items: [
-      "Electrodos disponibles (pediátricos y adultos)",
-      "Empaque sellado e íntegro",
-      "Fecha de vencimiento vigente (electrodos)",
-    ],
-  },
+const ITEMS_CHECKLIST = [
+  "Cables y conexiones en buen estado",
+  "Pantalla operativa y sin errores",
+  "Batería cargada al 100%",
+  "Electrodos conectados y en buen estado",
+  "Fecha de vencimiento de electrodos vigente",
+  "Equipo limpio y sin daños físicos",
+  "Modo de espera activo",
+  "Alarmas de autotest sin errores",
+  "Accesorios completos (gel, cables, electrodos de repuesto)",
+  "Registro de uso actualizado",
 ];
-
-const ITEMS_CHECKLIST = GRUPOS_CHECKLIST.flatMap(g => g.items);
 
 const ESTADOS = [
   { value: "ok", label: "OK" },
@@ -51,6 +27,8 @@ function initChecklist() {
     return acc;
   }, {});
 }
+
+const GRUPOS_CHECKLIST = null; // no usado en este componente
 
 export default function PautaSemanalDesfibrilador({ equipos, loading, onSuccess, equipoFijo }) {
   const [equipo_id, setEquipoId] = useState(equipoFijo?.id || "");
@@ -122,10 +100,10 @@ export default function PautaSemanalDesfibrilador({ equipos, loading, onSuccess,
       <div className="rounded-2xl p-5"
         style={{ background: "linear-gradient(135deg, #4C1D95 0%, #7C3AED 100%)" }}>
         <p className="text-xs font-bold text-purple-200 uppercase tracking-widest mb-1">
-          Check List Quincenal · DEA
+          Check List Semanal · Monitor Desfibrilador
         </p>
-        <h2 className="text-xl font-bold text-white">DEA / Monitor Desfibrilador</h2>
-        <p className="text-purple-200 text-sm mt-1">Inspección quincenal de estado del equipo</p>
+        <h2 className="text-xl font-bold text-white">Monitor Desfibrilador</h2>
+        <p className="text-purple-200 text-sm mt-1">Inspección semanal de estado del equipo</p>
       </div>
 
       {/* Equipo */}
@@ -189,69 +167,59 @@ export default function PautaSemanalDesfibrilador({ equipos, loading, onSuccess,
         </div>
       </div>
 
-      {/* Checklist por grupos */}
+      {/* Checklist */}
       <div className="bg-white rounded-2xl overflow-hidden" style={{ border: "1px solid #E2E8F0" }}>
         {/* Cabecera tabla */}
         <div className="grid px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest"
           style={{ gridTemplateColumns: "1fr 60px 60px 60px", borderBottom: "1px solid #E2E8F0", background: "#F8FAFC" }}>
-          <span>Check List Quincenal</span>
+          <span>Check List Semanal</span>
           <span className="text-center">OK</span>
           <span className="text-center">MALO</span>
           <span className="text-center">N/A</span>
         </div>
 
-        {GRUPOS_CHECKLIST.map((grupo, gi) => (
-          <div key={gi}>
-            {/* Encabezado de grupo */}
-            <div className="px-4 py-2 text-xs font-bold uppercase tracking-widest"
-              style={{ background: "#EFF6FF", color: "#1D4ED8", borderBottom: "1px solid #DBEAFE", borderTop: gi > 0 ? "2px solid #BFDBFE" : "none" }}>
-              {grupo.label}
-            </div>
-            {/* Ítems del grupo */}
-            <div className="divide-y divide-slate-50">
-              {grupo.items.map(item => {
-                const val = checklist[item];
-                const missing = !val;
-                return (
-                  <div
-                    key={item}
-                    className="grid items-center px-4 py-3.5 gap-2"
-                    style={{
-                      gridTemplateColumns: "1fr 60px 60px 60px",
-                      background: val === "malo" ? "#FFF5F5" : "white"
-                    }}>
-                    <span className="text-sm text-slate-700 flex items-center gap-1.5" style={{ fontFamily: "Manrope, sans-serif" }}>
-                      {missing && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0 inline-block" />}
-                      {item}
-                    </span>
-                    {ESTADOS.map(({ value, label }) => {
-                      const active = val === value;
-                      const activeColor = value === "ok" ? "#16A34A" : value === "malo" ? "#DC2626" : "#94A3B8";
-                      const activeBg = value === "ok" ? "#F0FDF4" : value === "malo" ? "#FEF2F2" : "#F8FAFC";
-                      return (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => handleCheck(item, active ? "" : value)}
-                          className="flex items-center justify-center mx-auto rounded-lg transition-all"
-                          style={{
-                            width: 40, height: 34,
-                            background: active ? activeBg : "#F8FAFC",
-                            border: `2px solid ${active ? activeColor : "#E2E8F0"}`,
-                            color: active ? activeColor : "#CBD5E1",
-                            fontWeight: "bold",
-                            fontSize: 11,
-                          }}>
-                          {active ? (value === "ok" ? "✓" : value === "malo" ? "✗" : "N/A") : label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+        <div className="divide-y divide-slate-50">
+          {ITEMS_CHECKLIST.map(item => {
+            const val = checklist[item];
+            const missing = !val;
+            return (
+              <div
+                key={item}
+                className="grid items-center px-4 py-3.5 gap-2"
+                style={{
+                  gridTemplateColumns: "1fr 60px 60px 60px",
+                  background: val === "malo" ? "#FFF5F5" : "white"
+                }}>
+                <span className="text-sm text-slate-700 flex items-center gap-1.5" style={{ fontFamily: "Manrope, sans-serif" }}>
+                  {missing && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0 inline-block" />}
+                  {item}
+                </span>
+                {ESTADOS.map(({ value, label }) => {
+                  const active = val === value;
+                  const activeColor = value === "ok" ? "#16A34A" : value === "malo" ? "#DC2626" : "#94A3B8";
+                  const activeBg = value === "ok" ? "#F0FDF4" : value === "malo" ? "#FEF2F2" : "#F8FAFC";
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => handleCheck(item, active ? "" : value)}
+                      className="flex items-center justify-center mx-auto rounded-lg transition-all"
+                      style={{
+                        width: 40, height: 34,
+                        background: active ? activeBg : "#F8FAFC",
+                        border: `2px solid ${active ? activeColor : "#E2E8F0"}`,
+                        color: active ? activeColor : "#CBD5E1",
+                        fontWeight: "bold",
+                        fontSize: 11,
+                      }}>
+                      {active ? (value === "ok" ? "✓" : value === "malo" ? "✗" : "N/A") : label}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Descripción breve */}
