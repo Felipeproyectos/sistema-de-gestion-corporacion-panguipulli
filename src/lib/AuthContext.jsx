@@ -65,25 +65,34 @@ export const AuthProvider = ({ children }) => {
               type: 'auth_required',
               message: 'Authentication required'
             });
+            setIsLoadingPublicSettings(false);
+            setIsLoadingAuth(false);
           } else if (reason === 'user_not_registered') {
-            setAuthError({
-              type: 'user_not_registered',
-              message: 'User not registered for this app'
-            });
+            // Puede que el usuario esté registrado en la entidad User aunque
+            // la plataforma diga user_not_registered. Intentar checkUserAuth igual.
+            setIsLoadingPublicSettings(false);
+            if (appParams.token) {
+              await checkUserAuth();
+            } else {
+              setAuthError({ type: 'user_not_registered', message: 'User not registered for this app' });
+              setIsLoadingAuth(false);
+            }
           } else {
             setAuthError({
               type: reason,
               message: appError.message
             });
+            setIsLoadingPublicSettings(false);
+            setIsLoadingAuth(false);
           }
         } else {
           setAuthError({
             type: 'unknown',
             message: appError.message || 'Failed to load app'
           });
+          setIsLoadingPublicSettings(false);
+          setIsLoadingAuth(false);
         }
-        setIsLoadingPublicSettings(false);
-        setIsLoadingAuth(false);
       }
     } catch (error) {
       console.error('Unexpected error:', error);
@@ -103,19 +112,10 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
 
-      // Verificar que el usuario esté registrado en la app buscándolo en la entidad User.
-      // Usamos el propio endpoint /me del SDK que ya valida si el usuario está registrado.
-      // La consulta User.filter() no funciona para usuarios normales (RLS solo permite admins listar otros),
-      // por eso usamos solo base44.auth.me() que ya devuelve el usuario si está registrado.
-      // Si currentUser existe y tiene email, está registrado correctamente.
       if (!currentUser || !currentUser.email) {
-        base44.functions.invoke('registrarAccesoNoAutorizado', {
-          email: currentUser?.email || 'desconocido',
-          user_agent: navigator.userAgent,
-        }).catch(() => {});
         setIsLoadingAuth(false);
         setIsAuthenticated(false);
-        setAuthError({ type: 'user_not_registered', message: 'User not registered for this app' });
+        setAuthError({ type: 'auth_required', message: 'Authentication required' });
         return;
       }
 
@@ -126,8 +126,22 @@ export const AuthProvider = ({ children }) => {
       console.error('User auth check failed:', error);
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
-      if (!isPublicRoute && (error.status === 401 || error.status === 403)) {
-        setAuthError({ type: 'auth_required', message: 'Authentication required' });
+      if (!isPublicRoute) {
+        const reason = error?.data?.extra_data?.reason;
+        if (reason === 'user_not_registered') {
+          // Registrar el intento fallido
+          try {
+            const token = appParams.token;
+            if (token) {
+              base44.functions.invoke('registrarAccesoNoAutorizado', {
+                user_agent: navigator.userAgent,
+              }).catch(() => {});
+            }
+          } catch {}
+          setAuthError({ type: 'user_not_registered', message: 'User not registered for this app' });
+        } else {
+          setAuthError({ type: 'auth_required', message: 'Authentication required' });
+        }
       }
     }
   };
