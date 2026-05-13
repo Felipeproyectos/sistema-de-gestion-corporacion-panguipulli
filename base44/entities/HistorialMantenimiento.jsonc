@@ -67,5 +67,19 @@
     "fecha_inspeccion",
     "tipo_mantenimiento",
     "resultado"
-  ]
+  ],
+  "rls": {
+    "create": false,
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }
