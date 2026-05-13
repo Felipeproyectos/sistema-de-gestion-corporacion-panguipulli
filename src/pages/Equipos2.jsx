@@ -41,9 +41,18 @@ export default function Equipos2() {
 
   const centrosPermitidos = !isAdmin && user?.centros_asignados?.length > 0 ? user.centros_asignados : null;
 
+  const centroSeleccionadoObj = centroSeleccionado
+    ? CENTROS_ESTRUCTURA.find(c => c.nombre === centroSeleccionado)
+    : null;
+  const subsedesDelCentro = centroSeleccionadoObj?.subsedes || [];
+
   const equiposFiltrados = equipos.filter(e => {
     if (centrosPermitidos && !centrosPermitidos.includes(e.centro_principal)) return false;
-    if (centroSeleccionado && e.centro_principal !== centroSeleccionado) return false;
+    if (centroSeleccionado) {
+      const enCentro = e.centro_principal === centroSeleccionado;
+      const enSubsede = subsedesDelCentro.includes(e.subsede);
+      if (!enCentro && !enSubsede) return false;
+    }
     if (filtroEstado !== "todos" && e.estado !== filtroEstado) return false;
     if (filtroTipo !== "todos" && e.tipo !== filtroTipo) return false;
     if (busqueda) {
