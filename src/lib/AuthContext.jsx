@@ -100,9 +100,29 @@ export const AuthProvider = ({ children }) => {
 
   const checkUserAuth = async () => {
     try {
-      // Now check if the user is authenticated
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
+
+      // Verificar que el usuario esté registrado en la app buscándolo en la entidad User.
+      // En apps públicas, cualquier cuenta OAuth puede obtener un token, pero solo
+      // los usuarios invitados aparecen en la entidad User.
+      try {
+        const users = await base44.entities.User.filter({ email: currentUser.email });
+        if (!users || users.length === 0) {
+          // Usuario autenticado con OAuth pero NO invitado a esta app
+          setIsLoadingAuth(false);
+          setIsAuthenticated(false);
+          setAuthError({ type: 'user_not_registered', message: 'User not registered for this app' });
+          return;
+        }
+      } catch {
+        // Si falla la consulta (ej. sin permisos), tratar como no registrado
+        setIsLoadingAuth(false);
+        setIsAuthenticated(false);
+        setAuthError({ type: 'user_not_registered', message: 'User not registered for this app' });
+        return;
+      }
+
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
@@ -110,13 +130,8 @@ export const AuthProvider = ({ children }) => {
       console.error('User auth check failed:', error);
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
-      
-      // If user auth fails, it might be an expired token
       if (!isPublicRoute && (error.status === 401 || error.status === 403)) {
-        setAuthError({
-          type: 'auth_required',
-          message: 'Authentication required'
-        });
+        setAuthError({ type: 'auth_required', message: 'Authentication required' });
       }
     }
   };
