@@ -1,0 +1,45 @@
+{
+  "name": "AccesoNoAutorizado",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "Email de la cuenta que intent\u00f3 acceder"
+    },
+    "fecha_intento": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora del intento de acceso"
+    },
+    "user_agent": {
+      "type": "string",
+      "description": "Navegador/dispositivo utilizado"
+    },
+    "notas": {
+      "type": "string",
+      "description": "Notas adicionales"
+    }
+  },
+  "required": [
+    "email",
+    "fecha_intento"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

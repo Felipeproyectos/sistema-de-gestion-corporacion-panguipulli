@@ -16,7 +16,8 @@ import {
   Building2,
   History,
   Activity,
-  FileText } from
+  FileText,
+  ShieldX } from
 "lucide-react";
 import MobileNav from "@/components/MobileNav";
 import useDarkMode from "@/hooks/useDarkMode";
@@ -45,7 +46,8 @@ export default function Layout({ children, currentPageName }) {
   { label: "Reportes", page: "Reportes", icon: FileText, adminOnly: false },
   { label: "Historial", page: "Historial", icon: History, adminOnly: true },
   { label: "Configuración", page: "Configuracion", icon: Settings, adminOnly: true },
-  { label: "Revisión Bitácora", page: "RevisionInspecciones", icon: ClipboardList, adminOnly: false }];
+  { label: "Revisión Bitácora", page: "RevisionInspecciones", icon: ClipboardList, adminOnly: false },
+  { label: "Accesos No Autorizados", page: "AccesosNoAutorizados", icon: ShieldX, adminOnly: true }];
 
 
   const visibleItems = navItems.filter((i) => !i.adminOnly || isAdmin);

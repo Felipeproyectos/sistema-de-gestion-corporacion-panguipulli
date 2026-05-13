@@ -109,7 +109,11 @@ export const AuthProvider = ({ children }) => {
       try {
         const users = await base44.entities.User.filter({ email: currentUser.email });
         if (!users || users.length === 0) {
-          // Usuario autenticado con OAuth pero NO invitado a esta app
+          // Usuario autenticado con OAuth pero NO invitado a esta app — registrar intento
+          base44.functions.invoke('registrarAccesoNoAutorizado', {
+            email: currentUser.email,
+            user_agent: navigator.userAgent,
+          }).catch(() => {});
           setIsLoadingAuth(false);
           setIsAuthenticated(false);
           setAuthError({ type: 'user_not_registered', message: 'User not registered for this app' });

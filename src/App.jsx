@@ -18,6 +18,7 @@ import Reportes from './pages/Reportes';
 import PublicBitacora from './pages/PublicBitacora';
 import RevisionInspecciones from './pages/RevisionInspecciones';
 import Bienvenida from './pages/Bienvenida';
+import AccesosNoAutorizados from './pages/AccesosNoAutorizados';
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
@@ -103,6 +104,7 @@ const AuthenticatedApp = () => {
       <Route path="/bitacora-publica" element={<PublicBitacora />} />
       <Route path="/bienvenida" element={<Bienvenida />} />
       <Route path="/RevisionInspecciones" element={<LayoutWrapper currentPageName="RevisionInspecciones"><PageWrapper><RevisionInspecciones /></PageWrapper></LayoutWrapper>} />
+      <Route path="/AccesosNoAutorizados" element={<LayoutWrapper currentPageName="AccesosNoAutorizados"><PageWrapper><AccesosNoAutorizados /></PageWrapper></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </AnimatedRoutes>
   );
