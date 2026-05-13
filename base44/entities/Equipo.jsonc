@@ -184,5 +184,39 @@
     "modelo",
     "estado",
     "centro_principal"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.usuarios_asignados": "{{user.email}}"
+        },
+        {
+          "data.centro_principal": {
+            "$in": "{{user.data.centros_asignados}}"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }
