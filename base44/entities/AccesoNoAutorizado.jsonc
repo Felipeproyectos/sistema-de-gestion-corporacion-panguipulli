@@ -25,7 +25,7 @@
     "fecha_intento"
   ],
   "rls": {
-    "create": {},
+    "create": true,
     "read": {
       "user_condition": {
         "role": "admin"
