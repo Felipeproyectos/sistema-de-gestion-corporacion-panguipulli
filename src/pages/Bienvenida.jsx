@@ -14,9 +14,19 @@ export default function Bienvenida() {
   }, []);
 
   useEffect(() => {
-    base44.auth.isAuthenticated().then((authed) => {
+    base44.auth.isAuthenticated().then(async (authed) => {
       if (authed) {
-        navigate("/Dashboard", { replace: true });
+        // Verificar que el usuario esté realmente registrado en la app
+        // antes de redirigir. Si no está registrado, cerrar sesión.
+        try {
+          await base44.auth.me();
+          navigate("/Dashboard", { replace: true });
+        } catch (err) {
+          // El usuario tiene token pero no está registrado en esta app.
+          // Cerrar sesión para que AuthContext lo maneje correctamente.
+          await base44.auth.logout();
+          setChecking(false);
+        }
       } else {
         setChecking(false);
       }
