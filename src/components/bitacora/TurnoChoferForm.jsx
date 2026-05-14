@@ -72,7 +72,7 @@ export default function TurnoChoferForm({ equipos, loading, onSuccess, equipoFij
               <option value="">Selecciona una ambulancia...</option>
               {(equipos || []).map(eq => (
                 <option key={eq.id} value={eq.id}>
-                  {eq.marca} {eq.modelo}{eq.patente ? ` — ${eq.patente}` : ""} ({eq.centro_principal})
+                  {eq.marca} {eq.modelo}{eq.patente ? ` — ${eq.patente}` : ""} | {eq.centro_principal}{eq.subsede ? ` › ${eq.subsede}` : ""}{eq.ubicacion_especifica ? ` › ${eq.ubicacion_especifica}` : ""}
                 </option>
               ))}
             </select>

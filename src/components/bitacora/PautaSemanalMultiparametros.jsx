@@ -127,7 +127,7 @@ export default function PautaSemanalMultiparametros({ equipos, loading, onSucces
               <option value="">Selecciona un equipo...</option>
               {(equipos || []).map(eq => (
                 <option key={eq.id} value={eq.id}>
-                  {eq.marca} {eq.modelo}{eq.numero_serie ? ` — S/N: ${eq.numero_serie}` : ""} ({eq.centro_principal})
+                  {eq.marca} {eq.modelo}{eq.numero_serie ? ` — S/N: ${eq.numero_serie}` : ""} | {eq.centro_principal}{eq.subsede ? ` › ${eq.subsede}` : ""}{eq.ubicacion_especifica ? ` › ${eq.ubicacion_especifica}` : ""}
                 </option>
               ))}
             </select>

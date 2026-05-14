@@ -19,6 +19,7 @@ Deno.serve(async (req) => {
       patente: e.patente || "",
       centro_principal: e.centro_principal,
       subsede: e.subsede || "",
+      ubicacion_especifica: e.ubicacion_especifica || "",
       estado: e.estado || "operativo"
     }));
 
