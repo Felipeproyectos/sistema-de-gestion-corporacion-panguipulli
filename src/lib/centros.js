@@ -1,4 +1,5 @@
-export const CENTROS_ESTRUCTURA = [
+// Datos estáticos de respaldo
+export const CENTROS_ESTRUCTURA_STATIC = [
   {
     nombre: "CESFAM Panguipulli",
     subsedes: ["Posta Bocatoma", "Posta Cayumapu", "Posta Melefquén", "Posta Huitar", "SAR Panguipulli"]
@@ -16,6 +17,26 @@ export const CENTROS_ESTRUCTURA = [
     subsedes: []
   }
 ];
+
+// Cache en memoria para evitar múltiples fetches
+let _cache = null;
+
+export async function getCentrosEstructura() {
+  if (_cache) return _cache;
+  try {
+    const { base44 } = await import("@/api/base44Client");
+    const centros = await base44.entities.Centro.list();
+    if (centros.length > 0) {
+      _cache = centros.map(c => ({ nombre: c.nombre, subsedes: c.sucursales || [] }));
+      return _cache;
+    }
+  } catch {}
+  return CENTROS_ESTRUCTURA_STATIC;
+}
+
+// Para compatibilidad con código sincrónico existente, exportar los datos estáticos
+// El formulario de equipos llama getCentrosEstructura() de forma asíncrona
+export const CENTROS_ESTRUCTURA = CENTROS_ESTRUCTURA_STATIC;
 
 export const TIPOS_EQUIPO = [
   { value: "dea", label: "DEA" },

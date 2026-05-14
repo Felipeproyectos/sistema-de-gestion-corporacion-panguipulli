@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Monitor, Plus, Search, Filter, ChevronRight, AlertTriangle, CheckCircle, Wrench, X, RefreshCw } from "lucide-react";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
-import { CENTROS_ESTRUCTURA, TIPOS_EQUIPO, ESTADOS_EQUIPO } from "@/lib/centros";
+import { getCentrosEstructura, TIPOS_EQUIPO, ESTADOS_EQUIPO } from "@/lib/centros";
 import EquipoCard from "@/components/equipos2/EquipoCard";
 import EquipoFormModal from "@/components/equipos2/EquipoFormModal";
 import EquipoDetalleModal from "@/components/equipos2/EquipoDetalleModal";
@@ -41,8 +41,11 @@ export default function Equipos2() {
 
   const centrosPermitidos = !isAdmin && user?.centros_asignados?.length > 0 ? user.centros_asignados : null;
 
+  const [centrosEstructura, setCentrosEstructura] = useState([]);
+  useEffect(() => { getCentrosEstructura().then(setCentrosEstructura); }, []);
+
   const centroSeleccionadoObj = centroSeleccionado
-    ? CENTROS_ESTRUCTURA.find(c => c.nombre === centroSeleccionado)
+    ? centrosEstructura.find(c => c.nombre === centroSeleccionado)
     : null;
   const subsedesDelCentro = centroSeleccionadoObj?.subsedes || [];
 
@@ -120,7 +123,7 @@ export default function Equipos2() {
               >
                 Todos
               </button>
-              {CENTROS_ESTRUCTURA.map(c => (
+              {centrosEstructura.map(c => (
                 <button
                   key={c.nombre}
                   onClick={() => setCentroSeleccionado(c.nombre)}

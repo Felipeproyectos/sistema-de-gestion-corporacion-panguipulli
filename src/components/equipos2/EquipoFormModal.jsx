@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { X, Upload, Loader2 } from "lucide-react";
-import { CENTROS_ESTRUCTURA, TIPOS_EQUIPO, ESTADOS_EQUIPO } from "@/lib/centros";
+import { getCentrosEstructura, TIPOS_EQUIPO, ESTADOS_EQUIPO } from "@/lib/centros";
 
 export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
   const isAdmin = user?.role === "admin";
+  const [centrosEstructura, setCentrosEstructura] = useState([]);
   const [form, setForm] = useState({
     numero_inventario: "", tipo: "dea", marca: "", modelo: "", numero_serie: "",
     anio_adquisicion: new Date().getFullYear(), estado: "operativo",
@@ -20,6 +21,7 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
   const [uploadingFoto, setUploadingFoto] = useState(false);
 
   useEffect(() => {
+    getCentrosEstructura().then(setCentrosEstructura);
     if (equipo) {
       setForm({ ...equipo, valor: equipo.valor || "", anio_adquisicion: equipo.anio_adquisicion || new Date().getFullYear() });
     }
@@ -30,7 +32,7 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
   const inputCls = "w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300";
   const selectCls = "w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300";
 
-  const centroData = CENTROS_ESTRUCTURA.find(c => c.nombre === form.centro_principal);
+  const centroData = centrosEstructura.find(c => c.nombre === form.centro_principal);
   const subsedes = centroData?.subsedes || [];
 
   const handleFotoUpload = async (e) => {
@@ -100,7 +102,7 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
               {isAdmin ? (
                 <select required className={selectCls} value={form.centro_principal} onChange={e => { set("centro_principal", e.target.value); set("subsede", ""); }}>
                   <option value="">Seleccionar...</option>
-                  {CENTROS_ESTRUCTURA.map(c => <option key={c.nombre} value={c.nombre}>{c.nombre}</option>)}
+                  {centrosEstructura.map(c => <option key={c.nombre} value={c.nombre}>{c.nombre}</option>)}
                 </select>
               ) : (
                 <input readOnly className="w-full border border-slate-100 bg-slate-50 rounded-xl px-3 py-2 text-sm text-slate-900" value={form.centro_principal} />

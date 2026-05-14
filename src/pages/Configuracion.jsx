@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { Upload, Loader2, Save, Settings, Users, Shield, Mail, UserPlus, Trash2, Edit2, X, Check, AlertTriangle, Car, ExternalLink, Copy, CheckCircle, Download } from "lucide-react";
+import { Upload, Loader2, Save, Settings, Users, Shield, Mail, UserPlus, Trash2, Edit2, X, Check, AlertTriangle, Car, ExternalLink, Copy, CheckCircle, Download, Building2 } from "lucide-react";
+import GestionSedes from "@/components/configuracion/GestionSedes";
 import { QRCodeSVG } from "qrcode.react";
 
 export default function Configuracion() {
@@ -37,8 +38,9 @@ export default function Configuracion() {
         setForm({ nombre_app: configs[0].nombre_app || "", subtitulo: configs[0].subtitulo || "", logo_url: configs[0].logo_url || "" });
       }
       setUsuarios(usrs);
-      const { CENTROS_ESTRUCTURA } = await import("@/lib/centros");
-      setCentros(CENTROS_ESTRUCTURA.map(c => c.nombre));
+      const { getCentrosEstructura } = await import("@/lib/centros");
+      const centrosData = await getCentrosEstructura();
+      setCentros(centrosData.map(c => c.nombre));
     };
     init();
   }, []);
@@ -275,6 +277,15 @@ export default function Configuracion() {
             ))}
             {usuarios.length === 0 && <p className="text-center text-sm text-slate-400 py-6">No hay usuarios registrados</p>}
           </div>
+        </div>
+
+        {/* Gestión de Sedes */}
+        <div className="bg-white rounded-3xl shadow-lg p-8 space-y-5">
+          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-blue-500" /> Sedes y Subsedes
+          </h2>
+          <p className="text-sm text-slate-500">Administra los centros principales y sus subsedes. Los cambios se reflejan en los formularios de equipos y bitácora pública.</p>
+          <GestionSedes />
         </div>
 
         {/* Enlace Bitácora Pública */}
