@@ -5,6 +5,7 @@ import {
   CheckCircle, Loader2, AlertTriangle, ChevronDown, ChevronUp,
   Send, Fuel, Car, Zap, Wrench, Package, FileText, Camera, X, Plus
 } from "lucide-react";
+import EquipoSelector from "./EquipoSelector";
 
 const NIVEL_COMBUSTIBLE = ["E", "1/4", "1/2", "3/4", "F"];
 
@@ -486,18 +487,12 @@ export default function PautaInspeccionSemanal({ equipos, onSuccess, equipoFijo 
             ) : (
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5">Ambulancia *</label>
-                <select
-                  required
+                <EquipoSelector
+                  equipos={equipos || []}
                   value={form.equipo_id}
-                  onChange={e => setForm(f => ({ ...f, equipo_id: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-300">
-                  <option value="">Selecciona una ambulancia...</option>
-                  {(equipos || []).map(eq => (
-                    <option key={eq.id} value={eq.id}>
-                      {eq.marca} {eq.modelo}{eq.patente ? ` — ${eq.patente}` : ""} | {eq.centro_principal}{eq.subsede ? ` › ${eq.subsede}` : ""}{eq.ubicacion_especifica ? ` › ${eq.ubicacion_especifica}` : ""}
-                    </option>
-                  ))}
-                </select>
+                  onChange={id => setForm(f => ({ ...f, equipo_id: id }))}
+                  placeholder="Selecciona una ambulancia..."
+                />
                 {equipo && (
                   <p className="text-xs text-blue-600 mt-1.5 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />

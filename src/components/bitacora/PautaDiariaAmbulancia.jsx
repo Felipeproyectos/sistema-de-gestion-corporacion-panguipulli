@@ -3,6 +3,7 @@ import { invokePublic } from "@/lib/publicFetch";
 import {
   CheckCircle, Loader2, AlertTriangle, ChevronDown, ChevronUp, Send
 } from "lucide-react";
+import EquipoSelector from "./EquipoSelector";
 
 // Momento: "inicio" = Antes del Turno, "termino" = Después del Turno
 const SECCIONES = [
@@ -299,18 +300,12 @@ export default function PautaDiariaAmbulancia({ equipoFijo, equipos = [], onSucc
         {!equipoFijo && equipos.length > 0 && (
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5">Ambulancia *</label>
-            <select
+            <EquipoSelector
+              equipos={equipos || []}
               value={equipoId}
-              onChange={e => setEquipoId(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-300"
-            >
-              <option value="">Selecciona una ambulancia...</option>
-              {equipos.map(eq => (
-                <option key={eq.id} value={eq.id}>
-                  {eq.marca} {eq.modelo}{eq.patente ? ` — ${eq.patente}` : ""} | {eq.centro_principal}{eq.subsede ? ` › ${eq.subsede}` : ""}{eq.ubicacion_especifica ? ` › ${eq.ubicacion_especifica}` : ""}
-                </option>
-              ))}
-            </select>
+              onChange={id => setEquipoId(id)}
+              placeholder="Selecciona una ambulancia..."
+            />
           </div>
         )}
 

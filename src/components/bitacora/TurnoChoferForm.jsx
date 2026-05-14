@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { invokePublic } from "@/lib/publicFetch";
 import { Loader2, AlertTriangle } from "lucide-react";
+import EquipoSelector from "./EquipoSelector";
 
 export default function TurnoChoferForm({ equipos, loading, onSuccess, equipoFijo }) {
   const [form, setForm] = useState({
@@ -66,16 +67,12 @@ export default function TurnoChoferForm({ equipos, loading, onSuccess, equipoFij
               <Loader2 className="w-4 h-4 animate-spin" /> Cargando equipos...
             </div>
           ) : (
-            <select required value={form.equipo_id}
-              onChange={e => setForm(f => ({ ...f, equipo_id: e.target.value }))}
-              className={inputCls}>
-              <option value="">Selecciona una ambulancia...</option>
-              {(equipos || []).map(eq => (
-                <option key={eq.id} value={eq.id}>
-                  {eq.marca} {eq.modelo}{eq.patente ? ` — ${eq.patente}` : ""} | {eq.centro_principal}{eq.subsede ? ` › ${eq.subsede}` : ""}{eq.ubicacion_especifica ? ` › ${eq.ubicacion_especifica}` : ""}
-                </option>
-              ))}
-            </select>
+            <EquipoSelector
+              equipos={equipos || []}
+              value={form.equipo_id}
+              onChange={id => setForm(f => ({ ...f, equipo_id: id }))}
+              placeholder="Selecciona una ambulancia..."
+            />
           )}
           {!equipoFijo && equipo && (
             <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">

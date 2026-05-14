@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { invokePublic } from "@/lib/publicFetch";
 import { Loader2, AlertTriangle, Send, ChevronDown, ChevronUp } from "lucide-react";
+import EquipoSelector from "./EquipoSelector";
 
 const GRUPOS_CHECKLIST = [
   {
@@ -219,15 +220,12 @@ export default function PautaSemanalDEA({ equipos, loading, onSuccess, equipoFij
         ) : (
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5">Equipo *</label>
-            <select required value={equipo_id} onChange={e => setEquipoId(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-amber-300">
-              <option value="">Selecciona un equipo...</option>
-              {(equipos || []).map(eq => (
-                <option key={eq.id} value={eq.id}>
-                  {eq.marca} {eq.modelo}{eq.numero_serie ? ` — S/N: ${eq.numero_serie}` : ""} | {eq.centro_principal}{eq.subsede ? ` › ${eq.subsede}` : ""}{eq.ubicacion_especifica ? ` › ${eq.ubicacion_especifica}` : ""}
-                </option>
-              ))}
-            </select>
+            <EquipoSelector
+              equipos={equipos || []}
+              value={equipo_id}
+              onChange={id => setEquipoId(id)}
+              placeholder="Selecciona un equipo..."
+            />
           </div>
         )}
 

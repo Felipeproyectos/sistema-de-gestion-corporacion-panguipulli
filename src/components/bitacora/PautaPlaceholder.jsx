@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { invokePublic } from "@/lib/publicFetch";
 import { Loader2, AlertTriangle, ClipboardCheck, Send } from "lucide-react";
+import EquipoSelector from "./EquipoSelector";
 
 /**
  * Formulario genérico para pautas aún no implementadas.
@@ -73,14 +74,12 @@ export default function PautaPlaceholder({ categoria, pauta, equipos, loading, o
           ) : (equipos || []).length === 0 ? (
             <p className="text-xs text-amber-600 py-2">No hay equipos de esta categoría disponibles.</p>
           ) : (
-            <select required value={equipo_id} onChange={e => setEquipoId(e.target.value)} className={inputCls}>
-              <option value="">Selecciona un equipo...</option>
-              {(equipos || []).map(eq => (
-                <option key={eq.id} value={eq.id}>
-                  {eq.marca} {eq.modelo}{eq.numero_serie ? ` — S/N: ${eq.numero_serie}` : ""} ({eq.centro_principal})
-                </option>
-              ))}
-            </select>
+            <EquipoSelector
+              equipos={equipos || []}
+              value={equipo_id}
+              onChange={id => setEquipoId(id)}
+              placeholder="Selecciona un equipo..."
+            />
           )}
           {!equipoFijo && equipo && (
             <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
