@@ -128,8 +128,16 @@ export default function SolicitudesV2() {
                       <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ color: cfg.color, background: cfg.bg }}>{cfg.label}</span>
                       <span className="text-xs text-slate-500">{tipoLabel}</span>
                     </div>
-                    <p className="font-semibold text-slate-900 text-sm">{equipo ? `${equipo.marca} ${equipo.modelo}` : "Equipo desconocido"}</p>
-                    <p className="text-xs text-slate-500">{sol.centro} · {sol.fecha}</p>
+                    <p className="font-semibold text-slate-900 text-sm">
+                      {equipo ? `${equipo.marca} ${equipo.modelo}` : "Equipo desconocido"}
+                      {equipo?.numero_inventario && <span className="text-slate-400 font-normal ml-1">· Inv.{equipo.numero_inventario}</span>}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {equipo?.centro_principal || sol.centro}
+                      {equipo?.subsede && ` · ${equipo.subsede}`}
+                      {equipo?.ubicacion_especifica && ` · ${equipo.ubicacion_especifica}`}
+                      {" · "}{sol.fecha}
+                    </p>
                     {isAdmin && sol.usuario_nombre && <p className="text-xs text-slate-400">Solicitante: {sol.usuario_nombre}</p>}
                     {sol.alerta_id && <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200 inline-block mt-1">Desde alerta</span>}
                     {sol.observaciones && <p className="text-xs text-slate-500 mt-1">{sol.observaciones}</p>}
@@ -321,7 +329,7 @@ function SolicitudForm({ equipos, user, onClose, onSaved, onOptimistic }) {
                 { value: "", label: "Seleccionar equipo..." },
                 ...equiposFiltrados.map(eq => ({
                   value: eq.id,
-                  label: `[${TIPO_EQUIPO_LABEL[eq.tipo] || eq.tipo}] ${eq.marca} ${eq.modelo} #${eq.numero_inventario}`
+                  label: `[${TIPO_EQUIPO_LABEL[eq.tipo] || eq.tipo}] ${eq.marca} ${eq.modelo} · Inv.${eq.numero_inventario}${eq.subsede ? ` · ${eq.subsede}` : ""}${eq.ubicacion_especifica ? ` (${eq.ubicacion_especifica})` : ""}`
                 }))
               ]}
             />
