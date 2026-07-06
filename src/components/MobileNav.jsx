@@ -1,16 +1,18 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Monitor, ClipboardList, Bell } from "lucide-react";
-
-const NAV_ITEMS = [
-  { label: "Dashboard", path: "/", icon: LayoutDashboard },
-  { label: "Equipos", path: "/Equipos2", icon: Monitor },
-  { label: "Solicitudes", path: "/SolicitudesV2", icon: ClipboardList },
-  { label: "Alertas", path: "/AlertasV2", icon: Bell },
-];
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
+import { getNavItemsForRole } from "@/lib/navPermissions";
 
 export default function MobileNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [role, setRole] = useState("user");
+
+  useEffect(() => {
+    base44.auth.me().then(u => setRole(u?.role || "user")).catch(() => {});
+  }, []);
+
+  const items = getNavItemsForRole(role).slice(0, 4);
 
   const handleTap = (e, item, isActive) => {
     e.preventDefault();
@@ -31,7 +33,7 @@ export default function MobileNav() {
         boxShadow: "0 -4px 24px rgba(15,45,107,0.10)"
       }}
     >
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const Icon = item.icon;
         const isActive =
           item.path === "/"

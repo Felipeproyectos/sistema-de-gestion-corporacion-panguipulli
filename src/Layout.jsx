@@ -2,26 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import {
-  Heart,
-  LayoutDashboard,
-  Monitor,
-  ClipboardList,
-  ClipboardCheck,
-  Menu,
-  X,
-  LogOut,
-  Bell,
-  Settings,
-  Building2,
-  History,
-  Activity,
-  FileText,
-  ShieldX,
-  Wrench,
-  Package,
-  BarChart3 } from
-"lucide-react";
+import { Heart, Menu, X, LogOut } from "lucide-react";
+import { getNavItemsForRole } from "@/lib/navPermissions";
 import MobileNav from "@/components/MobileNav";
 import useDarkMode from "@/hooks/useDarkMode";
 
@@ -39,28 +21,7 @@ export default function Layout({ children, currentPageName }) {
     }).catch(() => {});
   }, []);
 
-  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
-
-  const navItems = [
-  { label: "Dashboard", page: "Dashboard", icon: LayoutDashboard, adminOnly: false },
-  { label: "Equipos", page: "Equipos2", icon: Monitor, adminOnly: false },
-    { label: "Alertas", page: "AlertasV2", icon: Bell, adminOnly: false },
-  { label: "Solicitudes", page: "SolicitudesV2", icon: ClipboardList, adminOnly: false },
-  { label: "Reportes", page: "Reportes", icon: FileText, adminOnly: false },
-  { label: "Monitor Corporativo", page: "MonitorCorporativo", icon: BarChart3, roles: ["admin", "super_admin", "monitor_corporativo"] },
-  { label: "Historial", page: "Historial", icon: History, adminOnly: true },
-  { label: "Configuración", page: "Configuracion", icon: Settings, adminOnly: true },
-  { label: "Revisión Bitácora", page: "RevisionInspecciones", icon: ClipboardList, adminOnly: false },
-  { label: "Taller", page: "Taller", icon: Wrench, adminOnly: false },
-  { label: "Proveedores", page: "Proveedores", icon: Building2, adminOnly: true },
-  { label: "Repuestos", page: "Repuestos", icon: Package, adminOnly: true },
-  { label: "Accesos No Autorizados", page: "AccesosNoAutorizados", icon: ShieldX, adminOnly: true }];
-
-
-  const visibleItems = navItems.filter((i) => {
-    if (i.roles) return i.roles.includes(user?.role);
-    return !i.adminOnly || isAdmin;
-  });
+  const visibleItems = getNavItemsForRole(user?.role);
 
   return (
     <div className="min-h-screen bg-slate-50 flex" style={{ fontFamily: "'Inter', sans-serif" }}>
