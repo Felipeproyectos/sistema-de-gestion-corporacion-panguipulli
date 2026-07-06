@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+    if (user.role !== 'admin' && user.role !== 'supervisor' && user.role !== 'jefe_taller') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
     const { inspeccion_id, accion, nota } = await req.json();
     if (!inspeccion_id || !accion) return Response.json({ error: 'Faltan parámetros' }, { status: 400 });
@@ -59,6 +59,68 @@ Deno.serve(async (req) => {
         empresa_responsable: 'Registro automático — Bitácora',
       });
 
+      // Si la inspección aprobada tiene fallas, crear Orden de Trabajo automáticamente
+      let otCreada = null;
+      if (hasFallas) {
+        // Recolectar detalle de fallas del checklist
+        const fallasDetalle = [];
+        const recolectar = (obj) => {
+          if (!obj) return;
+          Object.entries(obj).forEach(([item, v]) => {
+            if (v && (v.estado === 'malo' || v.estado === 'incorrecto')) {
+              fallasDetalle.push('- ' + item + (v.obs ? ': ' + v.obs : ''));
+            }
+          });
+        };
+        ['luces', 'motor', 'accesorios', 'documentos', 'exterior', 'interior', 'equipo_medico', 'accesorios_diaria', 'saneamiento', 'documentacion'].forEach(k => recolectar(datos[k]));
+        if (datos.danos) {
+          Object.entries(datos.danos).forEach(([zone, v]) => {
+            if (v && v.marcado) {
+              fallasDetalle.push('- Daño visual: ' + zone.replace(/_/g, ' ') + (v.descripcion ? ': ' + v.descripcion : ''));
+            }
+          });
+        }
+
+        const ahora = new Date();
+        const ymd = ahora.toISOString().slice(0, 10).replace(/-/g, '');
+        const hhmmss = ahora.toTimeString().slice(0, 8).replace(/:/g, '');
+        const numero_ot = `OT-${ymd}-${hhmmss}`;
+
+        const equipo = datos.equipo || {};
+        const equipoLabel = inspeccion.equipo_label || `${equipo.marca || ''} ${equipo.modelo || ''}`.trim() || inspeccion.equipo_id;
+
+        // Prioridad: alta si hay daños visuales o fallas de motor, media en caso contrario
+        const tieneDanos = datos.danos && Object.values(datos.danos).some(v => v && v.marcado);
+        const fallasMotor = datos.motor && Object.values(datos.motor).some(v => v && v.estado === 'malo');
+        const prioridad = (tieneDanos || fallasMotor) ? 'alta' : 'media';
+
+        await base44.asServiceRole.entities.OrdenTrabajo.create({
+          numero_ot: numero_ot,
+          equipo_id: inspeccion.equipo_id,
+          equipo_label: equipoLabel,
+          patente: equipo.patente || '',
+          tipo_activo: 'corporativo',
+          prioridad,
+          estado: 'pendiente',
+          problema_reportado: `Fallas detectadas en inspección (${inspeccion.tipo_formulario}):\n${fallasDetalle.join('\n')}\n\nObservaciones: ${inspeccion.observaciones || ''}`,
+          diagnostico: '',
+          origen: 'inspeccion',
+          inspeccion_id: inspeccion_id,
+          reportado_por_email: user.email,
+          reportado_por_nombre: inspeccion.conductor || user.full_name,
+          supervisor_email: user.email,
+          supervisor_nombre: user.full_name,
+          linea_tiempo: [{
+            fecha: ahora.toISOString(),
+            evento: 'OT creada automáticamente desde inspección aprobada',
+            usuario_email: user.email,
+            usuario_nombre: user.full_name,
+            notas: `Inspección ${inspeccion_id}`,
+          }],
+        });
+        otCreada = { numero_ot, prioridad, fallas: fallasDetalle.length };
+      }
+
       // Si tiene kilometraje, registrarlo
       if (inspeccion.km_inicial) {
         const kmInicial = Number(inspeccion.km_inicial);
@@ -102,7 +164,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, ot_creada: otCreada });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

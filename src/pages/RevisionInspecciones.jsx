@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { useToast } from "@/components/ui/use-toast";
 import {
   CheckCircle, XCircle, Clock, ChevronDown, ChevronUp,
   AlertTriangle, ClipboardCheck, Car, MapPin, User, Calendar,
-  Fuel, Gauge, Zap, Wrench, Package, FileText, AlertCircle
+  Fuel, Gauge, Zap, Wrench, Package, FileText, AlertCircle, Wrench as WrenchIcon
 } from "lucide-react";
 
 const TIPO_LABEL = {
@@ -155,6 +156,7 @@ function DanosDetail({ danos }) {
 }
 
 function InspeccionCard({ insp, onActualizar }) {
+  const { toast } = useToast();
   const [expanded, setExpanded] = useState(false);
   const [nota, setNota] = useState("");
   const [processing, setProcessing] = useState(false);
@@ -172,11 +174,27 @@ function InspeccionCard({ insp, onActualizar }) {
 
   const handleAccion = async (accion) => {
     setProcessing(true);
-    await base44.functions.invoke("aprobarInspeccion", {
-      inspeccion_id: insp.id,
-      accion,
-      nota,
-    });
+    try {
+      const res = await base44.functions.invoke("aprobarInspeccion", {
+        inspeccion_id: insp.id,
+        accion,
+        nota,
+      });
+      const data = res.data || res;
+      if (accion === "aprobar" && data?.ot_creada) {
+        toast({
+          title: "Orden de Trabajo creada automáticamente",
+          description: `${data.ot_creada.numero_ot} — ${data.ot_creada.fallas} falla(s) detectada(s). Prioridad: ${data.ot_creada.prioridad}.`,
+          variant: "default",
+        });
+      } else if (accion === "aprobar") {
+        toast({ title: "Inspección aprobada", description: "Sin fallas — no se requiere orden de trabajo." });
+      } else {
+        toast({ title: "Inspección rechazada", description: nota || "Se notificó al conductor." });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: err.message || "No se pudo procesar", variant: "destructive" });
+    }
     setProcessing(false);
     onActualizar();
   };
