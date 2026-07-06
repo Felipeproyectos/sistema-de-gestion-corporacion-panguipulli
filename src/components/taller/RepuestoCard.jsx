@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Package, Pencil, Trash2, Plus, Minus, AlertTriangle } from "lucide-react";
+import { Package, Pencil, Trash2, Plus, Minus, AlertTriangle, FileText } from "lucide-react";
 
 const CATEGORIA_CFG = {
   neumaticos: { color: "#7C3AED", bg: "#F5F3FF" },
@@ -55,6 +55,22 @@ export default function RepuestoCard({ repuesto, onEditar, onCambioStock }) {
           {repuesto.marca_modelo_compat && <p className="text-xs text-slate-500 mt-0.5">{repuesto.marca_modelo_compat}</p>}
           {repuesto.proveedor_nombre && <p className="text-xs text-slate-400 mt-0.5">{repuesto.proveedor_nombre}</p>}
           {repuesto.ubicacion_bodega && <p className="text-xs text-slate-400 mt-0.5">📍 {repuesto.ubicacion_bodega}</p>}
+          {(repuesto.numero_factura || repuesto.numero_orden_compra) && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {repuesto.numero_factura && (
+                <a href={repuesto.factura_url} target="_blank" rel="noreferrer"
+                  className="text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: "#EFF6FF", color: "#2563EB" }}>
+                  <FileText className="w-3 h-3" /> Factura
+                </a>
+              )}
+              {repuesto.numero_orden_compra && (
+                <a href={repuesto.orden_compra_url} target="_blank" rel="noreferrer"
+                  className="text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: "#F5F3FF", color: "#7C3AED" }}>
+                  <FileText className="w-3 h-3" /> OC
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

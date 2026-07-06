@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { Package, Plus, RefreshCw, Search, AlertTriangle } from "lucide-react";
+import { Package, Plus, RefreshCw, Search, AlertTriangle, UploadCloud } from "lucide-react";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import RepuestoCard from "@/components/taller/RepuestoCard";
 import RepuestoFormModal from "@/components/taller/RepuestoFormModal";
+import CargaMasivaRepuestos from "@/components/taller/CargaMasivaRepuestos";
 
 const CATEGORIAS = [
   { value: "todos", label: "Todos" },
@@ -26,6 +27,7 @@ export default function Repuestos() {
   const [soloBajo, setSoloBajo] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [cargaMasivaOpen, setCargaMasivaOpen] = useState(false);
   const [editando, setEditando] = useState(null);
   const containerRef = useRef(null);
 
@@ -75,11 +77,18 @@ export default function Repuestos() {
               <p className="text-slate-300 text-xs lg:text-sm mt-0.5">{repuestos.length} items · ${valorTotal.toLocaleString("es-CL")} en stock</p>
             </div>
           </div>
-          <button onClick={() => { setEditando(null); setModalOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
-            style={{ background: "#2563EB" }}>
-            <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nuevo</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setCargaMasivaOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
+              style={{ background: "#059669" }}>
+              <UploadCloud className="w-4 h-4" /> <span className="hidden sm:inline">Carga Masiva</span>
+            </button>
+            <button onClick={() => { setEditando(null); setModalOpen(true); }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
+              style={{ background: "#2563EB" }}>
+              <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nuevo</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -130,6 +139,7 @@ export default function Repuestos() {
       </div>
 
       <RepuestoFormModal open={modalOpen} onClose={() => { setModalOpen(false); setEditando(null); }} onGuardar={handleGuardar} editando={editando} proveedores={proveedores} />
+      <CargaMasivaRepuestos open={cargaMasivaOpen} onClose={() => setCargaMasivaOpen(false)} onComplete={fetchData} proveedores={proveedores} />
     </div>
   );
 }

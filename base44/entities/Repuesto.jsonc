@@ -59,6 +59,32 @@
     },
     "notas": {
       "type": "string"
+    },
+    "numero_factura": {
+      "type": "string",
+      "description": "N\u00famero de factura de compra"
+    },
+    "fecha_factura": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de emisi\u00f3n de la factura"
+    },
+    "factura_url": {
+      "type": "string",
+      "description": "URL del documento de factura (PDF)"
+    },
+    "numero_orden_compra": {
+      "type": "string",
+      "description": "N\u00famero de orden de compra"
+    },
+    "fecha_orden_compra": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de la orden de compra"
+    },
+    "orden_compra_url": {
+      "type": "string",
+      "description": "URL del documento de orden de compra (PDF)"
     }
   },
   "required": [
