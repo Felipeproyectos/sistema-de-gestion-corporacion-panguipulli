@@ -14,6 +14,8 @@ import { createPageUrl } from "@/utils";
 import { differenceInDays, parseISO } from "date-fns";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import KpiCard from "@/components/monitor/KpiCard";
+import CentroBreakdown from "@/components/monitor/CentroBreakdown";
+import { getCentrosEstructura } from "@/lib/centros";
 
 const ESTADO_EQUIPO_COLORS = {
   operativo: "#16a34a",
@@ -62,8 +64,9 @@ export default function MonitorCorporativo() {
       base44.entities.OrdenTrabajo.list().catch(() => []),
       base44.entities.Repuesto.list().catch(() => []),
       base44.entities.Proveedor.list().catch(() => []),
+      getCentrosEstructura().catch(() => []),
     ]);
-    setData({ equipos, parches, alertas, solicitudes, inspecciones, ordenes, repuestos, proveedores });
+    setData({ equipos, parches, alertas, solicitudes, inspecciones, ordenes, repuestos, proveedores, centros });
   }, []);
 
   useEffect(() => { fetchData().finally(() => setLoading(false)); }, [fetchData]);
@@ -75,7 +78,7 @@ export default function MonitorCorporativo() {
     </div>
   );
 
-  const { equipos, parches, alertas, solicitudes, inspecciones, ordenes, repuestos, proveedores } = data;
+  const { equipos, parches, alertas, solicitudes, inspecciones, ordenes, repuestos, proveedores, centros } = data;
   const hoy = new Date();
 
   // KPIs Salud
@@ -127,7 +130,7 @@ export default function MonitorCorporativo() {
 
       {/* Header */}
       <div className="relative overflow-hidden px-4 lg:px-10 pt-6 lg:pt-12 pb-6 lg:pb-10"
-        style={{ background: "linear-gradient(135deg, #312e81 0%, #6d28d9 45%, #9333ea 100%)" }}>
+        style={{ background: "linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)" }}>
         <div className="absolute right-8 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full opacity-20 border-4 border-white hidden lg:block"
           style={{ background: "radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)" }} />
         <div className="relative max-w-6xl mx-auto flex items-center gap-3">
@@ -135,9 +138,9 @@ export default function MonitorCorporativo() {
             <ShieldCheck className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
           </div>
           <div>
-            <p className="text-violet-200 text-[10px] lg:text-xs font-semibold uppercase tracking-widest hidden sm:block">Visualización Estratégica Global</p>
+            <p className="text-indigo-100 text-[10px] lg:text-xs font-semibold uppercase tracking-widest hidden sm:block">Visualización Estratégica Global</p>
             <h1 className="text-xl lg:text-4xl font-bold text-white leading-tight">Monitor Corporativo</h1>
-            <p className="text-violet-100 text-xs lg:text-sm mt-0.5">KPIs consolidados · Área Salud y Taller · Solo lectura</p>
+            <p className="text-indigo-50 text-xs lg:text-sm mt-0.5">KPIs consolidados · Área Salud y Taller · Solo lectura</p>
           </div>
         </div>
       </div>
@@ -149,7 +152,7 @@ export default function MonitorCorporativo() {
           <KpiCard label="Equipos Totales" value={equipos.length} icon={Monitor} color="#6d28d9" bg="#f5f3ff" sub={`${ambulancias.length} ambulancias · ${deas.length} DEA`} />
           <KpiCard label="Alertas Activas" value={alertas.length} icon={AlertTriangle} color="#dc2626" bg="#fee2e2" sub={`${alertasCriticas.length} críticas`} />
           <KpiCard label="OT en Gestión" value={otPendientes.length + otEnProceso.length} icon={Wrench} color="#d97706" bg="#fffbeb" sub={`${otCompletadas.length} completadas`} />
-          <KpiCard label="Inventario Repuestos" value={stockBajo.length} icon={Package} color="#dc2626" bg="#fef2f2" sub={`${repuestos.length} ítems · stock bajo`} />
+          <KpiCard label="Inventario Repuestos" value={repuestos.length} icon={Package} color="#4f46e5" bg="#e0e7ff" sub={`${stockBajo.length} con stock bajo`} />
         </div>
 
         {/* ===== ÁREA SALUD ===== */}
@@ -302,6 +305,15 @@ export default function MonitorCorporativo() {
             </div>
           </div>
         </SeccionArea>
+
+        {/* ===== DISTRIBUCIÓN POR CENTRO Y SUCURSAL ===== */}
+        <CentroBreakdown
+          centros={centros}
+          equipos={equipos}
+          alertas={alertas}
+          parches={parches}
+          ordenes={ordenes}
+        />
 
       </div>
     </div>
