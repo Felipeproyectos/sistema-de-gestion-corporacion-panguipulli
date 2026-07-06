@@ -19,7 +19,8 @@ import {
   FileText,
   ShieldX,
   Wrench,
-  Package } from
+  Package,
+  BarChart3 } from
 "lucide-react";
 import MobileNav from "@/components/MobileNav";
 import useDarkMode from "@/hooks/useDarkMode";
@@ -38,7 +39,7 @@ export default function Layout({ children, currentPageName }) {
     }).catch(() => {});
   }, []);
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
 
   const navItems = [
   { label: "Dashboard", page: "Dashboard", icon: LayoutDashboard, adminOnly: false },
@@ -46,6 +47,7 @@ export default function Layout({ children, currentPageName }) {
     { label: "Alertas", page: "AlertasV2", icon: Bell, adminOnly: false },
   { label: "Solicitudes", page: "SolicitudesV2", icon: ClipboardList, adminOnly: false },
   { label: "Reportes", page: "Reportes", icon: FileText, adminOnly: false },
+  { label: "Monitor Corporativo", page: "MonitorCorporativo", icon: BarChart3, roles: ["admin", "super_admin", "monitor_corporativo"] },
   { label: "Historial", page: "Historial", icon: History, adminOnly: true },
   { label: "Configuración", page: "Configuracion", icon: Settings, adminOnly: true },
   { label: "Revisión Bitácora", page: "RevisionInspecciones", icon: ClipboardList, adminOnly: false },
@@ -55,7 +57,10 @@ export default function Layout({ children, currentPageName }) {
   { label: "Accesos No Autorizados", page: "AccesosNoAutorizados", icon: ShieldX, adminOnly: true }];
 
 
-  const visibleItems = navItems.filter((i) => !i.adminOnly || isAdmin);
+  const visibleItems = navItems.filter((i) => {
+    if (i.roles) return i.roles.includes(user?.role);
+    return !i.adminOnly || isAdmin;
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 flex" style={{ fontFamily: "'Inter', sans-serif" }}>
