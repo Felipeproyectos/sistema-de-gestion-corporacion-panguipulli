@@ -4,14 +4,14 @@ import { ShieldX, Mail, Monitor, Clock, Trash2 } from "lucide-react";
 import { ROLES } from "@/lib/roles";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function AccesosNoAutorizados() {
+  const { user } = useAuth();
   const [registros, setRegistros] = useState([]);
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
     base44.entities.AccesoNoAutorizado.list("-fecha_intento", 100)
       .then(setRegistros)
       .finally(() => setLoading(false));
