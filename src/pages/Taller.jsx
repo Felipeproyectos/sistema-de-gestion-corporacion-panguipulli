@@ -1,14 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import {
-  Wrench, Car, ClipboardList, CheckCircle2, AlertTriangle,
-  Package, Plus, RefreshCw, TrendingUp, Clock, Activity,
+  Wrench, ClipboardList, CheckCircle2, AlertTriangle,
+  Package, Plus, RefreshCw, TrendingUp, Activity,
   ChevronRight, Building2
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import OrdenTrabajoCard from "@/components/taller/OrdenTrabajoCard";
 import OrdenTrabajoFormModal from "@/components/taller/OrdenTrabajoFormModal";
