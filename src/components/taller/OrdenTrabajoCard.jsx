@@ -2,7 +2,7 @@ import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Wrench, Car, Clock, User, ChevronRight, AlertTriangle, CheckCircle2, Eye } from "lucide-react";
+import { Wrench, Car, Clock, User, ChevronRight, Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
