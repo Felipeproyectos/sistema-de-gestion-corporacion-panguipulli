@@ -187,15 +187,38 @@
     "estado"
   ],
   "rls": {
-    "create": true,
-    "read": true,
-    "update": {
+    "create": {
       "$or": [
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        },
         {
           "user_condition": {
             "role": "admin"
           }
         },
+        {
+          "user_condition": {
+            "role": "encargado_salud"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "jefe_taller"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "mecanico"
+          }
+        }
+      ]
+    },
+    "read": true,
+    "update": {
+      "$or": [
         {
           "user_condition": {
             "role": "super_admin"
@@ -210,11 +233,6 @@
           "user_condition": {
             "role": "mecanico"
           }
-        },
-        {
-          "user_condition": {
-            "role": "supervisor"
-          }
         }
       ]
     },
@@ -222,12 +240,12 @@
       "$or": [
         {
           "user_condition": {
-            "role": "admin"
+            "role": "super_admin"
           }
         },
         {
           "user_condition": {
-            "role": "super_admin"
+            "role": "jefe_taller"
           }
         }
       ]
