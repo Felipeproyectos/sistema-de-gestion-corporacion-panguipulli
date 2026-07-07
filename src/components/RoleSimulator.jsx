@@ -27,7 +27,7 @@ export default function RoleSimulator() {
     return () => {};
   }, [user]);
 
-  if (!user || user.role !== "super_admin") return null;
+  if (!user || !["super_admin", "admin"].includes(user.role)) return null;
 
   const selectRole = (role) => {
     setSimulatedRole(role);

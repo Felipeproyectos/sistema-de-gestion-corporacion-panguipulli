@@ -23,8 +23,8 @@ export function clearSimulatedRole() {
 // si no, usa el rol real del usuario.
 export function getEffectiveNavRole(realRole) {
   const sim = getSimulatedRole();
-  // Solo el super_admin puede simular
-  if (realRole === "super_admin" && sim) return sim;
+  // Super admin y admin (propietario) pueden simular roles
+  if (["super_admin", "admin"].includes(realRole) && sim) return sim;
   return realRole;
 }
 
