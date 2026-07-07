@@ -5,6 +5,7 @@ import usePullToRefresh from "@/hooks/usePullToRefresh";
 import RepuestoCard from "@/components/taller/RepuestoCard";
 import RepuestoFormModal from "@/components/taller/RepuestoFormModal";
 import CargaMasivaRepuestos from "@/components/taller/CargaMasivaRepuestos";
+import ConsumoDirectoModal from "@/components/taller/ConsumoDirectoModal";
 
 const CATEGORIAS = [
   { value: "todos", label: "Todos" },
@@ -29,9 +30,13 @@ export default function Repuestos() {
   const [modalOpen, setModalOpen] = useState(false);
   const [cargaMasivaOpen, setCargaMasivaOpen] = useState(false);
   const [editando, setEditando] = useState(null);
+  const [user, setUser] = useState(null);
+  const [consumoRepuesto, setConsumoRepuesto] = useState(null);
   const containerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
+    const u = await base44.auth.me().catch(() => null);
+    setUser(u);
     const [reps, provs] = await Promise.all([
       base44.entities.Repuesto.list("-created_date", 200).catch(() => []),
       base44.entities.Proveedor.list().catch(() => []),
@@ -132,7 +137,7 @@ export default function Repuestos() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {filtrados.map(r => (
-              <RepuestoCard key={r.id} repuesto={r} onEditar={handleEditar} onCambioStock={fetchData} />
+              <RepuestoCard key={r.id} repuesto={r} onEditar={handleEditar} onCambioStock={fetchData} user={user} onConsumo={(rep) => setConsumoRepuesto(rep)} />
             ))}
           </div>
         )}
@@ -140,6 +145,7 @@ export default function Repuestos() {
 
       <RepuestoFormModal open={modalOpen} onClose={() => { setModalOpen(false); setEditando(null); }} onGuardar={handleGuardar} editando={editando} proveedores={proveedores} />
       <CargaMasivaRepuestos open={cargaMasivaOpen} onClose={() => setCargaMasivaOpen(false)} onComplete={fetchData} proveedores={proveedores} />
+      <ConsumoDirectoModal repuesto={consumoRepuesto} user={user} onClose={() => setConsumoRepuesto(null)} onConsumido={fetchData} />
     </div>
   );
 }

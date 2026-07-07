@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Package, Pencil, Trash2, Plus, Minus, AlertTriangle, FileText } from "lucide-react";
+import { Package, Pencil, Trash2, Plus, Minus, AlertTriangle, FileText, Truck } from "lucide-react";
 
 const CATEGORIA_CFG = {
   neumaticos: { color: "#7C3AED", bg: "#F5F3FF" },
@@ -14,13 +14,14 @@ const CATEGORIA_CFG = {
   otros: { color: "#64748B", bg: "#F1F5F9" },
 };
 
-export default function RepuestoCard({ repuesto, onEditar, onCambioStock }) {
+export default function RepuestoCard({ repuesto, onEditar, onCambioStock, user, onConsumo }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [ajustando, setAjustando] = useState(null);
   const cfg = CATEGORIA_CFG[repuesto.categoria] || CATEGORIA_CFG.otros;
   const stock = repuesto.stock_actual || 0;
   const minimo = repuesto.stock_minimo || 0;
   const stockBajo = stock <= minimo;
+  const canConsumir = user && ['super_admin', 'admin', 'jefe_taller', 'encargado_compras_taller'].includes(user.role);
 
   const ajustarStock = async (delta) => {
     const nuevo = Math.max(0, stock + delta);
@@ -93,6 +94,12 @@ export default function RepuestoCard({ repuesto, onEditar, onCambioStock }) {
         <p className="text-sm font-bold text-slate-700">${(repuesto.precio_unitario || 0).toLocaleString("es-CL")}</p>
       </div>
 
+      {canConsumir && (
+        <button onClick={() => onConsumo(repuesto)} disabled={stock === 0}
+          className="w-full py-2 mb-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1.5 disabled:opacity-50" style={{ background: "#0891B2" }}>
+          <Truck className="w-3.5 h-3.5" /> Consumir y asignar a vehículo
+        </button>
+      )}
       <div className="flex gap-2 mt-2">
         <button onClick={() => onEditar(repuesto)} className="flex-1 py-2 rounded-xl text-xs font-bold text-blue-600 flex items-center justify-center gap-1.5" style={{ background: "#EFF6FF" }}>
           <Pencil className="w-3.5 h-3.5" /> Editar
