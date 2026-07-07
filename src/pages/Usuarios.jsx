@@ -7,6 +7,7 @@ import UsuarioCard from "@/components/usuarios/UsuarioCard";
 import InviteUserModal from "@/components/usuarios/InviteUserModal";
 import NormalizarUsuarios from "@/components/usuarios/NormalizarUsuarios";
 import { ROLES, esRolSalud, esRolTaller, esSuperAdmin, rolesQuePuedeCrear, roleLabel } from "@/lib/roles";
+import { getEffectiveNavRole } from "@/lib/roleSimulator";
 
 function getCentros(u) {
   const arr = Array.isArray(u.centros_asignados) ? u.centros_asignados : [];
@@ -56,9 +57,11 @@ export default function Usuarios() {
   // Acceso: super_admin (todos) · admin (solo Salud) · encargado_salud (solo su
   // centro, solo crea Usuario/Chofer) · jefe_taller (solo Taller, solo crea
   // Mecánico y Encargado Compras Taller).
+  // Usar el rol efectivo (simulado si el admin/super_admin está probando)
+  const effectiveRole = getEffectiveNavRole(currentUser?.role);
   const rolesConAcceso = [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.ENCARGADO_SALUD, ROLES.JEFE_TALLER];
-  const canAccess = rolesConAcceso.includes(currentUser?.role);
-  const rolesCreables = rolesQuePuedeCrear(currentUser?.role);
+  const canAccess = rolesConAcceso.includes(effectiveRole);
+  const rolesCreables = rolesQuePuedeCrear(effectiveRole);
   const puedeInvitar = rolesCreables.length > 0;
 
   // Qué usuarios puede ver cada rol (además del control de acceso general):
@@ -67,10 +70,10 @@ export default function Usuarios() {
   // - encargado_salud: solo usuarios de su propio centro_principal
   // - jefe_taller: solo área taller
   const usuariosVisibles = usuarios.filter((u) => {
-    if (esSuperAdmin(currentUser?.role)) return true;
-    if (currentUser?.role === ROLES.ADMIN) return deriveArea(u) !== "taller";
-    if (currentUser?.role === ROLES.JEFE_TALLER) return deriveArea(u) === "taller";
-    if (currentUser?.role === ROLES.ENCARGADO_SALUD) {
+    if (esSuperAdmin(effectiveRole)) return true;
+    if (effectiveRole === ROLES.ADMIN) return deriveArea(u) !== "taller";
+    if (effectiveRole === ROLES.JEFE_TALLER) return deriveArea(u) === "taller";
+    if (effectiveRole === ROLES.ENCARGADO_SALUD) {
       return deriveArea(u) === "salud" && getCentros(u).includes(currentUser.centro_principal);
     }
     return false;
@@ -79,13 +82,13 @@ export default function Usuarios() {
   // Clasificar usuarios por área derivada
   const porArea = (area) => usuariosVisibles.filter(u => deriveArea(u) === area);
 
-  const tabsDisponibles = esSuperAdmin(currentUser?.role)
+  const tabsDisponibles = esSuperAdmin(effectiveRole)
     ? ["salud", "taller", "admin"]
-    : currentUser?.role === ROLES.ADMIN
+    : effectiveRole === ROLES.ADMIN
     ? ["salud"]
-    : currentUser?.role === ROLES.ENCARGADO_SALUD
+    : effectiveRole === ROLES.ENCARGADO_SALUD
     ? ["salud"]
-    : currentUser?.role === ROLES.JEFE_TALLER
+    : effectiveRole === ROLES.JEFE_TALLER
     ? ["taller"]
     : [];
 
@@ -146,7 +149,7 @@ export default function Usuarios() {
               <UsersIcon className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
             </div>
             <div>
-              <p className="text-slate-300 text-[10px] lg:text-xs font-semibold uppercase tracking-widest hidden sm:block">{roleLabel(currentUser?.role)}</p>
+              <p className="text-slate-300 text-[10px] lg:text-xs font-semibold uppercase tracking-widest hidden sm:block">{roleLabel(effectiveRole)}</p>
               <h1 className="text-xl lg:text-3xl font-bold text-white leading-tight">Gestión de Usuarios</h1>
               <p className="text-slate-400 text-xs lg:text-sm mt-0.5">{usuariosVisibles.length} usuarios visibles</p>
             </div>
@@ -164,7 +167,7 @@ export default function Usuarios() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 lg:px-10 pb-10">
-        {esSuperAdmin(currentUser?.role) && (
+        {esSuperAdmin(effectiveRole) && (
           <NormalizarUsuarios usuarios={usuarios} onCompleto={fetchData} />
         )}
 
@@ -206,7 +209,7 @@ export default function Usuarios() {
         </div>
 
         {/* Filtro por centro (solo tab salud, y solo si el rol ve más de un centro) */}
-        {tab === "salud" && esSuperAdmin(currentUser?.role) || (tab === "salud" && currentUser?.role === ROLES.ADMIN) ? (
+        {tab === "salud" && esSuperAdmin(effectiveRole) || (tab === "salud" && effectiveRole === ROLES.ADMIN) ? (
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
               <Building2 className="w-3.5 h-3.5" /> Filtrar por centro
