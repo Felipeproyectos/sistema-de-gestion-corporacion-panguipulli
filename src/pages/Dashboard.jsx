@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
+import { esRolTaller } from "@/lib/roles";
 import {
   Monitor, AlertTriangle, ClipboardList, Activity, Zap, Car, Wrench,
   CheckCircle, Bell, User, MapPin, ChevronRight, RefreshCw,
@@ -52,20 +53,29 @@ export default function Dashboard() {
   const fetchData = useCallback(async () => {
     const u = await base44.auth.me().catch(() => null);
     setUser(u);
-    const [allEquipos, allParches, allSolicitudes, allActividades, allAlertas, allBitacoras] = await Promise.all([
+    // El taller (mecánico/jefe/encargado compras) solo necesita equipos y
+    // actividades. Se omiten los 4 listados de salud (parches, solicitudes,
+    // alertas, bitácoras) para acelerar la carga inicial.
+    const esTaller = esRolTaller(u?.role);
+    const comunes = [
       base44.entities.Equipo.list('-updated_date', 100).catch(() => []),
-      base44.entities.Parche.list().catch(() => []),
-      base44.entities.Solicitud.list().catch(() => []),
       base44.entities.Actividad.list('-created_date', 50).catch(() => []),
-      base44.entities.Alerta.filter({ estado: 'activa' }).catch(() => []),
-      base44.entities.InspeccionPendiente.filter({ estado: 'pendiente' }).catch(() => []),
-    ]);
-    setEquipos(allEquipos);
-    setParches(allParches);
-    setSolicitudes(allSolicitudes);
-    setActividades(allActividades);
-    setAlertas(allAlertas);
-    setBitacorasPendientes(allBitacoras);
+    ];
+    const datos = esTaller
+      ? await Promise.all(comunes)
+      : await Promise.all([
+          ...comunes,
+          base44.entities.Parche.list().catch(() => []),
+          base44.entities.Solicitud.list().catch(() => []),
+          base44.entities.Alerta.filter({ estado: 'activa' }).catch(() => []),
+          base44.entities.InspeccionPendiente.filter({ estado: 'pendiente' }).catch(() => []),
+        ]);
+    setEquipos(datos[0]);
+    setActividades(datos[1]);
+    setParches(esTaller ? [] : datos[2]);
+    setSolicitudes(esTaller ? [] : datos[3]);
+    setAlertas(esTaller ? [] : datos[4]);
+    setBitacorasPendientes(esTaller ? [] : datos[5]);
   }, []);
 
   useEffect(() => {
@@ -74,6 +84,7 @@ export default function Dashboard() {
 
   const { refreshing } = usePullToRefresh(fetchData, containerRef);
 
+  const esTallerUser = esRolTaller(user?.role);
   const hoy = new Date();
   const vencidos = parches.filter(p => differenceInDays(parseISO(p.fecha_vencimiento), hoy) < 0);
   const operativos = equipos.filter(e => e.estado === "operativo");
@@ -467,8 +478,8 @@ export default function Dashboard() {
               </div>
             </div>
           )}
-          {/* QR Bitácora Pública */}
-          <QRBitacoraCard />
+          {/* QR Bitácora Pública — solo perfiles de salud/administración */}
+          {!esTallerUser && <QRBitacoraCard />}
 
         </div>
 
