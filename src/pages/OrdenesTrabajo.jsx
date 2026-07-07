@@ -72,7 +72,7 @@ export default function OrdenesTrabajo() {
       </div>
 
       {/* Stats */}
-      <div className="max-w-6xl mx-auto px-4 lg:px-10 -mt-4 lg:-mt-6 mb-4 lg:mb-6">
+      <div className="max-w-6xl mx-auto px-4 lg:px-10 mt-4 lg:mt-6 mb-4 lg:mb-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           {[
             { label: "Asignadas", value: asignadas, icon: Wrench, color: "#2563EB", bg: "#EFF6FF" },
