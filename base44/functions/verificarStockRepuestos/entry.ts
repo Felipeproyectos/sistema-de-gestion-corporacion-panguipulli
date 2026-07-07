@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     // Obtener usuarios a notificar (admin, super_admin, jefe_taller)
     const usuarios = await base44.asServiceRole.entities.User.list();
     const destinatarios = usuarios
-      .filter(u => ['admin', 'super_admin', 'jefe_taller'].includes(u.role))
+      .filter(u => ['super_admin', 'jefe_taller', 'encargado_compras_taller'].includes(u.role))
       .map(u => u.email)
       .filter(Boolean);
 
