@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Users, X, ChevronUp, Eye, EyeOff } from "lucide-react";
-import { getSimulatedRole, setSimulatedRole, ALL_ROLES } from "@/lib/roleSimulator";
+import { Users, X, ChevronUp, Eye, EyeOff, Lock } from "lucide-react";
+import { getSimulatedRole, setSimulatedRole, clearSimulatedRole, ALL_ROLES } from "@/lib/roleSimulator";
+import { ROLES, roleLabel } from "@/lib/roles";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export default function RoleSimulator() {
@@ -21,19 +22,15 @@ export default function RoleSimulator() {
     return () => window.removeEventListener("role-simulator-change", handler);
   }, []);
 
-  // Limpiar simulación al cerrar sesión
-  useEffect(() => {
-    if (user === null) return;
-    return () => {};
-  }, [user]);
-
-  if (!user || !["super_admin", "admin"].includes(user.role)) return null;
+  // Exclusivo de Base del Sistema (super_admin). Nadie más ve este control,
+  // ni siquiera Administrador.
+  if (!user || user.role !== ROLES.SUPER_ADMIN) return null;
 
   const selectRole = (role) => {
-    setSimulatedRole(role);
+    const ok = setSimulatedRole(role, user.role);
+    if (!ok) return;
     setSimRole(role);
     setOpen(false);
-    // Recargar para que Layout/MobileNav actualicen y apliquen redirects
     if (location.pathname !== "/") {
       navigate("/");
     } else {
@@ -42,14 +39,14 @@ export default function RoleSimulator() {
   };
 
   const clearSim = () => {
-    setSimulatedRole(null);
+    clearSimulatedRole();
     setSimRole(null);
     setOpen(false);
     navigate("/");
     window.location.reload();
   };
 
-  const activeRole = ALL_ROLES.find(r => r.value === simRole);
+  const activeRole = simRole ? { value: simRole, label: roleLabel(simRole) } : null;
 
   return (
     <div className="fixed bottom-20 lg:bottom-4 right-4 z-[70]">
@@ -69,7 +66,7 @@ export default function RoleSimulator() {
               onClick={clearSim}
               className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
             >
-              <EyeOff className="w-4 h-4" /> Mi rol real (Super Admin)
+              <EyeOff className="w-4 h-4" /> Mi rol real (Base del Sistema)
             </button>
             <div className="h-px bg-slate-100 my-1" />
             {ALL_ROLES.map(r => (
@@ -78,18 +75,19 @@ export default function RoleSimulator() {
                 onClick={() => selectRole(r.value)}
                 className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors"
                 style={simRole === r.value
-                  ? { background: `${r.color}15`, color: r.color }
+                  ? { background: "#EFF6FF", color: "#2563EB" }
                   : { color: "#475569" }}
               >
-                <span className="w-2 h-2 rounded-full" style={{ background: r.color }} />
+                <span className="w-2 h-2 rounded-full" style={{ background: simRole === r.value ? "#2563EB" : "#CBD5E1" }} />
                 {r.label}
                 {simRole === r.value && <span className="ml-auto text-xs font-bold">●</span>}
               </button>
             ))}
           </div>
-          <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100">
+          <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-start gap-1.5">
+            <Lock className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
             <p className="text-[10px] text-slate-400 leading-tight">
-              Solo simula la navegación. Los datos siguen siendo los de Super Admin.
+              Modo solo lectura: mientras simulas un rol, cualquier intento de crear, editar o eliminar queda bloqueado.
             </p>
           </div>
         </div>
@@ -97,11 +95,11 @@ export default function RoleSimulator() {
         <button
           onClick={() => setOpen(true)}
           className="flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white font-bold text-sm transition-all hover:scale-105"
-          style={{ background: activeRole ? activeRole.color : "#1E293B" }}
+          style={{ background: activeRole ? "#7C3AED" : "#1E293B" }}
         >
           <Users className="w-4 h-4" />
-          <span className="hidden sm:inline">{activeRole ? `Demo: ${activeRole.label}` : "Probar Roles"}</span>
-          <span className="sm:hidden">{activeRole ? activeRole.label.split(" ")[0] : "Roles"}</span>
+          <span className="hidden sm:inline">{activeRole ? `Viendo como: ${activeRole.label}` : "Simular Rol"}</span>
+          <span className="sm:hidden">{activeRole ? activeRole.label.split(" ")[0] : "Rol"}</span>
           <ChevronUp className="w-3 h-3" />
         </button>
       )}
