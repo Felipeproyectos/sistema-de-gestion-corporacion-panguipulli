@@ -73,8 +73,25 @@
       "$or": [
         {
           "user_condition": {
+            "role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
             "role": "admin"
           }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "encargado_salud"
+              }
+            },
+            {
+              "data.centro_principal": "{{user.centro_principal}}"
+            }
+          ]
         },
         {
           "data.cargado_por_email": "{{user.email}}"
@@ -85,8 +102,25 @@
       "$or": [
         {
           "user_condition": {
+            "role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
             "role": "admin"
           }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "encargado_salud"
+              }
+            },
+            {
+              "data.centro_principal": "{{user.centro_principal}}"
+            }
+          ]
         },
         {
           "data.cargado_por_email": "{{user.email}}"
@@ -94,14 +128,32 @@
       ]
     },
     "update": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     }
   }
 }
