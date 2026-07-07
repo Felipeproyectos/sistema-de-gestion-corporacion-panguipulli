@@ -1,0 +1,195 @@
+{
+  "name": "SolicitudRepuesto",
+  "type": "object",
+  "properties": {
+    "numero_solicitud": {
+      "type": "string",
+      "description": "Identificador de la solicitud"
+    },
+    "solicitante_email": {
+      "type": "string",
+      "description": "Email del mec\u00e1nico que solicita"
+    },
+    "solicitante_nombre": {
+      "type": "string"
+    },
+    "repuesto_nombre": {
+      "type": "string",
+      "description": "Nombre del repuesto solicitado"
+    },
+    "categoria": {
+      "type": "string",
+      "enum": [
+        "neumaticos",
+        "frenos",
+        "bateria",
+        "filtros",
+        "lubricantes",
+        "electrico",
+        "sirena",
+        "luces",
+        "otros"
+      ],
+      "default": "otros"
+    },
+    "cantidad": {
+      "type": "number",
+      "default": 1
+    },
+    "urgencia": {
+      "type": "string",
+      "enum": [
+        "alta",
+        "media",
+        "baja"
+      ],
+      "default": "media"
+    },
+    "motivo": {
+      "type": "string",
+      "description": "Justificaci\u00f3n de la solicitud"
+    },
+    "orden_trabajo_id": {
+      "type": "string",
+      "description": "OT que origin\u00f3 la solicitud (opcional)"
+    },
+    "orden_trabajo_label": {
+      "type": "string"
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "pendiente",
+        "aprobada",
+        "rechazada",
+        "comprada"
+      ],
+      "default": "pendiente",
+      "description": "El Jefe de Taller aprueba o rechaza las solicitudes pendientes"
+    },
+    "aprobador_email": {
+      "type": "string",
+      "description": "Email del Jefe de Taller que aprueba/rechaza"
+    },
+    "aprobador_nombre": {
+      "type": "string"
+    },
+    "fecha_aprobacion": {
+      "type": "string",
+      "format": "date"
+    },
+    "comentario_aprobador": {
+      "type": "string"
+    },
+    "fecha_solicitud": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "repuesto_nombre",
+    "cantidad",
+    "estado"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "jefe_taller"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "mecanico"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "encargado_compras_taller"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "monitor_corporativo"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "jefe_taller"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "encargado_compras_taller"
+          }
+        },
+        {
+          "created_by": "{{user.email}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "jefe_taller"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "encargado_compras_taller"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "jefe_taller"
+          }
+        }
+      ]
+    }
+  }
+}
