@@ -13,6 +13,7 @@ import { differenceInDays, parseISO, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import TallerDashboard from "@/pages/TallerDashboard";
+import { useAuth } from "@/lib/AuthContext";
 
 const TIPO_ACT_LABEL = {
   mantenimiento_preventivo: "Mantenimiento Preventivo",
@@ -41,19 +42,18 @@ const TIPO_ACT_COLOR = {
 };
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [equipos, setEquipos] = useState([]);
   const [parches, setParches] = useState([]);
   const [solicitudes, setSolicitudes] = useState([]);
   const [actividades, setActividades] = useState([]);
   const [alertas, setAlertas] = useState([]);
   const [bitacorasPendientes, setBitacorasPendientes] = useState([]);
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const containerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
-    const u = await base44.auth.me().catch(() => null);
-    setUser(u);
+    const u = user;
     // El mecánico se redirige a su módulo de Órdenes de Trabajo;
     // no necesita cargar ningún listado del dashboard.
     if (u?.role === ROLES.MECANICO) return;
@@ -69,8 +69,8 @@ export default function Dashboard() {
       ? await Promise.all(comunes)
       : await Promise.all([
           ...comunes,
-          base44.entities.Parche.list().catch(() => []),
-          base44.entities.Solicitud.list().catch(() => []),
+          base44.entities.Parche.list('-updated_date', 200).catch(() => []),
+          base44.entities.Solicitud.list('-fecha', 200).catch(() => []),
           base44.entities.Alerta.filter({ estado: 'activa' }).catch(() => []),
           base44.entities.InspeccionPendiente.filter({ estado: 'pendiente' }).catch(() => []),
         ]);
@@ -80,11 +80,12 @@ export default function Dashboard() {
     setSolicitudes(esTaller ? [] : datos[3]);
     setAlertas(esTaller ? [] : datos[4]);
     setBitacorasPendientes(esTaller ? [] : datos[5]);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
+    if (!user) return;
     fetchData().finally(() => setLoading(false));
-  }, [fetchData]);
+  }, [fetchData, user]);
 
   const { refreshing } = usePullToRefresh(fetchData, containerRef);
 
