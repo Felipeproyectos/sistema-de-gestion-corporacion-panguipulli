@@ -18,6 +18,7 @@ import CentroBreakdown from "@/components/monitor/CentroBreakdown";
 import { getCentrosEstructura } from "@/lib/centros";
 import ComentariosEquipo from "@/components/monitor/ComentariosEquipo";
 import { MessageCircle } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 
 const ESTADO_EQUIPO_COLORS = {
   operativo: "#16a34a",
@@ -52,13 +53,11 @@ const ALERTA_TIPO_LABELS = {
 };
 
 export default function MonitorCorporativo() {
+  const { user: currentUser } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState(null);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState("");
   const containerRef = useRef(null);
-
-  useEffect(() => { base44.auth.me().then(setCurrentUser).catch(() => {}); }, []);
 
   const fetchData = useCallback(async () => {
     const [equipos, parches, alertas, solicitudes, inspecciones, ordenes, repuestos, proveedores, centros] = await Promise.all([
@@ -67,7 +66,7 @@ export default function MonitorCorporativo() {
       base44.entities.Alerta.filter({ estado: "activa" }).catch(() => []),
       base44.entities.Solicitud.filter({ estado: "pendiente" }).catch(() => []),
       base44.entities.InspeccionPendiente.filter({ estado: "pendiente" }).catch(() => []),
-      base44.entities.OrdenTrabajo.list().catch(() => []),
+      base44.entities.OrdenTrabajo.list('-created_date', 300).catch(() => []),
       base44.entities.Repuesto.list().catch(() => []),
       base44.entities.Proveedor.list().catch(() => []),
       getCentrosEstructura().catch(() => []),
