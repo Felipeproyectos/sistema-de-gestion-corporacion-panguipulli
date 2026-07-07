@@ -2,14 +2,11 @@ import { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Package } from "lucide-react";
 import SolicitudRepuestoModule from "@/components/taller/SolicitudRepuestoModule";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function SolicitudRepuestos() {
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [ordenesActivas, setOrdenesActivas] = useState([]);
-
-  useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (!user?.email) return;
