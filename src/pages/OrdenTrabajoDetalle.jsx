@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import LineaTiempo from "@/components/taller/LineaTiempo";
 import RepuestosUtilizados from "@/components/taller/RepuestosUtilizados";
+import ComentariosOT from "@/components/taller/ComentariosOT";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { isSimulandoActivo, getEffectiveNavRole, MENSAJE_BLOQUEO_SIMULACION } from "@/lib/roleSimulator";
@@ -323,6 +324,9 @@ export default function OrdenTrabajoDetalle() {
               </h3>
               <LineaTiempo eventos={ot.linea_tiempo || []} />
             </div>
+
+            {/* Notas y consultas para coordinación entre roles */}
+            <ComentariosOT ot={ot} />
           </div>
 
           {/* Columna lateral */}
