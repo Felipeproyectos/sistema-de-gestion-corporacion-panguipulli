@@ -115,7 +115,7 @@ export default function Configuracion() {
 
   if (!user) return <div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>;
 
-  if (user?.role !== "admin") return (
+  if (user?.role !== "admin" && user?.role !== "super_admin") return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4 text-slate-400">
       <Shield className="w-16 h-16 opacity-20" />
       <p className="text-lg font-medium">Acceso restringido a administradores</p>
