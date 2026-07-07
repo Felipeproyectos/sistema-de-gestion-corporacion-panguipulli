@@ -1,154 +1,216 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { Users, Shield, User, Mail } from "lucide-react";
+import { getCentrosEstructura } from "@/lib/centros";
+import { Users as UsersIcon, Plus, Search, Stethoscope, Wrench, Shield, Building2 } from "lucide-react";
+import usePullToRefresh from "@/hooks/usePullToRefresh";
+import UsuarioCard from "@/components/usuarios/UsuarioCard";
+import InviteUserModal from "@/components/usuarios/InviteUserModal";
+
+const ROLES_SALUD = ["user", "operador", "supervisor", "admin_salud"];
+const ROLES_TALLER = ["mecanico", "jefe_taller"];
+const ROLES_ADMIN = ["admin", "super_admin", "monitor_corporativo"];
+
+function getCentros(u) {
+  const arr = Array.isArray(u.centros_asignados) ? u.centros_asignados : [];
+  const legacy = u.centro_asignado ? [u.centro_asignado] : [];
+  return [...new Set([...arr, ...legacy])].filter(Boolean);
+}
+
+function deriveArea(u) {
+  if (u.area === "salud") return "salud";
+  if (u.area === "taller") return "taller";
+  if (u.area === "admin") return "admin";
+  if (ROLES_TALLER.includes(u.role)) return "taller";
+  if (ROLES_ADMIN.includes(u.role)) return "admin";
+  if (getCentros(u).length > 0) return "salud";
+  return "salud";
+}
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [centrosList, setCentrosList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("user");
-  const [inviting, setInviting] = useState(false);
-  const [inviteMsg, setInviteMsg] = useState("");
+  const [tab, setTab] = useState("salud");
+  const [centroFiltro, setCentroFiltro] = useState("todos");
+  const [busqueda, setBusqueda] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const containerRef = useRef(null);
 
-  useEffect(() => {
-    Promise.all([
-      base44.auth.me(),
-      base44.entities.User.list()
-    ]).then(([u, list]) => {
-      setUser(u);
-      setUsuarios(list);
-      setLoading(false);
-    });
+  const fetchData = useCallback(async () => {
+    const [u, list, centros] = await Promise.all([
+      base44.auth.me().catch(() => null),
+      base44.entities.User.list().catch(() => []),
+      getCentrosEstructura().catch(() => []),
+    ]);
+    setCurrentUser(u);
+    setUsuarios(list);
+    setCentrosList(centros);
   }, []);
 
-  const handleChangeRole = async (userId, newRole) => {
-    await base44.entities.User.update(userId, { role: newRole });
-    setUsuarios(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
-  };
+  useEffect(() => {
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
 
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) return;
-    setInviting(true);
-    setInviteMsg("");
-    await base44.users.inviteUser(inviteEmail.trim(), inviteRole);
-    setInviteMsg(`Invitación enviada a ${inviteEmail}`);
-    setInviteEmail("");
-    setInviting(false);
-  };
+  usePullToRefresh(fetchData, containerRef);
 
-  // Temporalmente todos tienen acceso de admin
-  // if (user?.role !== "admin") {
-  //   return (
-  //     <div className="flex items-center justify-center min-h-screen">
-  //       <div className="text-center text-slate-400">
-  //         <Shield className="w-10 h-10 mx-auto mb-3 opacity-30" />
-  //         <p>Acceso restringido</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  // Solo super_admin / admin pueden ver este módulo
+  const canAccess = currentUser?.role === "super_admin" || currentUser?.role === "admin";
+
+  // Clasificar usuarios por área derivada
+  const porArea = (area) => usuarios.filter(u => deriveArea(u) === area);
+
+  const usuariosTab = tab === "salud" ? porArea("salud")
+    : tab === "taller" ? porArea("taller")
+    : porArea("admin");
+
+  // Filtro por centro (solo aplica en tab salud)
+  const filtrados = usuariosTab.filter(u => {
+    const centrosU = getCentros(u);
+    const matchCentro = tab !== "salud" || centroFiltro === "todos" || centrosU.includes(centroFiltro);
+    const b = busqueda.toLowerCase();
+    const matchBusqueda = !b || [u.full_name, u.email].some(v => (v || "").toLowerCase().includes(b));
+    return matchCentro && matchBusqueda;
+  });
+
+  // Contar usuarios por centro para mostrar badges
+  const usuariosSalud = porArea("salud");
+  const countPorCentro = (nombre) => usuariosSalud.filter(u => getCentros(u).includes(nombre)).length;
+
+  const handleUpdated = (id, update) => {
+    setUsuarios(prev => prev.map(u => u.id === id ? { ...u, ...update } : u));
+  };
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
-      <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
+  if (!canAccess) return (
+    <div className="flex items-center justify-center min-h-screen px-6">
+      <div className="text-center">
+        <Shield className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+        <p className="text-slate-500 font-medium">Acceso restringido</p>
+        <p className="text-slate-400 text-sm mt-1">Solo Super Admin / Admin</p>
+      </div>
+    </div>
+  );
+
+  const TABS = [
+    { v: "salud", l: "Salud", icon: Stethoscope, color: "#059669", count: porArea("salud").length },
+    { v: "taller", l: "Taller", icon: Wrench, color: "#ea580c", count: porArea("taller").length },
+    { v: "admin", l: "Administración", icon: Shield, color: "#2563EB", count: porArea("admin").length },
+  ];
+
   return (
-    <div className="min-h-screen" style={{ background: "#e8f4fd" }}>
+    <div ref={containerRef} className="min-h-screen bg-slate-50" style={{ overscrollBehavior: "none" }}>
       {/* Header */}
-      <div className="relative overflow-hidden px-6 lg:px-10 pt-10 pb-8" style={{ background: "linear-gradient(135deg, #0f2d6b 0%, #1565c0 40%, #29b6f6 100%)" }}>
-        <div className="absolute right-8 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full opacity-20 border-4 border-white" />
-        <div className="absolute right-4 bottom-0 w-72 h-72 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #29b6f6 0%, transparent 70%)" }} />
-        <div className="relative max-w-4xl mx-auto flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.2)" }}>
-            <Users className="w-6 h-6 text-white" />
+      <div className="relative overflow-hidden px-4 lg:px-10 pt-6 lg:pt-12 pb-6 lg:pb-8"
+        style={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)" }}>
+        <div className="relative max-w-6xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.15)" }}>
+              <UsersIcon className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-slate-300 text-[10px] lg:text-xs font-semibold uppercase tracking-widest hidden sm:block">Super Administrador</p>
+              <h1 className="text-xl lg:text-3xl font-bold text-white leading-tight">Gestión de Usuarios</h1>
+              <p className="text-slate-400 text-xs lg:text-sm mt-0.5">{usuarios.length} usuarios registrados</p>
+            </div>
           </div>
-          <div>
-            <p className="text-cyan-200 text-xs font-semibold uppercase tracking-widest">Administración</p>
-            <h1 className="text-3xl font-bold text-white">Usuarios</h1>
-            <p className="text-blue-100 text-sm mt-0.5">Gestión de accesos y roles</p>
-          </div>
+          {(currentUser?.role === "super_admin") && (
+            <button
+              onClick={() => setModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 flex-shrink-0"
+              style={{ background: "#2563EB" }}
+            >
+              <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Invitar</span>
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 lg:px-10 pt-6 pb-10">
-        <div className="bg-white rounded-3xl shadow-lg p-6 space-y-6">
-
-          {/* Invitar usuario */}
-          <div className="bg-slate-50 rounded-2xl border border-slate-100 p-6">
-            <h2 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-              <Mail className="w-4 h-4" /> Invitar Usuario
-            </h2>
-            <div className="flex gap-3 flex-wrap">
-              <input
-                className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white min-w-48"
-                placeholder="correo@ejemplo.com"
-                value={inviteEmail}
-                onChange={e => setInviteEmail(e.target.value)}
-              />
-              <select
-                className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
-                value={inviteRole}
-                onChange={e => setInviteRole(e.target.value)}
-              >
-                <option value="user">Usuario</option>
-                <option value="admin">Administrador</option>
-              </select>
+      <div className="max-w-6xl mx-auto px-4 lg:px-10 pb-10">
+        {/* Tabs de área */}
+        <div className="grid grid-cols-3 gap-2 mb-4 -mt-2">
+          {TABS.map(t => {
+            const Icon = t.icon;
+            const active = tab === t.v;
+            return (
               <button
-                onClick={handleInvite}
-                disabled={inviting || !inviteEmail}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
-                style={{ background: "#1565c0" }}
+                key={t.v}
+                onClick={() => { setTab(t.v); setCentroFiltro("todos"); }}
+                className="flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold transition-all"
+                style={active
+                  ? { background: "white", color: t.color, boxShadow: "0 4px 14px rgba(0,0,0,0.08)" }
+                  : { background: "rgba(255,255,255,0.5)", color: "#64748B" }}
               >
-                {inviting ? "Enviando..." : "Invitar"}
+                <Icon className="w-4 h-4" />
+                <span className="hidden sm:inline">{t.l}</span>
+                <span className="px-1.5 py-0.5 rounded-full text-xs font-bold" style={active ? { background: `${t.color}15`, color: t.color } : { background: "#E2E8F0", color: "#94A3B8" }}>
+                  {t.count}
+                </span>
               </button>
-            </div>
-            {inviteMsg && <p className="text-xs text-green-600 mt-2">{inviteMsg}</p>}
-          </div>
+            );
+          })}
+        </div>
 
-          {/* Lista usuarios */}
-          <div className="bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 bg-white">
-              <h2 className="font-semibold text-slate-800 flex items-center gap-2">
-                <Users className="w-4 h-4" /> Usuarios registrados ({usuarios.length})
-              </h2>
+        {/* Buscador */}
+        <div className="relative mb-4">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            placeholder="Buscar por nombre o correo..."
+            className="w-full bg-white rounded-xl pl-10 pr-4 py-2.5 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
+          />
+        </div>
+
+        {/* Filtro por centro (solo tab salud) */}
+        {tab === "salud" && (
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              <Building2 className="w-3.5 h-3.5" /> Filtrar por centro
             </div>
-            <div className="divide-y divide-slate-100">
-              {usuarios.map(u => (
-                <div key={u.id} className="px-6 py-4 flex items-center justify-between bg-white">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ background: u.role === "admin" ? "#1565c0" : "#64748b" }}>
-                      {u.full_name?.charAt(0) || u.email?.charAt(0) || "U"}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-800">{u.full_name || "—"}</p>
-                      <p className="text-xs text-slate-400">{u.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${u.role === "admin" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600"}`}>
-                      {u.role === "admin" ? <Shield className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                      {u.role === "admin" ? "Admin" : "Usuario"}
-                    </span>
-                    {u.id !== user?.id && (
-                      <select
-                        className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300 bg-slate-50"
-                        value={u.role || "user"}
-                        onChange={e => handleChangeRole(u.id, e.target.value)}
-                      >
-                        <option value="user">Usuario</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    )}
-                  </div>
-                </div>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              <button
+                onClick={() => setCentroFiltro("todos")}
+                className="px-3.5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all"
+                style={centroFiltro === "todos" ? { background: "#1E293B", color: "white" } : { background: "white", color: "#64748B", border: "1px solid #E2E8F0" }}
+              >
+                Todos ({usuariosSalud.length})
+              </button>
+              {centrosList.map(c => (
+                <button
+                  key={c.nombre}
+                  onClick={() => setCentroFiltro(c.nombre)}
+                  className="px-3.5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all"
+                  style={centroFiltro === c.nombre ? { background: "#1E293B", color: "white" } : { background: "white", color: "#64748B", border: "1px solid #E2E8F0" }}
+                >
+                  {c.nombre} ({countPorCentro(c.nombre)})
+                </button>
               ))}
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Lista de usuarios */}
+        {filtrados.length === 0 ? (
+          <div className="bg-white rounded-2xl p-10 text-center">
+            <UsersIcon className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+            <p className="text-slate-400 text-sm">No hay usuarios en esta categoría.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            {filtrados.map(u => (
+              <UsuarioCard key={u.id} usuario={u} currentUser={currentUser} onUpdated={handleUpdated} />
+            ))}
+          </div>
+        )}
       </div>
+
+      <InviteUserModal open={modalOpen} onClose={() => setModalOpen(false)} onInvited={fetchData} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Monitor, Bell, ClipboardList, FileText, History,
-  Settings, Wrench, Building2, Package, ShieldX, BarChart3
+  Settings, Wrench, Building2, Package, ShieldX, BarChart3, Users
 } from "lucide-react";
 
 // Matriz de permisos por rol.
@@ -33,6 +33,8 @@ export const NAV_ITEMS = [
     roles: ["admin", "super_admin"] },
   { label: "Accesos No Autorizados", page: "AccesosNoAutorizados", path: "/AccesosNoAutorizados", icon: ShieldX,
     roles: ["admin", "super_admin"] },
+  { label: "Usuarios", page: "Usuarios", path: "/Usuarios", icon: Users,
+    roles: ["super_admin"] },
 ];
 
 export function getNavItemsForRole(role) {

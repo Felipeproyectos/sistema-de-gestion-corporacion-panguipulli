@@ -23,6 +23,7 @@ import Taller from './pages/Taller';
 import Proveedores from './pages/Proveedores';
 import Repuestos from './pages/Repuestos';
 import MonitorCorporativo from './pages/MonitorCorporativo';
+import Usuarios from './pages/Usuarios';
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
@@ -113,6 +114,7 @@ const AuthenticatedApp = () => {
       <Route path="/Proveedores" element={<LayoutWrapper currentPageName="Proveedores"><PageWrapper><Proveedores /></PageWrapper></LayoutWrapper>} />
       <Route path="/Repuestos" element={<LayoutWrapper currentPageName="Repuestos"><PageWrapper><Repuestos /></PageWrapper></LayoutWrapper>} />
       <Route path="/MonitorCorporativo" element={<LayoutWrapper currentPageName="MonitorCorporativo"><PageWrapper><MonitorCorporativo /></PageWrapper></LayoutWrapper>} />
+      <Route path="/Usuarios" element={<LayoutWrapper currentPageName="Usuarios"><PageWrapper><Usuarios /></PageWrapper></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </AnimatedRoutes>
   );
