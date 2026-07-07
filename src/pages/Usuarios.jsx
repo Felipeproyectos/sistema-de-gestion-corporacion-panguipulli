@@ -5,6 +5,7 @@ import { Users as UsersIcon, Plus, Search, Stethoscope, Wrench, Shield, Building
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import UsuarioCard from "@/components/usuarios/UsuarioCard";
 import InviteUserModal from "@/components/usuarios/InviteUserModal";
+import NormalizarUsuarios from "@/components/usuarios/NormalizarUsuarios";
 
 const ROLES_SALUD = ["user", "operador", "supervisor", "admin_salud"];
 const ROLES_TALLER = ["mecanico", "jefe_taller"];
@@ -132,6 +133,8 @@ export default function Usuarios() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 lg:px-10 pb-10">
+        <NormalizarUsuarios usuarios={usuarios} onCompleto={fetchData} />
+
         {/* Tabs de área */}
         <div className="grid grid-cols-3 gap-2 mb-4 -mt-2">
           {TABS.map(t => {
