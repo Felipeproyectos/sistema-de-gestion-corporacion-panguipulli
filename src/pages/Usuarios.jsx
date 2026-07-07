@@ -70,6 +70,8 @@ export default function Usuarios() {
   // - encargado_salud: solo usuarios de su propio centro_principal
   // - jefe_taller: solo área taller
   const usuariosVisibles = usuarios.filter((u) => {
+    // El super admin no se muestra a sí mismo en el listado de administradores
+    if (esSuperAdmin(effectiveRole) && u.id === currentUser?.id) return false;
     if (esSuperAdmin(effectiveRole)) return true;
     if (effectiveRole === ROLES.ADMIN) return deriveArea(u) !== "taller";
     if (effectiveRole === ROLES.JEFE_TALLER) return deriveArea(u) === "taller";
