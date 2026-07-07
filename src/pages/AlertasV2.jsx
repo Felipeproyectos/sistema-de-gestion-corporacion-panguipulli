@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { CheckCircle, Bell, Plus, X, Loader2, Mail, Send, ClipboardList, FileText } from "lucide-react";
 import { differenceInDays, parseISO } from "date-fns";
+import { useAuth } from "@/lib/AuthContext";
 
 const NIVEL_CONFIG = {
   critica:    { color: "#dc2626", bg: "#fef2f2", border: "#fca5a5", label: "Crítica" },
@@ -19,7 +20,7 @@ const TIPOS_ALERTA = [
 ];
 
 export default function AlertasV2() {
-  const [user, setUser]       = useState(null);
+  const { user } = useAuth();
   const [alertas, setAlertas] = useState([]);
   const [equipos, setEquipos] = useState([]);
   const [parches, setParches] = useState([]);
@@ -51,8 +52,6 @@ export default function AlertasV2() {
 
   useEffect(() => {
     const init = async () => {
-      const u = await base44.auth.me().catch(() => null);
-      setUser(u);
       const [eqs, pa, al, usrs] = await Promise.all([
         base44.entities.Equipo.list(),
         base44.entities.Parche.list(),
