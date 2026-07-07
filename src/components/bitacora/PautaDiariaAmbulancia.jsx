@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { invokePublic } from "@/lib/publicFetch";
-import {
-  CheckCircle, Loader2, AlertTriangle, ChevronDown, ChevronUp, Send
+import { Loader2, AlertTriangle, ChevronDown, ChevronUp, Send
 } from "lucide-react";
 import EquipoSelector from "./EquipoSelector";
 
