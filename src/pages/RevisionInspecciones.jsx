@@ -2,9 +2,8 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import {
-  CheckCircle, XCircle, Clock, ChevronDown, ChevronUp,
-  AlertTriangle, ClipboardCheck, Car, MapPin, User, Calendar,
-  Fuel, Gauge, Zap, Wrench, Package, FileText, AlertCircle, Wrench as WrenchIcon
+  CheckCircle, XCircle, ChevronDown, ChevronUp, ClipboardCheck, Car, MapPin, User, Calendar,
+  Fuel, Gauge, Zap, Wrench, Package, FileText, AlertCircle
 } from "lucide-react";
 
 const TIPO_LABEL = {
