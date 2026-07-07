@@ -1,41 +1,58 @@
-// Simulador de roles: permite al super_admin visualizar la navegación
-// desde la perspectiva de otros roles. Solo afecta el frontend (nav),
-// no cambia permisos reales del backend.
+// Simulador de roles: permite ÚNICAMENTE a Base del Sistema (super_admin)
+// visualizar la app desde la perspectiva de otro rol. Mientras está activo:
+//  - La navegación/UI se calcula con el rol simulado (getEffectiveNavRole).
+//  - TODAS las escrituras (create/update/delete/invoke) quedan bloqueadas por
+//    el cliente base44 (ver src/api/base44Client.js), sin importar la pantalla.
+//  - Los datos que se leen siguen siendo los reales del usuario autenticado
+//    (Base44 filtra por RLS del usuario real, esto no otorga permisos nuevos).
+import { ROLES, roleLabel } from "@/lib/roles";
+
 const KEY = "b44_role_simulator";
 
 export function getSimulatedRole() {
-  try { return localStorage.getItem(KEY) || null; } catch { return null; }
+  try { return sessionStorage.getItem(KEY) || null; } catch { return null; }
 }
 
-export function setSimulatedRole(role) {
+/** Solo puede activarse si quien la pide es realmente super_admin. */
+export function setSimulatedRole(role, realRole) {
+  if (realRole !== ROLES.SUPER_ADMIN) return false;
+  if (role === ROLES.SUPER_ADMIN) return false; // no tiene sentido "simular" Base del Sistema
   try {
-    if (role) localStorage.setItem(KEY, role);
-    else localStorage.removeItem(KEY);
+    if (role) sessionStorage.setItem(KEY, role);
+    else sessionStorage.removeItem(KEY);
     window.dispatchEvent(new CustomEvent("role-simulator-change", { detail: role }));
-  } catch {}
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function clearSimulatedRole() {
-  setSimulatedRole(null);
+  try {
+    sessionStorage.removeItem(KEY);
+    window.dispatchEvent(new CustomEvent("role-simulator-change", { detail: null }));
+  } catch { /* noop */ }
 }
 
-// Rol efectivo para navegación: si hay simulación activa, usa esa;
-// si no, usa el rol real del usuario.
+/**
+ * Rol efectivo para navegación: si el usuario real es super_admin y hay una
+ * simulación guardada, se usa esa. Para cualquier otro rol real, siempre se
+ * devuelve el rol real (nadie más puede simular).
+ */
 export function getEffectiveNavRole(realRole) {
   const sim = getSimulatedRole();
-  // Super admin y admin (propietario) pueden simular roles
-  if (["super_admin", "admin"].includes(realRole) && sim) return sim;
+  if (realRole === ROLES.SUPER_ADMIN && sim) return sim;
   return realRole;
 }
 
-export const ALL_ROLES = [
-  { value: "super_admin", label: "Super Administrador", color: "#7C3AED" },
-  { value: "admin", label: "Administrador", color: "#2563EB" },
-  { value: "monitor_corporativo", label: "Monitor Corporativo", color: "#0891B2" },
-  { value: "admin_salud", label: "Admin Salud", color: "#059669" },
-  { value: "supervisor", label: "Supervisor (Salud)", color: "#0D9488" },
-  { value: "operador", label: "Operador (Salud)", color: "#65A30D" },
-  { value: "user", label: "Usuario (Salud)", color: "#16A34A" },
-  { value: "jefe_taller", label: "Jefe de Taller", color: "#EA580C" },
-  { value: "mecanico", label: "Mecánico", color: "#C2410C" },
-];
+/** ¿Hay una simulación activa en este momento? (usado para bloquear escrituras) */
+export function isSimulandoActivo() {
+  return !!getSimulatedRole();
+}
+
+export const ALL_ROLES = Object.values(ROLES)
+  .filter((r) => r !== ROLES.SUPER_ADMIN)
+  .map((r) => ({ value: r, label: roleLabel(r) }));
+
+export const MENSAJE_BLOQUEO_SIMULACION =
+  "Estás en modo Simular Rol (solo lectura). Sal del modo simulación para hacer cambios.";
