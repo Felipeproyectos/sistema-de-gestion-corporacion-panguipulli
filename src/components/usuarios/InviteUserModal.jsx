@@ -1,75 +1,60 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { getCentrosEstructura } from "@/lib/centros";
 import { X, Mail, Loader2 } from "lucide-react";
+import { ROLES, rolesQuePuedeCrear, roleLabel, esRolSalud } from "@/lib/roles";
 
-const ROLES_SALUD = [
-  { value: "user", label: "Operador / Usuario" },
-  { value: "supervisor", label: "Supervisor" },
-  { value: "admin_salud", label: "Admin Salud" },
-];
-const ROLES_TALLER = [
-  { value: "mecanico", label: "Mecánico" },
-  { value: "jefe_taller", label: "Jefe de Taller" },
-];
-const ROLES_ADMIN = [
-  { value: "admin", label: "Administrador" },
-  { value: "super_admin", label: "Super Administrador" },
-  { value: "monitor_corporativo", label: "Monitor Corporativo" },
-];
-
-export default function InviteUserModal({ open, onClose, onInvited }) {
+export default function InviteUserModal({ open, onClose, onInvited, currentUser }) {
   const [email, setEmail] = useState("");
-  const [area, setArea] = useState("salud");
-  const [role, setRole] = useState("user");
+  const [role, setRole] = useState("");
   const [centrosList, setCentrosList] = useState([]);
   const [centroSel, setCentroSel] = useState([]);
   const [enviando, setEnviando] = useState(false);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
 
+  const rolesDisponibles = useMemo(
+    () => rolesQuePuedeCrear(currentUser?.role).map((r) => ({ value: r, label: roleLabel(r) })),
+    [currentUser?.role]
+  );
+
   useEffect(() => {
     if (open) getCentrosEstructura().then(setCentrosList).catch(() => {});
   }, [open]);
 
   useEffect(() => {
-    // Reset role when area changes to a valid default
-    if (area === "salud") setRole("user");
-    if (area === "taller") setRole("mecanico");
-    if (area === "admin") setRole("admin");
-    setCentroSel([]);
-  }, [area]);
+    if (open && rolesDisponibles.length > 0 && !rolesDisponibles.find((r) => r.value === role)) {
+      setRole(rolesDisponibles[0].value);
+    }
+    if (open) setCentroSel([]);
+     
+  }, [open, currentUser?.role]);
 
   if (!open) return null;
 
-  const rolesDisponibles =
-    area === "salud" ? ROLES_SALUD :
-    area === "taller" ? ROLES_TALLER :
-    ROLES_ADMIN;
+  // Encargado Salud solo invita Usuario/Chofer dentro de su propio centro:
+  // el centro queda fijo, no seleccionable.
+  const centroFijo = currentUser?.role === ROLES.ENCARGADO_SALUD ? currentUser?.centro_principal : null;
+  const mostrarSelectorCentro = esRolSalud(role) && role !== ROLES.USER ? true : esRolSalud(role) && !centroFijo;
 
-  const toggleCentro = (nombre) => {
-    setCentroSel(prev =>
-      prev.includes(nombre) ? prev.filter(c => c !== nombre) : [...prev, nombre]
-    );
-  };
-
-  const puedeInvitar = email.trim() && area &&
-    (area !== "salud" || centroSel.length > 0);
+  const puedeInvitar = email.trim() && role && (!mostrarSelectorCentro || centroFijo || centroSel.length > 0);
 
   const handleInvite = async () => {
     setError("");
     setMsg("");
     if (!email.trim()) { setError("Ingresa un correo válido"); return; }
-    if (area === "salud" && centroSel.length === 0) {
-      setError("Debes asignar al menos un centro para usuarios de Salud"); return;
+    if (!rolesDisponibles.find((r) => r.value === role)) { setError("No tienes permiso para asignar ese rol"); return; }
+    if (mostrarSelectorCentro && !centroFijo && centroSel.length === 0) {
+      setError("Debes asignar al menos un centro (CESFAM) para este rol"); return;
     }
     setEnviando(true);
     try {
       await base44.users.inviteUser(email.trim(), role);
-      // Guardar metadatos extra vía updateMe no aplica (el usuario aún no existe).
-      // Los metadatos se asignarán cuando el usuario acepte y el super_admin los edite,
-      // o guardamos en una lista pendiente. Por ahora solo invitamos con el rol.
-      setMsg(`Invitación enviada a ${email.trim()} (${role}). Asigna el área/centro desde la lista tras que acepte.`);
+      const centroInfo = centroFijo || centroSel[0];
+      setMsg(
+        `Invitación enviada a ${email.trim()} (${roleLabel(role)})` +
+        (centroInfo ? ` — recuerda confirmar su centro (${centroInfo}) y subsedes desde la lista una vez que acepte.` : ".")
+      );
       setEmail("");
       setCentroSel([]);
       if (onInvited) onInvited();
@@ -93,102 +78,94 @@ export default function InviteUserModal({ open, onClose, onInvited }) {
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Email */}
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Correo electrónico</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="correo@ejemplo.com"
-              className="mt-1 w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-            />
-          </div>
-
-          {/* Área */}
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Área</label>
-            <div className="mt-1 grid grid-cols-3 gap-2">
-              {[
-                { v: "salud", l: "Salud" },
-                { v: "taller", l: "Taller" },
-                { v: "admin", l: "Administración" },
-              ].map(opt => (
-                <button
-                  key={opt.v}
-                  onClick={() => setArea(opt.v)}
-                  className="py-2.5 rounded-xl text-sm font-semibold transition-all"
-                  style={area === opt.v
-                    ? { background: "#1E293B", color: "white" }
-                    : { background: "#F1F5F9", color: "#64748B" }}
-                >
-                  {opt.l}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Rol */}
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Rol</label>
-            <select
-              value={role}
-              onChange={e => setRole(e.target.value)}
-              className="mt-1 w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
-            >
-              {rolesDisponibles.map(r => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Centros (solo salud) */}
-          {area === "salud" && (
-            <div>
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                Centro(s) asignado(s) <span className="text-red-500">*</span>
-              </label>
-              <div className="mt-1 max-h-44 overflow-y-auto border border-slate-200 rounded-xl p-2 space-y-1">
-                {centrosList.length === 0 && (
-                  <p className="text-xs text-slate-400 text-center py-2">Cargando centros...</p>
-                )}
-                {centrosList.map(c => (
-                  <label key={c.nombre} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={centroSel.includes(c.nombre)}
-                      onChange={() => toggleCentro(c.nombre)}
-                      className="w-4 h-4 rounded"
-                    />
-                    <span className="text-sm text-slate-700">{c.nombre}</span>
-                    {c.subsedes?.length > 0 && (
-                      <span className="text-xs text-slate-400">({c.subsedes.length} subsedes)</span>
-                    )}
-                  </label>
-                ))}
+          {rolesDisponibles.length === 0 ? (
+            <p className="text-sm text-slate-500 bg-slate-50 rounded-xl p-4 text-center">
+              Tu rol no tiene permiso para invitar nuevas cuentas.
+            </p>
+          ) : (
+            <>
+              {/* Email */}
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Correo electrónico</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="correo@ejemplo.com"
+                  className="mt-1 w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                />
               </div>
-              {centroSel.length > 0 && (
-                <p className="text-xs text-slate-500 mt-1">Seleccionados: {centroSel.join(", ")}</p>
-              )}
-            </div>
-          )}
 
-          {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-          {msg && <p className="text-xs text-green-600 bg-green-50 rounded-lg px-3 py-2">{msg}</p>}
+              {/* Rol — solo se ofrecen los roles que este usuario puede crear */}
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Rol</label>
+                <select
+                  value={role}
+                  onChange={e => setRole(e.target.value)}
+                  className="mt-1 w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+                >
+                  {rolesDisponibles.map(r => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Centro fijo (Encargado Salud invitando Usuario/Chofer) */}
+              {centroFijo && (
+                <div className="bg-blue-50 rounded-xl p-3">
+                  <p className="text-xs text-blue-700">Quedará asignado a tu mismo centro: <strong>{centroFijo}</strong></p>
+                </div>
+              )}
+
+              {/* Selector de centro (Admin/Super Admin invitando roles de Salud) */}
+              {mostrarSelectorCentro && !centroFijo && (
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    Centro (CESFAM) principal <span className="text-red-500">*</span>
+                  </label>
+                  <div className="mt-1 max-h-44 overflow-y-auto border border-slate-200 rounded-xl p-2 space-y-1">
+                    {centrosList.length === 0 && (
+                      <p className="text-xs text-slate-400 text-center py-2">Cargando centros...</p>
+                    )}
+                    {centrosList.map(c => (
+                      <label key={c.nombre} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="centro-principal"
+                          checked={centroSel[0] === c.nombre}
+                          onChange={() => setCentroSel([c.nombre])}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm text-slate-700">{c.nombre}</span>
+                        {c.subsedes?.length > 0 && (
+                          <span className="text-xs text-slate-400">({c.subsedes.length} subsedes)</span>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+              {msg && <p className="text-xs text-green-600 bg-green-50 rounded-lg px-3 py-2">{msg}</p>}
+            </>
+          )}
         </div>
 
         <div className="sticky bottom-0 bg-white px-6 py-4 border-t border-slate-100 flex gap-2">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-slate-600 bg-slate-100">
             Cerrar
           </button>
-          <button
-            onClick={handleInvite}
-            disabled={!puedeInvitar || enviando}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 flex items-center justify-center gap-2"
-            style={{ background: "#2563EB" }}
-          >
-            {enviando ? <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</> : "Invitar"}
-          </button>
+          {rolesDisponibles.length > 0 && (
+            <button
+              onClick={handleInvite}
+              disabled={!puedeInvitar || enviando}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ background: "#2563EB" }}
+            >
+              {enviando ? <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</> : "Invitar"}
+            </button>
+          )}
         </div>
       </div>
     </div>
