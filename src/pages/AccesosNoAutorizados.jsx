@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { ShieldX, Mail, Monitor, Clock, Trash2 } from "lucide-react";
+import { ROLES } from "@/lib/roles";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 export default function AccesosNoAutorizados() {
   const [registros, setRegistros] = useState([]);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
     base44.entities.AccesoNoAutorizado.list("-fecha_intento", 100)
       .then(setRegistros)
       .finally(() => setLoading(false));
@@ -18,6 +21,18 @@ export default function AccesosNoAutorizados() {
     await base44.entities.AccesoNoAutorizado.delete(id);
     setRegistros(prev => prev.filter(r => r.id !== id));
   };
+
+  if (!loading && user?.role !== ROLES.SUPER_ADMIN) {
+    return (
+      <div className="flex items-center justify-center min-h-screen px-6">
+        <div className="text-center">
+          <ShieldX className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-500 font-medium">Acceso restringido</p>
+          <p className="text-slate-400 text-sm mt-1">Exclusivo de Base del Sistema.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
