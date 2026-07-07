@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Wrench, Car, Clock, User, ChevronRight, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { Wrench, Car, Clock, User, ChevronRight, AlertTriangle, CheckCircle2, Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -22,6 +24,7 @@ const PRIORIDAD_CFG = {
 export default function OrdenTrabajoCard({ ot, onActualizar, onEditar }) {
   const [expandida, setExpandida] = useState(false);
   const [cambiando, setCambiando] = useState(false);
+  const navigate = useNavigate();
   const estado = ESTADO_CFG[ot.estado] || ESTADO_CFG.pendiente;
   const prio = PRIORIDAD_CFG[ot.prioridad] || PRIORIDAD_CFG.media;
 
@@ -127,6 +130,10 @@ export default function OrdenTrabajoCard({ ot, onActualizar, onEditar }) {
                 <option key={k} value={k}>{v.label}</option>
               ))}
             </select>
+            <button onClick={(e) => { e.stopPropagation(); navigate(createPageUrl(`OrdenTrabajoDetalle/${ot.id}`)); }}
+              className="text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1 text-white" style={{ background: "#0F172A" }}>
+              <Eye className="w-3.5 h-3.5" /> Ver Detalle
+            </button>
             <button onClick={(e) => { e.stopPropagation(); onEditar(ot); }}
               className="text-xs font-semibold px-3 py-2 rounded-xl text-white" style={{ background: "#2563EB" }}>
               Editar
