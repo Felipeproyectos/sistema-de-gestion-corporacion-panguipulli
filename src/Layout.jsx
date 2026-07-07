@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { Heart, Menu, X, LogOut } from "lucide-react";
 import { getNavItemsForRole } from "@/lib/navPermissions";
 import MobileNav from "@/components/MobileNav";
+import CompletarPerfil from "@/components/usuarios/CompletarPerfil";
 import useDarkMode from "@/hooks/useDarkMode";
 
 export default function Layout({ children, currentPageName }) {
@@ -138,6 +139,7 @@ export default function Layout({ children, currentPageName }) {
       </main>
 
       <MobileNav />
+      <CompletarPerfil user={user} onCompleto={() => window.location.reload()} />
     </div>);
 
 }
