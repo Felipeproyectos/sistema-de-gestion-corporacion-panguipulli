@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { FileText, Loader2, Filter, Bell, ClipboardList } from "lucide-react";
-import { CENTROS_ESTRUCTURA, TIPOS_EQUIPO } from "@/lib/centros";
+import { CENTROS_ESTRUCTURA } from "@/lib/centros";
+import { esRolTaller, esSuperAdmin, esMonitorCorporativo } from "@/lib/roles";
 import ReporteTaller from "@/components/reportes/ReporteTaller";
-import { differenceInDays, parseISO, format } from "date-fns";
+import { format } from "date-fns";
 
 export default function Reportes() {
   const [equipos, setEquipos] = useState([]);
@@ -14,8 +15,10 @@ export default function Reportes() {
   const [generandoAlertas, setGenerandoAlertas] = useState(false);
   const [generandoSolicitudes, setGenerandoSolicitudes] = useState(false);
   const [filtroCentro, setFiltroCentro] = useState("");
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
     Promise.all([
       base44.entities.Equipo.list(),
       base44.entities.Parche.list(),
@@ -220,6 +223,11 @@ export default function Reportes() {
   const alertasActivas = alertasFiltradas.length;
   const solPendientes = solicitudesFiltradas.filter(s => s.estado === "pendiente").length;
 
+  // Cada área ve solo sus propios reportes; Base del Sistema y Monitor
+  // Corporativo ven ambos.
+  const veReportesSalud = esSuperAdmin(user?.role) || esMonitorCorporativo(user?.role) || user?.role === "admin" || user?.role === "encargado_salud";
+  const veReportesTaller = esSuperAdmin(user?.role) || esMonitorCorporativo(user?.role) || esRolTaller(user?.role);
+
   return (
     <div className="min-h-screen" style={{ background: "#e8f4fd" }}>
       <div className="relative overflow-hidden px-6 lg:px-10 pt-10 pb-8" style={{ background: "linear-gradient(135deg, #0f2d6b 0%, #1565c0 40%, #29b6f6 100%)" }}>
@@ -237,7 +245,7 @@ export default function Reportes() {
 
       <div className="max-w-4xl mx-auto px-6 lg:px-10 pt-6 pb-10 space-y-5">
 
-        {/* Filtro global */}
+        {veReportesSalud && (
         <div className="bg-white rounded-2xl shadow p-5">
           <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2 mb-3">
             <Filter className="w-4 h-4 text-blue-500" /> Filtro por Centro
@@ -251,7 +259,9 @@ export default function Reportes() {
             {CENTROS_ESTRUCTURA.map(c => <option key={c.nombre} value={c.nombre}>{c.nombre}</option>)}
           </select>
         </div>
+        )}
 
+        {veReportesSalud && (<>
         {/* Reporte Alertas */}
         <div className="bg-white rounded-2xl shadow p-6 space-y-4">
           <div className="flex items-center justify-between">
@@ -325,9 +335,10 @@ export default function Reportes() {
             {generandoSolicitudes ? "Generando..." : "Generar PDF de Solicitudes"}
           </button>
         </div>
+        </>)}
 
         {/* Reporte de Taller */}
-        <ReporteTaller />
+        {veReportesTaller && <ReporteTaller />}
 
       </div>
     </div>
