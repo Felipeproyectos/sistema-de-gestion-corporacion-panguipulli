@@ -28,17 +28,17 @@
     "create": {},
     "read": {
       "user_condition": {
-        "role": "admin"
+        "role": "super_admin"
       }
     },
     "update": {
       "user_condition": {
-        "role": "admin"
+        "role": "super_admin"
       }
     },
     "delete": {
       "user_condition": {
-        "role": "admin"
+        "role": "super_admin"
       }
     }
   }
