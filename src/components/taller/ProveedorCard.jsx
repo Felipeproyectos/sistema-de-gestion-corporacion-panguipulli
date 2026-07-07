@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { base44 } from "@/api/base44Client";
 import { Building2, Phone, Mail, MapPin, Globe, Pencil, Trash2 } from "lucide-react";
 
 const RUBRO_CFG = {
