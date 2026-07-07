@@ -9,17 +9,19 @@ import RoleSimulator from "@/components/RoleSimulator";
 import { getEffectiveNavRole } from "@/lib/roleSimulator";
 import useDarkMode from "@/hooks/useDarkMode";
 import { roleLabel } from "@/lib/roles";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Layout({ children, currentPageName }) {
-  const [user, setUser] = useState(null);
-  const [userLoading, setUserLoading] = useState(true);
+  // El usuario ya se obtiene una sola vez en AuthContext (a nivel de App),
+  // antes de que Layout llegue a montarse. Reutilizarlo aquí evita una
+  // segunda llamada de red idéntica en cada navegación.
+  const { user, isLoadingAuth: userLoading } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [appConfig, setAppConfig] = useState(null);
   const location = useLocation();
   useDarkMode();
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {}).finally(() => setUserLoading(false));
     base44.entities.AppConfig.list().then((list) => {
       if (list.length > 0) setAppConfig(list[0]);
     }).catch(() => {});
