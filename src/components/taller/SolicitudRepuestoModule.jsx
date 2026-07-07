@@ -35,13 +35,25 @@ export default function SolicitudRepuestoModule({ user, ordenesActivas = [], req
   const resolver = async (sol, estado) => {
     setProcesando(sol.id);
     try {
-      await base44.entities.SolicitudRepuesto.update(sol.id, {
+      const res = await base44.functions.invoke("aprobarSolicitudRepuesto", {
+        solicitud_id: sol.id,
         estado,
-        aprobador_email: user.email,
-        aprobador_nombre: user.full_name,
-        fecha_aprobacion: new Date().toISOString().split("T")[0],
+        comentario: "",
       });
-      toast({ title: `Solicitud ${estado === "aprobada" ? "aprobada" : "rechazada"}` });
+      const data = res.data || {};
+      let title = `Solicitud ${estado === "aprobada" ? "aprobada" : "rechazada"}`;
+      let description;
+      if (estado === "aprobada" && data.deduccion) {
+        const d = data.deduccion;
+        if (d.no_encontrado) {
+          description = `"${d.repuesto_nombre}" no se encontró en el inventario. Aprueba la compra por separado.`;
+        } else if (d.insuficiente) {
+          description = `Stock insuficiente. Descontado a ${d.nuevo_stock} (de ${d.stock_previo}). Reponer pronto.`;
+        } else {
+          description = `Descontado ${d.cantidad_descontada} de "${d.repuesto_nombre}". Stock: ${d.stock_previo} → ${d.nuevo_stock}.`;
+        }
+      }
+      toast({ title, description });
       fetch();
     } catch (e) {
       toast({ title: "No se pudo procesar", description: e.message, variant: "destructive" });

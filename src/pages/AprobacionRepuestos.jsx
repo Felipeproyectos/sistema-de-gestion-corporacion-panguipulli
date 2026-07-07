@@ -50,11 +50,23 @@ export default function AprobacionRepuestos() {
   const aprobadas = solicitudes.filter(s => s.estado === "aprobada").length;
   const rechazadas = solicitudes.filter(s => s.estado === "rechazada").length;
 
-  const onResolver = (estado, error) => {
+  const onResolver = (estado, error, data) => {
     if (error) {
       toast({ title: "No se pudo procesar", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: `Solicitud ${estado === "aprobada" ? "aprobada" : "rechazada"}` });
+      let title = `Solicitud ${estado === "aprobada" ? "aprobada" : "rechazada"}`;
+      let description;
+      if (estado === "aprobada" && data?.deduccion) {
+        const d = data.deduccion;
+        if (d.no_encontrado) {
+          description = `"${d.repuesto_nombre}" no está en el inventario. Gestiona la compra por separado.`;
+        } else if (d.insuficiente) {
+          description = `Stock insuficiente. Stock actual: ${d.nuevo_stock} (era ${d.stock_previo}). Reponer pronto.`;
+        } else {
+          description = `Descontado ${d.cantidad_descontada} de "${d.repuesto_nombre}". Stock: ${d.stock_previo} → ${d.nuevo_stock}.`;
+        }
+      }
+      toast({ title, description });
       setSeleccionada(null);
       fetch();
     }

@@ -11,14 +11,12 @@ export default function AprobacionRepuestoModal({ solicitud, user, onClose, onRe
   const resolver = async (estado) => {
     setSaving(estado);
     try {
-      await base44.entities.SolicitudRepuesto.update(solicitud.id, {
+      const res = await base44.functions.invoke("aprobarSolicitudRepuesto", {
+        solicitud_id: solicitud.id,
         estado,
-        aprobador_email: user?.email,
-        aprobador_nombre: user?.full_name,
-        fecha_aprobacion: new Date().toISOString().split("T")[0],
-        comentario_aprobador: comentario,
+        comentario,
       });
-      onResolver(estado);
+      onResolver(estado, null, res.data);
     } catch (e) {
       onResolver(estado, e);
     }
