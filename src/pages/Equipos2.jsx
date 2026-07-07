@@ -6,9 +6,10 @@ import { getCentrosEstructura, TIPOS_EQUIPO, ESTADOS_EQUIPO } from "@/lib/centro
 import EquipoCard from "@/components/equipos2/EquipoCard";
 import EquipoFormModal from "@/components/equipos2/EquipoFormModal";
 import EquipoDetalleModal from "@/components/equipos2/EquipoDetalleModal";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Equipos2() {
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [equipos, setEquipos] = useState([]);
   const [parches, setParches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +32,6 @@ export default function Equipos2() {
   }, []);
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
     reload().finally(() => setLoading(false));
   }, [reload]);
 
