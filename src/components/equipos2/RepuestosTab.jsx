@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, Edit, Save, X, AlertTriangle, CheckCircle, Clock, Package, User, Calendar } from "lucide-react";
+import { Plus, Edit, Save, X, AlertTriangle, CheckCircle, Package, User } from "lucide-react";
 
 const TIPOS_CONFIG = {
   neumaticos: { label: "Neumáticos", icon: "🛞", unit: "unidades" },
