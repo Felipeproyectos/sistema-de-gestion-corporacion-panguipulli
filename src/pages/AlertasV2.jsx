@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { AlertTriangle, CheckCircle, Bell, Plus, X, Loader2, Mail, Send, ClipboardList, FileText } from "lucide-react";
+import { CheckCircle, Bell, Plus, X, Loader2, Mail, Send, ClipboardList, FileText } from "lucide-react";
 import { differenceInDays, parseISO } from "date-fns";
-import { CENTROS_ESTRUCTURA } from "@/lib/centros";
 
 const NIVEL_CONFIG = {
   critica:    { color: "#dc2626", bg: "#fef2f2", border: "#fca5a5", label: "Crítica" },
