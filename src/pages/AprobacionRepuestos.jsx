@@ -9,6 +9,7 @@ import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import AprobacionRepuestoModal from "@/components/taller/AprobacionRepuestoModal";
+import { useAuth } from "@/lib/AuthContext";
 
 const ESTADO_CFG = {
   pendiente: { label: "Pendiente", color: "#D97706", bg: "#FEF3C7", icon: Clock },
@@ -25,17 +26,15 @@ const FILTROS = [
 ];
 
 export default function AprobacionRepuestos() {
+  const { user } = useAuth();
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("pendiente");
-  const [user, setUser] = useState(null);
   const [seleccionada, setSeleccionada] = useState(null);
   const containerRef = useRef(null);
   const { toast } = useToast();
 
   const fetch = useCallback(async () => {
-    const u = await base44.auth.me().catch(() => null);
-    setUser(u);
     const list = await base44.entities.SolicitudRepuesto.list("-created_date", 200).catch(() => []);
     setSolicitudes(list);
     setLoading(false);
