@@ -9,6 +9,7 @@ import CompletarPerfil from "@/components/usuarios/CompletarPerfil";
 import RoleSimulator from "@/components/RoleSimulator";
 import { getEffectiveNavRole } from "@/lib/roleSimulator";
 import useDarkMode from "@/hooks/useDarkMode";
+import { roleLabel } from "@/lib/roles";
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
@@ -101,7 +102,7 @@ export default function Layout({ children, currentPageName }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white text-xs font-medium truncate">{user.full_name || user.email}</p>
-                <p className="text-white/40 text-xs capitalize">{user.role || "user"}</p>
+                <p className="text-white/40 text-xs">{roleLabel(user.role)}</p>
               </div>
               <button onClick={() => base44.auth.logout()} className="text-white/30 hover:text-white/70 transition-colors">
                 <LogOut className="w-4 h-4" />
