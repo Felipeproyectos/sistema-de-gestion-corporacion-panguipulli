@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { X, Building2, Phone, Mail, Globe } from "lucide-react";
+import { X, Building2 } from "lucide-react";
 
 const RUBROS = [
   { value: "repuestos", label: "Repuestos" },
