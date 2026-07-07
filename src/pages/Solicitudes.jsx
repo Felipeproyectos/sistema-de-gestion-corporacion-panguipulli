@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Plus, ClipboardList, CheckCircle, XCircle, Loader2, X } from "lucide-react";
 import InformeSolicitudesPDF from "@/components/solicitudes/InformeSolicitudesPDF";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 
 const TIPOS = [
   { value: "parches_adulto", label: "Parches Adulto" },
