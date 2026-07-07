@@ -1,20 +1,16 @@
 import { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
 import { Users, X, ChevronUp, Eye, EyeOff, Lock } from "lucide-react";
 import { getSimulatedRole, setSimulatedRole, clearSimulatedRole, ALL_ROLES } from "@/lib/roleSimulator";
 import { ROLES, roleLabel } from "@/lib/roles";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function RoleSimulator() {
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [simRole, setSimRole] = useState(getSimulatedRole());
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
-  }, []);
 
   useEffect(() => {
     const handler = (e) => setSimRole(e.detail);
