@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { Monitor, Plus, Search, Filter, ChevronRight, AlertTriangle, CheckCircle, Wrench, X, RefreshCw } from "lucide-react";
+import { Monitor, Plus, Search, Filter, RefreshCw } from "lucide-react";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import { getCentrosEstructura, TIPOS_EQUIPO, ESTADOS_EQUIPO } from "@/lib/centros";
 import EquipoCard from "@/components/equipos2/EquipoCard";
