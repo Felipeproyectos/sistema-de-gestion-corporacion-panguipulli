@@ -5,8 +5,8 @@ import { useToast } from "@/components/ui/use-toast";
 
 const CATS = ["neumaticos", "frenos", "bateria", "filtros", "lubricantes", "electrico", "sirena", "luces", "otros"];
 
-export default function SolicitudRepuestoFormModal({ open, onClose, onGuardar, user }) {
-  const [form, setForm] = useState({ repuesto_nombre: "", categoria: "otros", cantidad: 1, urgencia: "media", motivo: "" });
+export default function SolicitudRepuestoFormModal({ open, onClose, onGuardar, user, ordenesActivas = [], requiereOT = false }) {
+  const [form, setForm] = useState({ repuesto_nombre: "", categoria: "otros", cantidad: 1, urgencia: "media", motivo: "", orden_trabajo_id: "" });
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
@@ -16,12 +16,19 @@ export default function SolicitudRepuestoFormModal({ open, onClose, onGuardar, u
 
   const submit = async () => {
     if (!form.repuesto_nombre.trim()) { toast({ title: "Indica el repuesto", variant: "destructive" }); return; }
+    if (requiereOT && !form.orden_trabajo_id) { toast({ title: "Selecciona la orden de trabajo", description: "Debes vincular la solicitud a un vehículo en taller", variant: "destructive" }); return; }
     setSaving(true);
     try {
       const numero = `SR-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Date.now().toString().slice(-5)}`;
+      const otSel = ordenesActivas.find(o => o.id === form.orden_trabajo_id);
       await base44.entities.SolicitudRepuesto.create({
-        ...form,
+        repuesto_nombre: form.repuesto_nombre,
+        categoria: form.categoria,
         cantidad: Number(form.cantidad) || 1,
+        urgencia: form.urgencia,
+        motivo: form.motivo,
+        orden_trabajo_id: form.orden_trabajo_id || undefined,
+        orden_trabajo_label: otSel ? `${otSel.numero_ot} · ${otSel.equipo_label || ""}` : undefined,
         numero_solicitud: numero,
         solicitante_email: user?.email,
         solicitante_nombre: user?.full_name,
@@ -29,7 +36,7 @@ export default function SolicitudRepuestoFormModal({ open, onClose, onGuardar, u
         fecha_solicitud: new Date().toISOString().split("T")[0],
       });
       toast({ title: "Solicitud enviada", description: "Será revisada por el Jefe de Taller" });
-      setForm({ repuesto_nombre: "", categoria: "otros", cantidad: 1, urgencia: "media", motivo: "" });
+      setForm({ repuesto_nombre: "", categoria: "otros", cantidad: 1, urgencia: "media", motivo: "", orden_trabajo_id: "" });
       onGuardar();
       onClose();
     } catch (e) {
@@ -48,6 +55,20 @@ export default function SolicitudRepuestoFormModal({ open, onClose, onGuardar, u
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
+          {ordenesActivas.length > 0 && (
+            <div>
+              <label className="text-xs font-semibold text-slate-500">
+                Orden de trabajo {requiereOT && <span className="text-amber-600">*</span>}
+              </label>
+              <select className={input} value={form.orden_trabajo_id} onChange={e => set("orden_trabajo_id", e.target.value)}>
+                <option value="">Selecciona el vehículo en taller…</option>
+                {ordenesActivas.map(o => (
+                  <option key={o.id} value={o.id}>{o.numero_ot} · {o.equipo_label}{o.patente ? ` · ${o.patente}` : ""}</option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-400 mt-1">Vincula la solicitud a la orden donde se usarán los repuestos.</p>
+            </div>
+          )}
           <div>
             <label className="text-xs font-semibold text-slate-500">Repuesto solicitado</label>
             <input className={input} value={form.repuesto_nombre} onChange={e => set("repuesto_nombre", e.target.value)} placeholder="Ej. Filtro de aceite" />

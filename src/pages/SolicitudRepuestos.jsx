@@ -5,10 +5,21 @@ import SolicitudRepuestoModule from "@/components/taller/SolicitudRepuestoModule
 
 export default function SolicitudRepuestos() {
   const [user, setUser] = useState(null);
+  const [ordenesActivas, setOrdenesActivas] = useState([]);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!user?.email) return;
+    base44.entities.OrdenTrabajo.list("-created_date", 100)
+      .then((list) => setOrdenesActivas(
+        list.filter((o) => o.mecanico_email === user.email &&
+          ["pendiente", "asignada", "en_proceso", "pausada"].includes(o.estado))
+      ))
+      .catch(() => {});
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -27,8 +38,12 @@ export default function SolicitudRepuestos() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 lg:px-10 -mt-4 lg:-mt-6 pb-10">
-        <SolicitudRepuestoModule user={user} />
+      <div className="max-w-6xl mx-auto px-4 lg:px-10 mt-4 lg:mt-6 pb-10">
+        <SolicitudRepuestoModule
+          user={user}
+          ordenesActivas={ordenesActivas}
+          requiereOT={user?.role === "mecanico"}
+        />
       </div>
     </div>
   );

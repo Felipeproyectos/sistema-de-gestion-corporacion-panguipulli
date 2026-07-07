@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { Package, Plus, Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Package, Plus, Loader2, CheckCircle2, XCircle, Clock, Wrench, Info } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import SolicitudRepuestoFormModal from "./SolicitudRepuestoFormModal";
 
@@ -11,7 +11,7 @@ const ESTADO_CFG = {
   comprada: { label: "Comprada", color: "#2563EB", bg: "#DBEAFE", icon: Package },
 };
 
-export default function SolicitudRepuestoModule({ user }) {
+export default function SolicitudRepuestoModule({ user, ordenesActivas = [], requiereOT = false }) {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -28,6 +28,9 @@ export default function SolicitudRepuestoModule({ user }) {
 
   const puedeCrear = ["super_admin", "admin", "jefe_taller", "encargado_compras_taller", "mecanico"].includes(user?.role);
   const puedeAprobar = ["super_admin", "admin", "jefe_taller"].includes(user?.role);
+  // El mecánico solo puede solicitar repuestos si tiene un vehículo en taller
+  // (una OT activa asignada a él). Otros roles no tienen esta restricción.
+  const tieneVehiculoEnTaller = !requiereOT || ordenesActivas.length > 0;
 
   const resolver = async (sol, estado) => {
     setProcesando(sol.id);
@@ -58,12 +61,29 @@ export default function SolicitudRepuestoModule({ user }) {
           Solicitud de Repuestos
           <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">{pendientes} pend.</span>
         </h2>
-        {puedeCrear && (
+        {puedeCrear && tieneVehiculoEnTaller && (
           <button onClick={() => setModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white" style={{ background: "#D97706" }}>
             <Plus className="w-3.5 h-3.5" /> Nueva
           </button>
         )}
       </div>
+      {requiereOT && !tieneVehiculoEnTaller && (
+        <div className="px-5 py-4 flex items-start gap-3" style={{ background: "#FFF7ED", borderBottom: "1px solid #FED7AA" }}>
+          <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-bold text-amber-800">Sin vehículo en taller</p>
+            <p className="text-xs text-amber-700 mt-0.5">Solo puedes solicitar repuestos cuando tengas una orden de trabajo activa asignada a ti. Cuando el Jefe de Taller te asigne una orden, aquí podrás pedir los repuestos necesarios.</p>
+          </div>
+        </div>
+      )}
+      {requiereOT && tieneVehiculoEnTaller && (
+        <div className="px-5 py-2.5 flex items-center gap-2" style={{ background: "#F0FDF4", borderBottom: "1px solid #BBF7D0" }}>
+          <Wrench className="w-4 h-4 text-green-600 flex-shrink-0" />
+          <p className="text-xs text-green-700">
+            Tienes <span className="font-bold">{ordenesActivas.length}</span> vehículo(s) en taller. Vincula tu solicitud a una orden.
+          </p>
+        </div>
+      )}
       <div className="divide-y divide-slate-50 max-h-96 overflow-y-auto">
         {loading ? (
           <div className="px-5 py-8 text-center"><Loader2 className="w-6 h-6 text-slate-300 animate-spin mx-auto" /></div>
@@ -80,6 +100,7 @@ export default function SolicitudRepuestoModule({ user }) {
                   <p className="text-xs text-slate-500 mt-0.5">{sol.cantidad} unid. · {sol.categoria} · {sol.urgencia}</p>
                   {sol.motivo && <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{sol.motivo}</p>}
                   <p className="text-xs text-slate-400 mt-0.5">Solicita: {sol.solicitante_nombre || sol.solicitante_email}</p>
+                  {sol.orden_trabajo_label && <p className="text-xs text-blue-600 mt-0.5 font-medium">OT: {sol.orden_trabajo_label}</p>}
                   {sol.comentario_aprobador && <p className="text-xs text-slate-500 mt-0.5 italic">"{sol.comentario_aprobador}" — {sol.aprobador_nombre}</p>}
                 </div>
                 <span className="text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 flex-shrink-0" style={{ background: cfg.bg, color: cfg.color }}>
@@ -102,7 +123,14 @@ export default function SolicitudRepuestoModule({ user }) {
           );
         })}
       </div>
-      <SolicitudRepuestoFormModal open={modalOpen} onClose={() => setModalOpen(false)} onGuardar={fetch} user={user} />
+      <SolicitudRepuestoFormModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onGuardar={fetch}
+        user={user}
+        ordenesActivas={ordenesActivas}
+        requiereOT={requiereOT}
+      />
     </div>
   );
 }
