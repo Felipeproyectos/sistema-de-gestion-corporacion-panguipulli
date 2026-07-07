@@ -1,21 +1,20 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
 import { getNavItemsForRole } from "@/lib/navPermissions";
 import { getEffectiveNavRole } from "@/lib/roleSimulator";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function MobileNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [role, setRole] = useState(null);
+  const { user } = useAuth();
+  const role = user?.role || null;
 
+  // Solo forzamos un re-render cuando cambia la simulación de rol (el rol
+  // real ya viene del contexto de autenticación, no hace falta re-pedirlo).
+  const [, forceUpdate] = useState(0);
   useEffect(() => {
-    base44.auth.me().then(u => setRole(u?.role || "user")).catch(() => {});
-  }, []);
-
-  // Refrescar cuando cambia la simulación
-  useEffect(() => {
-    const h = () => base44.auth.me().then(u => setRole(u?.role || "user")).catch(() => {});
+    const h = () => forceUpdate(n => n + 1);
     window.addEventListener("role-simulator-change", h);
     return () => window.removeEventListener("role-simulator-change", h);
   }, []);
