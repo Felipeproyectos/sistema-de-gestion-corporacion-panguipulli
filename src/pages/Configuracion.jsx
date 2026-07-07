@@ -3,9 +3,10 @@ import { base44 } from "@/api/base44Client";
 import { Upload, Loader2, Save, Settings, Users, Shield, Mail, UserPlus, Trash2, Edit2, X, Check, AlertTriangle, Car, ExternalLink, Copy, CheckCircle, Download, Building2 } from "lucide-react";
 import GestionSedes from "@/components/configuracion/GestionSedes";
 import { QRCodeSVG } from "qrcode.react";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Configuracion() {
-  const [user, setUser]     = useState(null);
+  const { user } = useAuth();
   const [config, setConfig] = useState(null);
   const [form, setForm]     = useState({ nombre_app: "", subtitulo: "", logo_url: "" });
   const [uploading, setUploading] = useState(false);
@@ -26,9 +27,7 @@ export default function Configuracion() {
 
   useEffect(() => {
     const init = async () => {
-      const u = await base44.auth.me().catch(() => null);
-      setUser(u);
-      if (u?.role !== "admin") return;
+      if (user?.role !== "admin") return;
       const [configs, usrs] = await Promise.all([
         base44.entities.AppConfig.list(),
         base44.entities.User.list().catch(() => [])
