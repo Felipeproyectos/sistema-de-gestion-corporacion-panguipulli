@@ -4,14 +4,14 @@ import { History, User as UserIcon, Clock, ShieldAlert } from "lucide-react";
 import { ROLES } from "@/lib/roles";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Historial() {
+  const { user } = useAuth();
   const [registros, setRegistros] = useState([]);
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
     base44.entities.Historial.list("-fecha", 200)
       .then(setRegistros)
       .finally(() => setLoading(false));
