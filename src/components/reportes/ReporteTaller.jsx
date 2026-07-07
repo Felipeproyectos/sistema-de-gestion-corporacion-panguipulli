@@ -24,9 +24,15 @@ export default function ReporteTaller() {
       base44.entities.Repuesto.list().catch(() => []),
       base44.entities.Equipo.list().catch(() => []),
     ]).then(([ot, rep, eq]) => {
-      setOrdenes(ot);
+      const ambulancias = eq.filter(e => e.tipo === "ambulancia");
+      const idsAmbulancias = new Set(ambulancias.map(a => a.id));
+      // Solo OT de vehículos: ambulancias corporativas o activos externos
+      const ordenesVehiculos = ot.filter(o =>
+        o.tipo_activo === "externo" || (o.equipo_id && idsAmbulancias.has(o.equipo_id))
+      );
+      setOrdenes(ordenesVehiculos);
       setRepuestos(rep);
-      setEquipos(eq.filter(e => e.tipo === "ambulancia"));
+      setEquipos(ambulancias);
       setLoading(false);
     });
   }, []);
