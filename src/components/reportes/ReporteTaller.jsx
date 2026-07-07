@@ -3,8 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Wrench, Loader2, FileText, Clock, DollarSign, Package, User } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  PieChart, Pie, Cell, Legend
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from "recharts";
 
 const ESTADO_LABELS = {
