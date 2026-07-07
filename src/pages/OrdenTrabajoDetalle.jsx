@@ -4,8 +4,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   ArrowLeft, Wrench, Car, User, Clock, AlertTriangle, CheckCircle2,
-  Calendar, Package, ClipboardList, Save, Loader2, Edit3, Building2,
-  Stethoscope, X
+  Calendar, ClipboardList, Save, Loader2, Edit3,
+  Stethoscope
 } from "lucide-react";
 import LineaTiempo from "@/components/taller/LineaTiempo";
 import RepuestosUtilizados from "@/components/taller/RepuestosUtilizados";
@@ -44,7 +44,11 @@ export default function OrdenTrabajoDetalle() {
   const [notasCierre, setNotasCierre] = useState("");
   const [guardando, setGuardando] = useState(false);
 
-  const canEdit = ["admin", "super_admin", "jefe_taller", "mecanico"].includes(user?.role);
+  // Administrador no tiene acceso a Taller (fuera de su ámbito). Mecánico y
+  // Jefe de Taller trabajan el contenido de la OT; solo Jefe de Taller (y
+  // Super Admin) puede cerrarla — el cierre es lo que descuenta stock real.
+  const canEdit = ["super_admin", "jefe_taller", "mecanico"].includes(user?.role);
+  const canCerrar = ["super_admin", "jefe_taller"].includes(user?.role);
 
   const fetchData = useCallback(async () => {
     const [u, rep, users] = await Promise.all([
@@ -119,6 +123,7 @@ export default function OrdenTrabajoDetalle() {
   };
 
   const handleCambiarEstado = async (nuevoEstado) => {
+    if (nuevoEstado === "completada" && !canCerrar) return; // solo Jefe de Taller / Base del Sistema cierra la OT
     setGuardando(true);
     try {
       const update = {
@@ -134,6 +139,20 @@ export default function OrdenTrabajoDetalle() {
         update.total_mano_obra = manoObra ? Number(manoObra) : ot.total_mano_obra;
         update.notas_cierre = notasCierre;
         update.total = (ot.total_repuestos || 0) + (manoObra ? Number(manoObra) : (ot.total_mano_obra || 0));
+
+        // Al cerrar la OT se descuenta el stock real de cada repuesto reportado
+        // por el mecánico (hasta este momento solo era un registro editable).
+        for (const item of (ot.repuestos_utilizados || [])) {
+          if (!item.repuesto_id) continue;
+          try {
+            const rep = await base44.entities.Repuesto.get(item.repuesto_id);
+            if (rep) {
+              await base44.entities.Repuesto.update(item.repuesto_id, {
+                stock_actual: Math.max(0, (rep.stock_actual || 0) - Number(item.cantidad || 0)),
+              });
+            }
+          } catch (_) { /* si un repuesto fue eliminado, no bloquea el cierre */ }
+        }
       }
       await base44.entities.OrdenTrabajo.update(ot.id, update);
       setOt({ ...ot, ...update });
@@ -254,7 +273,7 @@ export default function OrdenTrabajoDetalle() {
             </div>
 
             {/* Repuestos utilizizados */}
-            <RepuestosUtilizados ot={ot} repuestos={repuestos} onActualizado={fetchData} user={user} editable={canEdit} />
+            <RepuestosUtilizados ot={ot} repuestos={repuestos} onActualizado={fetchData} user={user} editable={canEdit && ot.estado !== "completada"} />
 
             {/* Línea de tiempo */}
             <div className="bg-white rounded-2xl p-5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
@@ -331,7 +350,9 @@ export default function OrdenTrabajoDetalle() {
                 <h3 className="text-sm font-bold text-slate-700 mb-3">Cambiar estado</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.entries(ESTADO_CFG).map(([k, v]) => (
-                    <button key={k} onClick={() => handleCambiarEstado(k)} disabled={guardando || ot.estado === k}
+                    <button key={k} onClick={() => handleCambiarEstado(k)}
+                      disabled={guardando || ot.estado === k || (k === "completada" && !canCerrar)}
+                      title={k === "completada" && !canCerrar ? "Solo Jefe de Taller puede cerrar la OT" : ""}
                       className="py-2 rounded-xl text-xs font-semibold disabled:opacity-40 transition-all"
                       style={{ background: ot.estado === k ? v.color : v.bg, color: ot.estado === k ? "white" : v.color }}>
                       {v.label}
