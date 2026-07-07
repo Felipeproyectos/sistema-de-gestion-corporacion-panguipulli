@@ -1,46 +1,54 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { AlertCircle, Wand2, Loader2, CheckCircle2, X } from "lucide-react";
+import { esRolTaller, esSuperAdmin, ROLES } from "@/lib/roles";
 
-const ROLES_TALLER = ["mecanico", "jefe_taller"];
-const ROLES_ADMIN = ["admin", "super_admin", "monitor_corporativo"];
+const CENTRO_MIGRACION_DEFECTO = "CESFAM Panguipulli";
 
 function getCentros(u) {
   const arr = Array.isArray(u.centros_asignados) ? u.centros_asignados : [];
   const legacy = u.centro_asignado ? [u.centro_asignado] : [];
-  return [...new Set([...arr, ...legacy])].filter(Boolean);
+  const principal = u.centro_principal ? [u.centro_principal] : [];
+  return [...new Set([...principal, ...arr, ...legacy])].filter(Boolean);
 }
 
 function derivarArea(u) {
-  if (ROLES_ADMIN.includes(u.role)) return "ambas";
-  if (ROLES_TALLER.includes(u.role)) return "taller";
+  if (esSuperAdmin(u.role) || u.role === ROLES.ADMIN || u.role === ROLES.MONITOR_CORPORATIVO) return "ambas";
+  if (esRolTaller(u.role)) return "taller";
   return "salud";
 }
 
-// Detecta usuarios que requieren normalización
+// Detecta usuarios que requieren normalización:
+// - Sin área válida o con datos de centro heredados (legacy) sin migrar.
+// - Roles de Salud sin centro_principal asignado: se proponen migrar por
+//   defecto a CESFAM Panguipulli (decisión de migración), a la espera de que
+//   Base del Sistema reasigne manualmente el centro correcto de cada uno.
 export function detectarPendientes(usuarios) {
   return usuarios.filter(u => {
     const areaValida = ["salud", "taller", "ambas"].includes(u.area);
     const centrosArr = Array.isArray(u.centros_asignados) ? u.centros_asignados : [];
     const tieneLegacy = !!u.centro_asignado && !centrosArr.includes(u.centro_asignado);
-    const areaDerivada = derivarArea(u);
     const areaMala = u.area === "admin" || (u.area && !areaValida);
-    // Sin área, o área inválida, o centro legacy sin migrar
-    return !u.area || areaMala || tieneLegacy;
+    const areaDerivada = derivarArea(u);
+    const necesitaCentro = areaDerivada === "salud" && !u.centro_principal;
+    return !u.area || areaMala || tieneLegacy || necesitaCentro;
   }).map(u => {
     const areaCorrecta = derivarArea(u);
     const centrosFinales = getCentros(u);
+    const centroPrincipalFinal = u.centro_principal || centrosFinales[0] || (areaCorrecta === "salud" ? CENTRO_MIGRACION_DEFECTO : "");
     return {
       id: u.id,
       email: u.email,
       full_name: u.full_name,
       areaActual: u.area || "—",
       areaCorrecta,
-      centrosFinales,
+      centroActual: u.centro_principal || "—",
+      centroFinal: centroPrincipalFinal,
       cambios: {
         area: areaCorrecta,
         centros_asignados: centrosFinales,
         centro_asignado: null, // limpiar legacy
+        centro_principal: areaCorrecta === "salud" ? centroPrincipalFinal : "",
       },
     };
   });
@@ -83,7 +91,7 @@ export default function NormalizarUsuarios({ usuarios, onCompleto }) {
             </div>
             <div>
               <p className="text-sm font-bold text-amber-800">{pendientes.length} usuario(s) requieren normalización</p>
-              <p className="text-xs text-amber-600">Sin área asignada o con datos heredados sin migrar</p>
+              <p className="text-xs text-amber-600">Sin centro asignado (se propone {CENTRO_MIGRACION_DEFECTO} por defecto) o con datos heredados sin migrar</p>
             </div>
           </div>
           <button
@@ -120,6 +128,9 @@ export default function NormalizarUsuarios({ usuarios, onCompleto }) {
                     {resultado.ok} actualizado(s) correctamente
                     {resultado.err > 0 && ` · ${resultado.err} con error`}
                   </p>
+                  <p className="text-xs text-slate-400 mt-3">
+                    Recuerda reasignar manualmente el centro correcto de cada usuario desde su tarjeta cuando corresponda.
+                  </p>
                   <button onClick={() => { setOpen(false); setResultado(null); }}
                     className="mt-4 px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: "#16A34A" }}>
                     Listo
@@ -128,7 +139,8 @@ export default function NormalizarUsuarios({ usuarios, onCompleto }) {
               ) : (
                 <>
                   <p className="text-sm text-slate-600">
-                    Se actualizarán <strong>{pendientes.length}</strong> usuario(s) asignando área según su rol y migrando centros heredados al nuevo formato:
+                    Se actualizarán <strong>{pendientes.length}</strong> usuario(s), migrando datos heredados y asignando
+                    <strong> {CENTRO_MIGRACION_DEFECTO}</strong> por defecto a quienes no tengan centro (podrás reasignarlos después):
                   </p>
                   <div className="max-h-72 overflow-y-auto space-y-2">
                     {pendientes.map(p => (
@@ -138,17 +150,11 @@ export default function NormalizarUsuarios({ usuarios, onCompleto }) {
                           <p className="text-xs text-slate-400 truncate">{p.email}</p>
                         </div>
                         <div className="flex items-center gap-2 text-xs flex-shrink-0">
-                          <span className="text-slate-400 line-through">{p.areaActual}</span>
+                          <span className="text-slate-400 line-through">{p.centroActual}</span>
                           <span className="text-slate-300">→</span>
-                          <span className="font-bold px-2 py-0.5 rounded-full" style={{
-                            background: p.areaCorrecta === "taller" ? "#FED7AA" : p.areaCorrecta === "ambas" ? "#E9D5FF" : "#BBF7D0",
-                            color: p.areaCorrecta === "taller" ? "#C2410C" : p.areaCorrecta === "ambas" ? "#7C3AED" : "#16A34A",
-                          }}>
-                            {p.areaCorrecta}
+                          <span className="font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                            {p.centroFinal || "—"}
                           </span>
-                          {p.centrosFinales.length > 0 && (
-                            <span className="text-slate-400 hidden sm:inline">({p.centrosFinales.length} centros)</span>
-                          )}
                         </div>
                       </div>
                     ))}
