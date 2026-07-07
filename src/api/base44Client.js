@@ -62,10 +62,19 @@ function envolverEntidad(entidad, nombre) {
   });
 }
 
+// Cache de entidades ya envueltas: evita crear un Proxy nuevo cada vez que se
+// accede a base44.entities.X (por ejemplo, en cada render), ya que antes se
+// reconstruía en cada acceso a la propiedad.
+const entityProxyCache = new Map();
 const entitiesProxy = new Proxy(base44Raw.entities || {}, {
   get(target, prop, receiver) {
+    if (entityProxyCache.has(prop)) return entityProxyCache.get(prop);
     const entidad = Reflect.get(target, prop, receiver);
-    if (entidad && typeof entidad === 'object') return envolverEntidad(entidad, prop);
+    if (entidad && typeof entidad === 'object') {
+      const envuelta = envolverEntidad(entidad, prop);
+      entityProxyCache.set(prop, envuelta);
+      return envuelta;
+    }
     return entidad;
   },
 });
