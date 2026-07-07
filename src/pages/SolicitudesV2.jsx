@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { ClipboardList, Plus, Search, Loader2, X, CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { ClipboardList, Plus, Search, Loader2, X } from "lucide-react";
 import { TIPOS_SOLICITUD, CENTROS_ESTRUCTURA } from "@/lib/centros";
-import { format } from "date-fns";
 import NativePicker from "@/components/NativePicker";
 
 const ESTADO_CONFIG = {
@@ -41,8 +40,10 @@ export default function SolicitudesV2() {
     setSolicitudes(prev => prev.map(s => s.id === id ? { ...s, ...data } : s));
   };
 
-  const isAdmin = user?.role === "admin";
-  // Usuario normal solo ve sus propias solicitudes
+  // "Gestiona" (ve todas + puede resolver): Base del Sistema, Administrador,
+  // Encargado Salud y Encargado Compras Salud. El resto (Usuario/Chofer) solo
+  // ve y gestiona sus propias solicitudes.
+  const isAdmin = ["super_admin", "admin", "encargado_salud", "encargado_compras_salud"].includes(user?.role);
   const solicitudesFiltradas = isAdmin ? solicitudes : solicitudes.filter(s => s.usuario_email === user?.email);
 
   const filtradas = solicitudesFiltradas.filter(s => {
@@ -145,11 +146,26 @@ export default function SolicitudesV2() {
                       <p className="text-xs text-blue-600 mt-1 bg-blue-50 rounded-lg px-2 py-1">Resp: {sol.respuesta_admin}</p>
                     )}
                   </div>
-                  {isAdmin && sol.estado !== "finalizada" && (
-                    <button onClick={() => setEditando(sol)} className="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">
-                      Gestionar
-                    </button>
-                  )}
+                  <div className="flex flex-col gap-1.5 flex-shrink-0">
+                    {isAdmin && sol.estado !== "finalizada" && (
+                      <button onClick={() => setEditando(sol)} className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">
+                        Gestionar
+                      </button>
+                    )}
+                    {/* El propio solicitante puede cancelar mientras siga "pendiente" */}
+                    {sol.usuario_email === user?.email && sol.estado === "pendiente" && (
+                      <button
+                        onClick={async () => {
+                          if (!confirm("¿Cancelar esta solicitud?")) return;
+                          await base44.entities.Solicitud.delete(sol.id);
+                          setSolicitudes(prev => prev.filter(s => s.id !== sol.id));
+                        }}
+                        className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-red-200 text-red-600 hover:bg-red-50"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -244,8 +260,8 @@ const TIPO_EQUIPO_LABEL = {
 };
 
 function SolicitudForm({ equipos, user, onClose, onSaved, onOptimistic }) {
-  const centroDefault = user?.centro_asignado || "";
-  const isAdmin = user?.role === "admin";
+  const centroDefault = user?.centro_principal || user?.centro_asignado || "";
+  const isAdmin = ["super_admin", "admin", "encargado_salud", "encargado_compras_salud"].includes(user?.role);
 
   // Equipos filtrados según centro del usuario
   const equiposFiltrados = centroDefault && !isAdmin
