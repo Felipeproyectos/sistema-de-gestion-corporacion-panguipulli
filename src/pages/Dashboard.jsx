@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { esRolTaller } from "@/lib/roles";
+import { esRolTaller, ROLES } from "@/lib/roles";
 import {
   Monitor, AlertTriangle, ClipboardList, Activity, Zap, Car, Wrench,
   CheckCircle, Bell, User, MapPin, ChevronRight, RefreshCw,
   Package, ClipboardCheck, TrendingUp, ArrowRight, QrCode
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { differenceInDays, parseISO, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -86,6 +86,8 @@ export default function Dashboard() {
   const { refreshing } = usePullToRefresh(fetchData, containerRef);
 
   const esTallerUser = esRolTaller(user?.role);
+  // El mecánico aterriza directo en su módulo de Órdenes de Trabajo.
+  if (user?.role === ROLES.MECANICO && !loading) return <Navigate to="/OrdenesTrabajo" replace />;
   // Los roles de taller no ven el dashboard de equipos de salud:
   // ven un panel enfocado en órdenes y solicitudes entrantes desde los centros.
   if (esTallerUser && !loading) return <TallerDashboard user={user} />;

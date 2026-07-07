@@ -13,7 +13,13 @@ export const NAV_ITEMS = [
     roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.ENCARGADO_SALUD, ROLES.ENCARGADO_COMPRAS_SALUD, ROLES.USER] },
 
   { label: "Taller", page: "Taller", path: "/Taller", icon: Wrench,
-    roles: [ROLES.SUPER_ADMIN, ROLES.JEFE_TALLER, ROLES.MECANICO] },
+    roles: [ROLES.SUPER_ADMIN, ROLES.JEFE_TALLER] },
+
+  { label: "Órdenes de Trabajo", page: "OrdenesTrabajo", path: "/OrdenesTrabajo", icon: ClipboardList,
+    roles: [ROLES.MECANICO] },
+
+  { label: "Solicitud de Repuestos", page: "SolicitudRepuestos", path: "/SolicitudRepuestos", icon: Package,
+    roles: [ROLES.MECANICO] },
 
   { label: "Equipos", page: "Equipos2", path: "/Equipos2", icon: Monitor,
     roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.ENCARGADO_SALUD, ROLES.ENCARGADO_COMPRAS_SALUD, ROLES.USER] },
@@ -25,7 +31,7 @@ export const NAV_ITEMS = [
     roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.ENCARGADO_SALUD, ROLES.ENCARGADO_COMPRAS_SALUD, ROLES.USER] },
 
   { label: "Repuestos", page: "Repuestos", path: "/Repuestos", icon: Package,
-    roles: [ROLES.SUPER_ADMIN, ROLES.JEFE_TALLER, ROLES.MECANICO, ROLES.ENCARGADO_COMPRAS_TALLER] },
+    roles: [ROLES.SUPER_ADMIN, ROLES.JEFE_TALLER, ROLES.ENCARGADO_COMPRAS_TALLER] },
 
   { label: "Aprobación Solicitudes", page: "AprobacionRepuestos", path: "/AprobacionRepuestos", icon: ClipboardCheck,
     roles: [ROLES.SUPER_ADMIN, ROLES.JEFE_TALLER, ROLES.ENCARGADO_COMPRAS_TALLER] },
