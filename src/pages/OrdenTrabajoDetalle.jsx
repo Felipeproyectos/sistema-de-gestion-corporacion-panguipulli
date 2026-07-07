@@ -245,7 +245,7 @@ export default function OrdenTrabajoDetalle() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 lg:px-10 -mt-3 lg:-mt-5 pb-10 space-y-4">
+      <div className="max-w-5xl mx-auto px-4 lg:px-10 mt-3 lg:mt-5 pb-10 space-y-4">
         {simActivo && (
           <div className="rounded-2xl px-4 py-3 flex items-center gap-2 text-sm font-semibold" style={{ background: "#F5F3FF", color: "#7C3AED" }}>
             <Lock className="w-4 h-4 flex-shrink-0" /> {MENSAJE_BLOQUEO_SIMULACION}

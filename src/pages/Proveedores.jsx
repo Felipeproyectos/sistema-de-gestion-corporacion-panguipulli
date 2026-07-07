@@ -75,7 +75,7 @@ export default function Proveedores() {
 
       <div className="max-w-6xl mx-auto px-4 lg:px-10 pb-10">
         {/* Buscador y filtros */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-5 -mt-4">
+        <div className="flex flex-col sm:flex-row gap-3 mb-5 mt-4">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input value={busqueda} onChange={e => setBusqueda(e.target.value)}

@@ -151,7 +151,7 @@ export default function MonitorCorporativo() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 lg:px-10 -mt-4 lg:-mt-6 pb-10 space-y-6 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 lg:px-10 mt-4 lg:mt-6 pb-10 space-y-6 relative z-10">
 
         {/* KPIs Globales */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">

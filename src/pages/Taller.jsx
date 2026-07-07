@@ -106,7 +106,7 @@ export default function Taller() {
       </div>
 
       {/* Stats Cards */}
-      <div className="max-w-6xl mx-auto px-4 lg:px-10 -mt-4 lg:-mt-6 mb-4 lg:mb-6">
+      <div className="max-w-6xl mx-auto px-4 lg:px-10 mt-4 lg:mt-6 mb-4 lg:mb-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           {[
             { label: "Pendientes", value: pendientes, icon: ClipboardList, color: "#D97706", bg: "#FFFBEB" },
