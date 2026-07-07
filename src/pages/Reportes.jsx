@@ -5,8 +5,10 @@ import { CENTROS_ESTRUCTURA } from "@/lib/centros";
 import { esRolTaller, esSuperAdmin, esMonitorCorporativo } from "@/lib/roles";
 import ReporteTaller from "@/components/reportes/ReporteTaller";
 import { format } from "date-fns";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Reportes() {
+  const { user } = useAuth();
   const [equipos, setEquipos] = useState([]);
   const [parches, setParches] = useState([]);
   const [alertas, setAlertas] = useState([]);
@@ -15,15 +17,13 @@ export default function Reportes() {
   const [generandoAlertas, setGenerandoAlertas] = useState(false);
   const [generandoSolicitudes, setGenerandoSolicitudes] = useState(false);
   const [filtroCentro, setFiltroCentro] = useState("");
-  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
     Promise.all([
       base44.entities.Equipo.list(),
-      base44.entities.Parche.list(),
-      base44.entities.Alerta.list(),
-      base44.entities.Solicitud.list()
+      base44.entities.Parche.list('-updated_date', 300),
+      base44.entities.Alerta.list('-created_date', 300),
+      base44.entities.Solicitud.list('-fecha', 300)
     ]).then(([eq, pa, al, so]) => {
       setEquipos(eq);
       setParches(pa);
