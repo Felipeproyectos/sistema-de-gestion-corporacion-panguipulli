@@ -6,6 +6,7 @@ import RepuestoCard from "@/components/taller/RepuestoCard";
 import RepuestoFormModal from "@/components/taller/RepuestoFormModal";
 import CargaMasivaRepuestos from "@/components/taller/CargaMasivaRepuestos";
 import ConsumoDirectoModal from "@/components/taller/ConsumoDirectoModal";
+import { useAuth } from "@/lib/AuthContext";
 
 const CATEGORIAS = [
   { value: "todos", label: "Todos" },
@@ -21,6 +22,7 @@ const CATEGORIAS = [
 ];
 
 export default function Repuestos() {
+  const { user } = useAuth();
   const [repuestos, setRepuestos] = useState([]);
   const [proveedores, setProveedores] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,13 +32,10 @@ export default function Repuestos() {
   const [modalOpen, setModalOpen] = useState(false);
   const [cargaMasivaOpen, setCargaMasivaOpen] = useState(false);
   const [editando, setEditando] = useState(null);
-  const [user, setUser] = useState(null);
   const [consumoRepuesto, setConsumoRepuesto] = useState(null);
   const containerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
-    const u = await base44.auth.me().catch(() => null);
-    setUser(u);
     const [reps, provs] = await Promise.all([
       base44.entities.Repuesto.list("-created_date", 200).catch(() => []),
       base44.entities.Proveedor.list().catch(() => []),
