@@ -2,41 +2,56 @@ import {
   LayoutDashboard, Monitor, Bell, ClipboardList, FileText, History,
   Settings, Wrench, Building2, Package, ShieldX, BarChart3, Users
 } from "lucide-react";
+import { ROLES } from "@/lib/roles";
 
-// Matriz de permisos por rol.
-// Roles: admin, super_admin, monitor_corporativo, admin_salud,
-//        jefe_taller, mecanico, supervisor, operador, user
+// Matriz de navegación por rol. Roles finales:
+// super_admin (Base del Sistema) · admin · encargado_salud ·
+// encargado_compras_salud · monitor_corporativo · jefe_taller ·
+// encargado_compras_taller · mecanico · user (Usuario/Chofer)
 export const NAV_ITEMS = [
   { label: "Dashboard", page: "Dashboard", path: "/", icon: LayoutDashboard,
-    roles: ["admin", "super_admin", "admin_salud", "supervisor", "operador", "user"] },
+    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.ENCARGADO_SALUD, ROLES.ENCARGADO_COMPRAS_SALUD, ROLES.USER] },
+
   { label: "Taller", page: "Taller", path: "/Taller", icon: Wrench,
-    roles: ["admin", "super_admin", "jefe_taller", "mecanico"] },
+    roles: [ROLES.SUPER_ADMIN, ROLES.JEFE_TALLER, ROLES.MECANICO] },
+
   { label: "Equipos", page: "Equipos2", path: "/Equipos2", icon: Monitor,
-    roles: ["admin", "super_admin", "admin_salud", "supervisor", "operador", "user"] },
+    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.ENCARGADO_SALUD, ROLES.ENCARGADO_COMPRAS_SALUD, ROLES.USER] },
+
   { label: "Alertas", page: "AlertasV2", path: "/AlertasV2", icon: Bell,
-    roles: ["admin", "super_admin", "admin_salud", "supervisor", "operador", "user"] },
+    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.ENCARGADO_SALUD, ROLES.ENCARGADO_COMPRAS_SALUD, ROLES.USER] },
+
   { label: "Solicitudes", page: "SolicitudesV2", path: "/SolicitudesV2", icon: ClipboardList,
-    roles: ["admin", "super_admin", "admin_salud", "supervisor", "operador", "user"] },
+    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.ENCARGADO_SALUD, ROLES.ENCARGADO_COMPRAS_SALUD, ROLES.USER] },
+
   { label: "Repuestos", page: "Repuestos", path: "/Repuestos", icon: Package,
-    roles: ["admin", "super_admin", "jefe_taller", "mecanico"] },
+    roles: [ROLES.SUPER_ADMIN, ROLES.JEFE_TALLER, ROLES.MECANICO, ROLES.ENCARGADO_COMPRAS_TALLER] },
+
   { label: "Proveedores", page: "Proveedores", path: "/Proveedores", icon: Building2,
-    roles: ["admin", "super_admin", "jefe_taller"] },
+    roles: [ROLES.SUPER_ADMIN, ROLES.JEFE_TALLER, ROLES.ENCARGADO_COMPRAS_TALLER, ROLES.ENCARGADO_COMPRAS_SALUD] },
+
   { label: "Revisión Bitácora", page: "RevisionInspecciones", path: "/RevisionInspecciones", icon: ClipboardList,
-    roles: ["admin", "super_admin", "admin_salud", "supervisor"] },
+    roles: [ROLES.SUPER_ADMIN, ROLES.ENCARGADO_SALUD] },
+
   { label: "Reportes", page: "Reportes", path: "/Reportes", icon: FileText,
-    roles: ["admin", "super_admin", "admin_salud", "jefe_taller", "supervisor"] },
+    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.ENCARGADO_SALUD, ROLES.JEFE_TALLER, ROLES.MONITOR_CORPORATIVO] },
+
   { label: "Monitor Corporativo", page: "MonitorCorporativo", path: "/MonitorCorporativo", icon: BarChart3,
-    roles: ["admin", "super_admin", "monitor_corporativo", "jefe_taller"] },
+    roles: [ROLES.SUPER_ADMIN, ROLES.MONITOR_CORPORATIVO] },
+
   { label: "Historial", page: "Historial", path: "/Historial", icon: History,
-    roles: ["admin", "super_admin", "admin_salud"] },
+    roles: [ROLES.SUPER_ADMIN] },
+
   { label: "Configuración", page: "Configuracion", path: "/Configuracion", icon: Settings,
-    roles: ["admin", "super_admin"] },
+    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
+
   { label: "Accesos No Autorizados", page: "AccesosNoAutorizados", path: "/AccesosNoAutorizados", icon: ShieldX,
-    roles: ["admin", "super_admin"] },
+    roles: [ROLES.SUPER_ADMIN] },
+
   { label: "Usuarios", page: "Usuarios", path: "/Usuarios", icon: Users,
-    roles: ["super_admin"] },
+    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.ENCARGADO_SALUD, ROLES.JEFE_TALLER] },
 ];
 
 export function getNavItemsForRole(role) {
-  return NAV_ITEMS.filter(item => item.roles.includes(role || "user"));
+  return NAV_ITEMS.filter(item => item.roles.includes(role || ROLES.USER));
 }
