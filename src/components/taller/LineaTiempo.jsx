@@ -1,4 +1,4 @@
-import { Clock, User, Wrench, CheckCircle2, Plus, FileText } from "lucide-react";
+import { Clock, User, Wrench, CheckCircle2, FileText } from "lucide-react";
 
 function fmtFecha(fecha) {
   if (!fecha) return "";
