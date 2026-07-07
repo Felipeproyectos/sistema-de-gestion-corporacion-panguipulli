@@ -54,7 +54,10 @@ export default function Dashboard() {
   const fetchData = useCallback(async () => {
     const u = await base44.auth.me().catch(() => null);
     setUser(u);
-    // El taller (mecánico/jefe/encargado compras) solo necesita equipos y
+    // El mecánico se redirige a su módulo de Órdenes de Trabajo;
+    // no necesita cargar ningún listado del dashboard.
+    if (u?.role === ROLES.MECANICO) return;
+    // El taller (jefe/encargado compras) solo necesita equipos y
     // actividades. Se omiten los 4 listados de salud (parches, solicitudes,
     // alertas, bitácoras) para acelerar la carga inicial.
     const esTaller = esRolTaller(u?.role);
