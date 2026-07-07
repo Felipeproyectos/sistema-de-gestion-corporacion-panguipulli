@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Monitor, Bell, ClipboardList, FileText, History,
-  Settings, Wrench, Building2, Package, ShieldX, BarChart3, Users
+  Settings, Wrench, Building2, Package, ShieldX, BarChart3, Users, ClipboardCheck
 } from "lucide-react";
 import { ROLES } from "@/lib/roles";
 
@@ -26,6 +26,9 @@ export const NAV_ITEMS = [
 
   { label: "Repuestos", page: "Repuestos", path: "/Repuestos", icon: Package,
     roles: [ROLES.SUPER_ADMIN, ROLES.JEFE_TALLER, ROLES.MECANICO, ROLES.ENCARGADO_COMPRAS_TALLER] },
+
+  { label: "Aprobación Solicitudes", page: "AprobacionRepuestos", path: "/AprobacionRepuestos", icon: ClipboardCheck,
+    roles: [ROLES.SUPER_ADMIN, ROLES.JEFE_TALLER, ROLES.ENCARGADO_COMPRAS_TALLER] },
 
   { label: "Proveedores", page: "Proveedores", path: "/Proveedores", icon: Building2,
     roles: [ROLES.SUPER_ADMIN, ROLES.JEFE_TALLER, ROLES.ENCARGADO_COMPRAS_TALLER, ROLES.ENCARGADO_COMPRAS_SALUD] },
