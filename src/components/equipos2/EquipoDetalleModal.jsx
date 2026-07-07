@@ -1,16 +1,15 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   X, Edit, Trash2, Plus, Info, Wrench, ClipboardCheck, Package, BookOpen,
   MapPin, Calendar, User, Upload, AlertTriangle, Activity, Car, Zap, Monitor,
-  Hash, Gauge, FileText, Download, Shield, CheckCircle, Clock, ArrowLeft,
-  Loader2, ExternalLink, Printer, ChevronDown, ChevronRight, Fuel
+  Hash, Gauge, FileText, Shield, CheckCircle, Clock, ArrowLeft,
+  Loader2, ExternalLink, Printer, ChevronDown
 } from "lucide-react";
-import { TIPOS_EQUIPO, ESTADOS_EQUIPO, TIPOS_ACTIVIDAD } from "@/lib/centros";
+import { TIPOS_EQUIPO, ESTADOS_EQUIPO } from "@/lib/centros";
 import RepuestosTab from "./RepuestosTab";
 import PautaInspeccionSemanal from "@/components/bitacora/PautaInspeccionSemanal";
 import PautaPlaceholder from "@/components/bitacora/PautaPlaceholder";
-import TurnoChoferForm from "@/components/bitacora/TurnoChoferForm";
 import PautaSemanalDesfibrilador from "@/components/bitacora/PautaSemanalDesfibrilador";
 import PautaSemanalMultiparametros from "@/components/bitacora/PautaSemanalMultiparametros";
 import PautaDiariaAmbulancia from "@/components/bitacora/PautaDiariaAmbulancia";
@@ -50,9 +49,11 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
   };
 
   const handleDelete = async () => {
-    if (!confirm("¿Eliminar este equipo? Esta acción no se puede deshacer.")) return;
+    if (!confirm("¿Eliminar este equipo? Quedará oculto de los listados pero se conserva en el historial para auditoría.")) return;
     setDeleting(true);
-    await base44.entities.Equipo.delete(equipo.id);
+    // Soft delete: se marca inactivo en vez de borrar el registro real, para
+    // que Base del Sistema siempre pueda auditar qué se eliminó y cuándo.
+    await base44.entities.Equipo.update(equipo.id, { activo: false });
     onDeleted();
   };
 
