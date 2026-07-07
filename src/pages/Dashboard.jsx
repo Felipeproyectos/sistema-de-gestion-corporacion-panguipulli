@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   Monitor, AlertTriangle, ClipboardList, Activity, Zap, Car, Wrench,
-  CheckCircle, Clock, Bell, User, MapPin, ChevronRight, RefreshCw,
+  CheckCircle, Bell, User, MapPin, ChevronRight, RefreshCw,
   Package, ClipboardCheck, TrendingUp, ArrowRight, QrCode
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
