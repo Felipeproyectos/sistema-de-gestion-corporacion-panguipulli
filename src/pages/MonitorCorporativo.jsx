@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import {
-  Monitor, AlertTriangle, ClipboardCheck, ClipboardList, Activity, Zap, Car,
-  Wrench, Package, CheckCircle2, TrendingUp, Building2, BarChart3,
+  Monitor, AlertTriangle, ClipboardCheck, ClipboardList, Activity,
+  Wrench, Package, CheckCircle2, TrendingUp, BarChart3,
   ShieldCheck, RefreshCw, Heart, Stethoscope
 } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar,
-  XAxis, YAxis, Tooltip, Legend, CartesianGrid
+  XAxis, YAxis, Tooltip, CartesianGrid
 } from "recharts";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -16,6 +16,8 @@ import usePullToRefresh from "@/hooks/usePullToRefresh";
 import KpiCard from "@/components/monitor/KpiCard";
 import CentroBreakdown from "@/components/monitor/CentroBreakdown";
 import { getCentrosEstructura } from "@/lib/centros";
+import ComentariosEquipo from "@/components/monitor/ComentariosEquipo";
+import { MessageCircle } from "lucide-react";
 
 const ESTADO_EQUIPO_COLORS = {
   operativo: "#16a34a",
@@ -52,7 +54,11 @@ const ALERTA_TIPO_LABELS = {
 export default function MonitorCorporativo() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [equipoSeleccionado, setEquipoSeleccionado] = useState("");
   const containerRef = useRef(null);
+
+  useEffect(() => { base44.auth.me().then(setCurrentUser).catch(() => {}); }, []);
 
   const fetchData = useCallback(async () => {
     const [equipos, parches, alertas, solicitudes, inspecciones, ordenes, repuestos, proveedores, centros] = await Promise.all([
@@ -304,6 +310,39 @@ export default function MonitorCorporativo() {
               )}
             </div>
           </div>
+        </SeccionArea>
+
+        {/* ===== NOTAS Y CONSULTAS (bidireccional: Monitor Corporativo, Jefe de Taller, Encargado Salud) ===== */}
+        <SeccionArea
+          titulo="Notas y Consultas" subtitulo="Hilo por equipo, visible para Monitor Corporativo, Jefe de Taller y Encargado Salud del centro"
+          icon={MessageCircle} color="#4f46e5" bg="#eef2ff">
+          <div className="mb-3">
+            <select
+              value={equipoSeleccionado}
+              onChange={(e) => setEquipoSeleccionado(e.target.value)}
+              className="w-full sm:w-96 border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            >
+              <option value="">Selecciona un equipo para ver/dejar notas...</option>
+              {equipos
+                .slice()
+                .sort((a, b) => (a.tipo === "ambulancia" ? -1 : 1))
+                .map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.tipo === "ambulancia" ? "🚑" : "🩺"} {e.marca} {e.modelo} — {e.centro_principal}{e.subsede ? " / " + e.subsede : ""}
+                  </option>
+                ))}
+            </select>
+          </div>
+          {equipoSeleccionado && (
+            <ComentariosEquipo
+              equipoId={equipoSeleccionado}
+              equipoLabel={(() => {
+                const eq = equipos.find((e) => e.id === equipoSeleccionado);
+                return eq ? `${eq.marca} ${eq.modelo}` : equipoSeleccionado;
+              })()}
+              currentUser={currentUser}
+            />
+          )}
         </SeccionArea>
 
         {/* ===== DISTRIBUCIÓN POR CENTRO Y SUCURSAL ===== */}
