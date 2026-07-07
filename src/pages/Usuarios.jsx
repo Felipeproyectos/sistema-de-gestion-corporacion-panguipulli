@@ -6,24 +6,22 @@ import usePullToRefresh from "@/hooks/usePullToRefresh";
 import UsuarioCard from "@/components/usuarios/UsuarioCard";
 import InviteUserModal from "@/components/usuarios/InviteUserModal";
 import NormalizarUsuarios from "@/components/usuarios/NormalizarUsuarios";
-
-const ROLES_SALUD = ["user", "operador", "supervisor", "admin_salud"];
-const ROLES_TALLER = ["mecanico", "jefe_taller"];
-const ROLES_ADMIN = ["admin", "super_admin", "monitor_corporativo"];
+import { ROLES, esRolSalud, esRolTaller, esSuperAdmin, rolesQuePuedeCrear, roleLabel } from "@/lib/roles";
 
 function getCentros(u) {
   const arr = Array.isArray(u.centros_asignados) ? u.centros_asignados : [];
   const legacy = u.centro_asignado ? [u.centro_asignado] : [];
-  return [...new Set([...arr, ...legacy])].filter(Boolean);
+  const principal = u.centro_principal ? [u.centro_principal] : [];
+  return [...new Set([...principal, ...arr, ...legacy])].filter(Boolean);
 }
 
 function deriveArea(u) {
   if (u.area === "salud") return "salud";
   if (u.area === "taller") return "taller";
   if (u.area === "admin") return "admin";
-  if (ROLES_TALLER.includes(u.role)) return "taller";
-  if (ROLES_ADMIN.includes(u.role)) return "admin";
-  if (getCentros(u).length > 0) return "salud";
+  if (esRolTaller(u.role)) return "taller";
+  if (u.role === ROLES.ADMIN || esSuperAdmin(u.role) || u.role === ROLES.MONITOR_CORPORATIVO) return "admin";
+  if (esRolSalud(u.role)) return "salud";
   return "salud";
 }
 
@@ -55,15 +53,48 @@ export default function Usuarios() {
 
   usePullToRefresh(fetchData, containerRef);
 
-  // Solo super_admin / admin pueden ver este módulo
-  const canAccess = currentUser?.role === "super_admin" || currentUser?.role === "admin";
+  // Acceso: super_admin (todos) · admin (solo Salud) · encargado_salud (solo su
+  // centro, solo crea Usuario/Chofer) · jefe_taller (solo Taller, solo crea
+  // Mecánico y Encargado Compras Taller).
+  const rolesConAcceso = [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.ENCARGADO_SALUD, ROLES.JEFE_TALLER];
+  const canAccess = rolesConAcceso.includes(currentUser?.role);
+  const rolesCreables = rolesQuePuedeCrear(currentUser?.role);
+  const puedeInvitar = rolesCreables.length > 0;
+
+  // Qué usuarios puede ver cada rol (además del control de acceso general):
+  // - super_admin: todos
+  // - admin: área salud completa
+  // - encargado_salud: solo usuarios de su propio centro_principal
+  // - jefe_taller: solo área taller
+  const usuariosVisibles = usuarios.filter((u) => {
+    if (esSuperAdmin(currentUser?.role)) return true;
+    if (currentUser?.role === ROLES.ADMIN) return deriveArea(u) !== "taller";
+    if (currentUser?.role === ROLES.JEFE_TALLER) return deriveArea(u) === "taller";
+    if (currentUser?.role === ROLES.ENCARGADO_SALUD) {
+      return deriveArea(u) === "salud" && getCentros(u).includes(currentUser.centro_principal);
+    }
+    return false;
+  });
 
   // Clasificar usuarios por área derivada
-  const porArea = (area) => usuarios.filter(u => deriveArea(u) === area);
+  const porArea = (area) => usuariosVisibles.filter(u => deriveArea(u) === area);
 
-  const usuariosTab = tab === "salud" ? porArea("salud")
-    : tab === "taller" ? porArea("taller")
-    : porArea("admin");
+  const tabsDisponibles = esSuperAdmin(currentUser?.role)
+    ? ["salud", "taller", "admin"]
+    : currentUser?.role === ROLES.ADMIN
+    ? ["salud"]
+    : currentUser?.role === ROLES.ENCARGADO_SALUD
+    ? ["salud"]
+    : currentUser?.role === ROLES.JEFE_TALLER
+    ? ["taller"]
+    : [];
+
+  useEffect(() => {
+    if (tabsDisponibles.length && !tabsDisponibles.includes(tab)) setTab(tabsDisponibles[0]);
+     
+  }, [currentUser]);
+
+  const usuariosTab = porArea(tab);
 
   // Filtro por centro (solo aplica en tab salud)
   const filtrados = usuariosTab.filter(u => {
@@ -93,7 +124,7 @@ export default function Usuarios() {
       <div className="text-center">
         <Shield className="w-12 h-12 text-slate-300 mx-auto mb-3" />
         <p className="text-slate-500 font-medium">Acceso restringido</p>
-        <p className="text-slate-400 text-sm mt-1">Solo Super Admin / Admin</p>
+        <p className="text-slate-400 text-sm mt-1">No tienes permiso para gestionar cuentas</p>
       </div>
     </div>
   );
@@ -102,7 +133,7 @@ export default function Usuarios() {
     { v: "salud", l: "Salud", icon: Stethoscope, color: "#059669", count: porArea("salud").length },
     { v: "taller", l: "Taller", icon: Wrench, color: "#ea580c", count: porArea("taller").length },
     { v: "admin", l: "Administración", icon: Shield, color: "#2563EB", count: porArea("admin").length },
-  ];
+  ].filter(t => tabsDisponibles.includes(t.v));
 
   return (
     <div ref={containerRef} className="min-h-screen bg-slate-50" style={{ overscrollBehavior: "none" }}>
@@ -115,12 +146,12 @@ export default function Usuarios() {
               <UsersIcon className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
             </div>
             <div>
-              <p className="text-slate-300 text-[10px] lg:text-xs font-semibold uppercase tracking-widest hidden sm:block">Super Administrador</p>
+              <p className="text-slate-300 text-[10px] lg:text-xs font-semibold uppercase tracking-widest hidden sm:block">{roleLabel(currentUser?.role)}</p>
               <h1 className="text-xl lg:text-3xl font-bold text-white leading-tight">Gestión de Usuarios</h1>
-              <p className="text-slate-400 text-xs lg:text-sm mt-0.5">{usuarios.length} usuarios registrados</p>
+              <p className="text-slate-400 text-xs lg:text-sm mt-0.5">{usuariosVisibles.length} usuarios visibles</p>
             </div>
           </div>
-          {(currentUser?.role === "super_admin") && (
+          {puedeInvitar && (
             <button
               onClick={() => setModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 flex-shrink-0"
@@ -133,31 +164,35 @@ export default function Usuarios() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 lg:px-10 pb-10">
-        <NormalizarUsuarios usuarios={usuarios} onCompleto={fetchData} />
+        {esSuperAdmin(currentUser?.role) && (
+          <NormalizarUsuarios usuarios={usuarios} onCompleto={fetchData} />
+        )}
 
         {/* Tabs de área */}
-        <div className="grid grid-cols-3 gap-2 mb-4 -mt-2">
-          {TABS.map(t => {
-            const Icon = t.icon;
-            const active = tab === t.v;
-            return (
-              <button
-                key={t.v}
-                onClick={() => { setTab(t.v); setCentroFiltro("todos"); }}
-                className="flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold transition-all"
-                style={active
-                  ? { background: "white", color: t.color, boxShadow: "0 4px 14px rgba(0,0,0,0.08)" }
-                  : { background: "rgba(255,255,255,0.5)", color: "#64748B" }}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{t.l}</span>
-                <span className="px-1.5 py-0.5 rounded-full text-xs font-bold" style={active ? { background: `${t.color}15`, color: t.color } : { background: "#E2E8F0", color: "#94A3B8" }}>
-                  {t.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {TABS.length > 1 && (
+          <div className="grid gap-2 mb-4 -mt-2" style={{ gridTemplateColumns: `repeat(${TABS.length}, minmax(0,1fr))` }}>
+            {TABS.map(t => {
+              const Icon = t.icon;
+              const active = tab === t.v;
+              return (
+                <button
+                  key={t.v}
+                  onClick={() => { setTab(t.v); setCentroFiltro("todos"); }}
+                  className="flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold transition-all"
+                  style={active
+                    ? { background: "white", color: t.color, boxShadow: "0 4px 14px rgba(0,0,0,0.08)" }
+                    : { background: "rgba(255,255,255,0.5)", color: "#64748B" }}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t.l}</span>
+                  <span className="px-1.5 py-0.5 rounded-full text-xs font-bold" style={active ? { background: `${t.color}15`, color: t.color } : { background: "#E2E8F0", color: "#94A3B8" }}>
+                    {t.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Buscador */}
         <div className="relative mb-4">
@@ -170,8 +205,8 @@ export default function Usuarios() {
           />
         </div>
 
-        {/* Filtro por centro (solo tab salud) */}
-        {tab === "salud" && (
+        {/* Filtro por centro (solo tab salud, y solo si el rol ve más de un centro) */}
+        {tab === "salud" && esSuperAdmin(currentUser?.role) || (tab === "salud" && currentUser?.role === ROLES.ADMIN) ? (
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
               <Building2 className="w-3.5 h-3.5" /> Filtrar por centro
@@ -196,7 +231,7 @@ export default function Usuarios() {
               ))}
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Lista de usuarios */}
         {filtrados.length === 0 ? (
@@ -213,7 +248,7 @@ export default function Usuarios() {
         )}
       </div>
 
-      <InviteUserModal open={modalOpen} onClose={() => setModalOpen(false)} onInvited={fetchData} />
+      <InviteUserModal open={modalOpen} onClose={() => setModalOpen(false)} onInvited={fetchData} currentUser={currentUser} />
     </div>
   );
 }
