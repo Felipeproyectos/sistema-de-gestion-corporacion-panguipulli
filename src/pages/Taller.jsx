@@ -11,6 +11,7 @@ import usePullToRefresh from "@/hooks/usePullToRefresh";
 import OrdenTrabajoCard from "@/components/taller/OrdenTrabajoCard";
 import OrdenTrabajoFormModal from "@/components/taller/OrdenTrabajoFormModal";
 import SolicitudRepuestoModule from "@/components/taller/SolicitudRepuestoModule";
+import { useAuth } from "@/lib/AuthContext";
 
 const FILTROS = [
   { value: "pendiente", label: "Pendientes" },
@@ -21,10 +22,10 @@ const FILTROS = [
 ];
 
 export default function Taller() {
+  const { user } = useAuth();
   const [ordenes, setOrdenes] = useState([]);
   const [repuestos, setRepuestos] = useState([]);
   const [equipos, setEquipos] = useState([]);
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("pendiente");
   const [modalOpen, setModalOpen] = useState(false);
@@ -32,8 +33,6 @@ export default function Taller() {
   const containerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
-    const u = await base44.auth.me().catch(() => null);
-    setUser(u);
     const [ots, reps, eqs] = await Promise.all([
       base44.entities.OrdenTrabajo.list("-created_date", 100).catch(() => []),
       base44.entities.Repuesto.list().catch(() => []),
