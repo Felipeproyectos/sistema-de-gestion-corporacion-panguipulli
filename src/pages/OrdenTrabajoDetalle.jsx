@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import LineaTiempo from "@/components/taller/LineaTiempo";
 import RepuestosUtilizados from "@/components/taller/RepuestosUtilizados";
+import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { isSimulandoActivo, getEffectiveNavRole, MENSAJE_BLOQUEO_SIMULACION } from "@/lib/roleSimulator";
 
@@ -41,10 +42,10 @@ const PRIORIDAD_CFG = {
 export default function OrdenTrabajoDetalle() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [ot, setOt] = useState(null);
   const [repuestos, setRepuestos] = useState([]);
   const [mecanicos, setMecanicos] = useState([]);
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Campos editables
@@ -67,12 +68,10 @@ export default function OrdenTrabajoDetalle() {
   const canCerrar = !simActivo && ["super_admin", "jefe_taller"].includes(effectiveRole);
 
   const fetchData = useCallback(async () => {
-    const [u, rep, users] = await Promise.all([
-      base44.auth.me().catch(() => null),
+    const [rep, users] = await Promise.all([
       base44.entities.Repuesto.list().catch(() => []),
       base44.entities.User.list().catch(() => []),
     ]);
-    setUser(u);
     setRepuestos(rep);
     setMecanicos(users.filter(us => ["mecanico", "jefe_taller"].includes(us.role)));
     const otData = await base44.entities.OrdenTrabajo.get(id).catch(() => null);
