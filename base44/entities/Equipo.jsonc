@@ -175,6 +175,11 @@
     "empresa_responsable_informe_externo": {
       "type": "string",
       "description": "Empresa o persona responsable del informe externo"
+    },
+    "activo": {
+      "type": "boolean",
+      "default": true,
+      "description": "Falso = eliminado l\u00f3gicamente (soft delete). Se conserva el registro para auditor\u00eda; no aparece en listados normales."
     }
   },
   "required": [
@@ -186,13 +191,129 @@
     "centro_principal"
   ],
   "rls": {
-    "create": true,
-    "read": true,
-    "update": true,
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "encargado_salud"
+              }
+            },
+            {
+              "data.centro_principal": "{{user.centro_principal}}"
+            }
+          ]
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "monitor_corporativo"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "jefe_taller"
+              }
+            },
+            {
+              "data.tipo": "ambulancia"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "mecanico"
+              }
+            },
+            {
+              "data.tipo": "ambulancia"
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "encargado_compras_taller"
+              }
+            },
+            {
+              "data.tipo": "ambulancia"
+            }
+          ]
+        },
+        {
+          "data.centro_principal": "{{user.centro_principal}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "user_condition": {
+                "role": "encargado_salud"
+              }
+            },
+            {
+              "data.centro_principal": "{{user.centro_principal}}"
+            }
+          ]
+        }
+      ]
+    },
     "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     }
   }
 }
