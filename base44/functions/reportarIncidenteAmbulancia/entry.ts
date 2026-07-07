@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
 
       // 3. Buscar todos los admins y enviar correo
       const usuarios = await base44.asServiceRole.entities.User.list();
-      const admins = usuarios.filter(u => u.role === 'admin');
+      const admins = usuarios.filter(u => ['super_admin', 'admin', 'encargado_salud'].includes(u.role));
 
       const tipoLabel = { falla_mecanica: "Falla Mecánica", accidente: "Accidente", otros: "Otros" }[tipo_incidente] || tipo_incidente;
 
