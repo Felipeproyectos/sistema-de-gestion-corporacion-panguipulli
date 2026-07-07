@@ -3,7 +3,7 @@ import { invokePublic } from "@/lib/publicFetch";
 import { base44 } from "@/api/base44Client";
 import {
   CheckCircle, Loader2, AlertTriangle, ChevronDown, ChevronUp,
-  Send, Fuel, Car, Zap, Wrench, Package, FileText, Camera, X, Plus
+  Send, Fuel, Car, Zap, Wrench, Package, FileText, Camera, X
 } from "lucide-react";
 import EquipoSelector from "./EquipoSelector";
 
