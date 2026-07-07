@@ -1,153 +1,79 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { History, Search, Loader2, Plus, Edit2, Trash2, Filter } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { History, User as UserIcon, Clock, ShieldAlert } from "lucide-react";
+import { ROLES } from "@/lib/roles";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
-
-const ACCION_CONFIG = {
-  crear:   { color: "bg-green-100 text-green-700 border-green-200",  icon: Plus,  label: "Creó" },
-  editar:  { color: "bg-blue-100 text-blue-700 border-blue-200",    icon: Edit2, label: "Editó" },
-  eliminar:{ color: "bg-red-100 text-red-700 border-red-200",       icon: Trash2,label: "Eliminó" },
-};
 
 export default function Historial() {
   const [registros, setRegistros] = useState([]);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [filtroAccion, setFiltroAccion] = useState("todos");
 
   useEffect(() => {
-    base44.entities.Historial.list("-created_date", 200)
-      .then(data => { setRegistros(data); setLoading(false); })
-      .catch(() => setLoading(false));
+    base44.auth.me().then(setUser).catch(() => {});
+    base44.entities.Historial.list("-fecha", 200)
+      .then(setRegistros)
+      .finally(() => setLoading(false));
   }, []);
 
-  const filtrados = registros.filter(r => {
-    const matchAccion = filtroAccion === "todos" || r.accion === filtroAccion;
-    const matchSearch = !search || 
-      r.descripcion?.toLowerCase().includes(search.toLowerCase()) ||
-      r.usuario_email?.toLowerCase().includes(search.toLowerCase()) ||
-      r.usuario_nombre?.toLowerCase().includes(search.toLowerCase());
-    return matchAccion && matchSearch;
-  });
+  const esBaseDelSistema = user?.role === ROLES.SUPER_ADMIN;
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-    </div>
-  );
+  if (!loading && !esBaseDelSistema) {
+    return (
+      <div className="flex items-center justify-center min-h-screen px-6">
+        <div className="text-center">
+          <ShieldAlert className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-500 font-medium">Acceso restringido</p>
+          <p className="text-slate-400 text-sm mt-1">El historial de auditoría es exclusivo de Base del Sistema.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen" style={{ background: "#e8f4fd" }}>
-      {/* Header */}
-      <div className="relative overflow-hidden px-6 lg:px-10 pt-10 pb-8" style={{ background: "linear-gradient(135deg, #0f2d6b 0%, #1565c0 40%, #29b6f6 100%)" }}>
-        <div className="absolute right-8 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full opacity-20 border-4 border-white" />
-        <div className="absolute right-4 bottom-0 w-72 h-72 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #29b6f6 0%, transparent 70%)" }} />
-        <div className="relative max-w-5xl mx-auto flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.2)" }}>
-            <History className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <p className="text-cyan-200 text-xs font-semibold uppercase tracking-widest">Auditoría</p>
-            <h1 className="text-3xl font-bold text-white">Historial de Actividad</h1>
-            <p className="text-blue-100 text-sm mt-0.5">Registro de todas las acciones realizadas en la plataforma</p>
-          </div>
+    <div className="p-6 max-w-4xl mx-auto">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+          style={{ background: "linear-gradient(135deg, #64748b, #475569)" }}>
+          <History className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <h1 className="text-xl font-bold text-slate-800">Historial de Auditoría</h1>
+          <p className="text-sm text-slate-500">Registro de acciones realizadas en el sistema</p>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-6 pb-10">
-      <div className="bg-white rounded-3xl shadow-lg p-6">
-
-      {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            className="w-full border border-slate-200 rounded-xl pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-slate-50 shadow-sm"
-            placeholder="Buscar por usuario o descripción..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
         </div>
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400" />
-          {["todos", "crear", "editar", "eliminar"].map(a => (
-            <button
-              key={a}
-              onClick={() => setFiltroAccion(a)}
-              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all capitalize ${
-                filtroAccion === a
-                  ? "text-white shadow-sm"
-                  : "bg-white text-slate-500 border border-slate-200"
-              }`}
-              style={filtroAccion === a ? { background: "linear-gradient(135deg,#1565c0,#0288d1)" } : {}}
-            >
-              {a === "todos" ? "Todos" : a}
-            </button>
-          ))}
+      ) : registros.length === 0 ? (
+        <div className="text-center py-16 text-slate-400">
+          <History className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p className="font-medium">Sin registros</p>
         </div>
-      </div>
-
-      {/* Resumen */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        {[
-          { label: "Creaciones", key: "crear", color: "#16a34a", bg: "#f0fdf4" },
-          { label: "Ediciones", key: "editar", color: "#1565c0", bg: "#eff6ff" },
-          { label: "Eliminaciones", key: "eliminar", color: "#dc2626", bg: "#fef2f2" },
-        ].map(s => (
-          <div key={s.key} className="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center">
-            <p className="text-2xl font-bold" style={{ color: s.color }}>
-              {registros.filter(r => r.accion === s.key).length}
-            </p>
-            <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Timeline */}
-      <div className="space-y-2">
-        {filtrados.length === 0 && (
-          <div className="text-center py-16 text-slate-400">
-            <History className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p>No hay registros de actividad aún</p>
-            <p className="text-xs mt-1">Las acciones se registrarán automáticamente</p>
-          </div>
-        )}
-        {filtrados.map(r => {
-          const cfg = ACCION_CONFIG[r.accion] || ACCION_CONFIG.editar;
-          const Icon = cfg.icon;
-          return (
-            <div key={r.id} className="bg-slate-50 rounded-2xl border border-slate-100 px-5 py-4 flex items-start gap-4 hover:shadow-sm transition-shadow">
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border ${cfg.color}`}>
-                <Icon className="w-4 h-4" />
+      ) : (
+        <div className="space-y-2">
+          {registros.map(r => (
+            <div key={r.id} className="bg-white rounded-xl p-4 flex items-start gap-3 border border-slate-100">
+              <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-slate-100">
+                <UserIcon className="w-4 h-4 text-slate-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-900 leading-snug">{r.descripcion}</p>
-                <div className="flex items-center gap-3 mt-1 flex-wrap">
-                  <span className="text-xs text-slate-500">
-                    {r.usuario_nombre ? `${r.usuario_nombre}` : r.usuario_email}
+                <p className="text-sm text-slate-700">{r.descripcion || `${r.accion} en ${r.entidad}`}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Clock className="w-3 h-3 text-slate-400" />
+                  <span className="text-xs text-slate-400">
+                    {r.fecha ? format(new Date(r.fecha), "d MMM yyyy · HH:mm", { locale: es }) : "—"}
                   </span>
-                  {r.usuario_nombre && (
-                    <span className="text-xs text-slate-300">{r.usuario_email}</span>
-                  )}
+                  {r.usuario_email && <span className="text-xs text-slate-400">· {r.usuario_email}</span>}
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg.color}`}>
-                  {cfg.label}
-                </span>
-                {r.created_date && (
-                  <span className="text-xs text-slate-400">
-                    {format(new Date(r.created_date), "dd/MM/yy HH:mm")}
-                  </span>
-                )}
-              </div>
             </div>
-          );
-        })}
-      </div>
-      </div>
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
