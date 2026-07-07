@@ -5,18 +5,18 @@
     "role": {
       "type": "string",
       "enum": [
-        "admin",
-        "user",
         "super_admin",
+        "admin",
+        "encargado_salud",
+        "encargado_compras_salud",
         "monitor_corporativo",
-        "admin_salud",
         "jefe_taller",
+        "encargado_compras_taller",
         "mecanico",
-        "supervisor",
-        "operador"
+        "user"
       ],
       "default": "user",
-      "description": "Rol jer\u00e1rquico del usuario en el sistema"
+      "description": "Rol jer\u00e1rquico del usuario en el sistema. 'super_admin' se muestra en la interfaz como \"Base del Sistema\". 'user' representa el perfil Usuario/Chofer."
     },
     "area": {
       "type": "string",
@@ -25,18 +25,29 @@
         "taller",
         "ambas"
       ],
-      "description": "\u00c1rea operativa principal del usuario"
+      "description": "\u00c1rea operativa principal del usuario (derivada del rol, se mantiene por compatibilidad)"
     },
     "centro_asignado": {
       "type": "string",
-      "description": "Centro de salud asignado (legacy)"
+      "description": "Centro de salud asignado (legacy, usar centro_principal)"
+    },
+    "centro_principal": {
+      "type": "string",
+      "description": "Nombre del CESFAM al que pertenece el usuario. Define el alcance principal de visibilidad (Encargado Salud, Usuario/Chofer, Encargado Compras Salud)."
+    },
+    "subsedes_asignadas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Subsedes espec\u00edficas (dentro del centro_principal) que el usuario puede ver. Si est\u00e1 vac\u00edo, se asume solo el centro principal sin subsedes."
     },
     "centros_asignados": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "Centros de salud que puede visualizar el usuario"
+      "description": "Legacy: centros de salud que puede visualizar el usuario. Reemplazado por centro_principal + subsedes_asignadas."
     }
   },
   "required": []
