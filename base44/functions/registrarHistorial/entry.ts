@@ -14,11 +14,16 @@ Deno.serve(async (req) => {
     // Mapeo de nombres legibles
     const NOMBRES = {
       EquipoDEA: "Equipo DEA",
+      Equipo: "Equipo",
       Parche: "Parche",
       SolicitudStock: "Solicitud de Stock",
       HistorialMantenimiento: "Mantenimiento",
       Centro: "Centro de Salud",
       ConfigAlerta: "Config. Alerta",
+      Repuesto: "Repuesto",
+      OrdenTrabajo: "Orden de Trabajo",
+      Proveedor: "Proveedor",
+      User: "Usuario",
     };
 
     const ACCIONES = { create: "crear", update: "editar", delete: "eliminar" };
@@ -38,6 +43,16 @@ Deno.serve(async (req) => {
         descripcion = `${accion === "crear" ? "Registró" : accion === "editar" ? "Editó" : "Eliminó"} mantenimiento tipo ${data.tipo_mantenimiento || "—"} para equipo ID ${data.equipo_id || "—"}`;
       } else if (entityName === "Centro") {
         descripcion = `${accion === "crear" ? "Creó" : accion === "editar" ? "Editó" : "Eliminó"} centro: ${data.nombre || "—"}`;
+      } else if (entityName === "Equipo") {
+        descripcion = `${accion === "crear" ? "Registró" : accion === "editar" ? "Editó" : "Eliminó"} equipo: ${data.marca || ""} ${data.modelo || ""} (Inv. ${data.numero_inventario || "—"}) en ${data.centro_principal || "—"}`;
+      } else if (entityName === "Repuesto") {
+        descripcion = `${accion === "crear" ? "Registró" : accion === "editar" ? "Editó" : "Eliminó"} repuesto: ${data.nombre || "—"} (código ${data.codigo || "—"})`;
+      } else if (entityName === "OrdenTrabajo") {
+        descripcion = `${accion === "crear" ? "Creó" : accion === "editar" ? "Editó" : "Eliminó"} orden de trabajo ${data.numero_ot || "—"} — ${data.equipo_label || "—"}`;
+      } else if (entityName === "Proveedor") {
+        descripcion = `${accion === "crear" ? "Registró" : accion === "editar" ? "Editó" : "Eliminó"} proveedor: ${data.nombre || "—"} (${data.rubro || "—"})`;
+      } else if (entityName === "User") {
+        descripcion = `${accion === "crear" ? "Creó" : accion === "editar" ? "Editó" : "Eliminó"} usuario: ${data.email || data.full_name || "—"} — rol: ${data.role || "—"}`;
       }
     }
 
