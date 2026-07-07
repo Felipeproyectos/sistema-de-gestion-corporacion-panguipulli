@@ -8,21 +8,24 @@ import usePullToRefresh from "@/hooks/usePullToRefresh";
 import OrdenTrabajoCard from "@/components/taller/OrdenTrabajoCard";
 
 const FILTROS = [
-  { value: "pendiente", label: "Pendientes" },
   { value: "asignada", label: "Asignadas" },
   { value: "en_proceso", label: "En Proceso" },
+  { value: "pausada", label: "Pausadas" },
   { value: "completada", label: "Completadas" },
   { value: "todas", label: "Todas" },
 ];
 
 export default function OrdenesTrabajo() {
   const [ordenes, setOrdenes] = useState([]);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filtro, setFiltro] = useState("pendiente");
+  const [filtro, setFiltro] = useState("asignada");
   const containerRef = useRef(null);
   const navigate = useNavigate();
 
   const fetchData = useCallback(async () => {
+    const u = await base44.auth.me().catch(() => null);
+    setUser(u);
     const ots = await base44.entities.OrdenTrabajo.list("-created_date", 100).catch(() => []);
     setOrdenes(ots);
   }, []);
@@ -30,11 +33,12 @@ export default function OrdenesTrabajo() {
   useEffect(() => { fetchData().finally(() => setLoading(false)); }, [fetchData]);
   const { refreshing } = usePullToRefresh(fetchData, containerRef);
 
-  const filtradas = filtro === "todas" ? ordenes : ordenes.filter(o => o.estado === filtro);
-  const pendientes = ordenes.filter(o => o.estado === "pendiente").length;
-  const asignadas = ordenes.filter(o => o.estado === "asignada").length;
-  const enProceso = ordenes.filter(o => o.estado === "en_proceso").length;
-  const completadas = ordenes.filter(o => o.estado === "completada").length;
+  const mias = ordenes.filter(o => o.mecanico_email && o.mecanico_email === user?.email);
+  const filtradas = filtro === "todas" ? mias : mias.filter(o => o.estado === filtro);
+  const asignadas = mias.filter(o => o.estado === "asignada").length;
+  const enProceso = mias.filter(o => o.estado === "en_proceso").length;
+  const pausadas = mias.filter(o => o.estado === "pausada").length;
+  const completadas = mias.filter(o => o.estado === "completada").length;
 
   const irDetalle = (ot) => navigate(`/OrdenTrabajoDetalle/${ot.id}`);
 
@@ -71,9 +75,9 @@ export default function OrdenesTrabajo() {
       <div className="max-w-6xl mx-auto px-4 lg:px-10 -mt-4 lg:-mt-6 mb-4 lg:mb-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           {[
-            { label: "Pendientes", value: pendientes, icon: ClipboardList, color: "#D97706", bg: "#FFFBEB" },
             { label: "Asignadas", value: asignadas, icon: Wrench, color: "#2563EB", bg: "#EFF6FF" },
             { label: "En Proceso", value: enProceso, icon: Activity, color: "#7C3AED", bg: "#F5F3FF" },
+            { label: "Pausadas", value: pausadas, icon: ClipboardList, color: "#64748B", bg: "#F1F5F9" },
             { label: "Completadas", value: completadas, icon: CheckCircle2, color: "#16A34A", bg: "#F0FDF4" },
           ].map((s, i) => {
             const Icon = s.icon;
@@ -105,7 +109,7 @@ export default function OrdenesTrabajo() {
                 : { background: "white", color: "#64748B", border: "1px solid #E2E8F0" }}>
               {f.label}
               {f.value !== "todas" && (
-                <span className="ml-1.5 text-xs">({ordenes.filter(o => o.estado === f.value).length})</span>
+                <span className="ml-1.5 text-xs">({mias.filter(o => o.estado === f.value).length})</span>
               )}
             </button>
           ))}
