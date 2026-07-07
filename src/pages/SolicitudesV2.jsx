@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { ClipboardList, Plus, Search, Loader2, X } from "lucide-react";
 import { TIPOS_SOLICITUD, CENTROS_ESTRUCTURA } from "@/lib/centros";
 import NativePicker from "@/components/NativePicker";
+import { useAuth } from "@/lib/AuthContext";
 
 const ESTADO_CONFIG = {
   pendiente: { label: "Pendiente", color: "#d97706", bg: "#fffbeb" },
@@ -11,9 +12,9 @@ const ESTADO_CONFIG = {
 };
 
 export default function SolicitudesV2() {
+  const { user } = useAuth();
   const [solicitudes, setSolicitudes] = useState([]);
   const [equipos, setEquipos] = useState([]);
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState("todos");
@@ -22,11 +23,9 @@ export default function SolicitudesV2() {
 
   useEffect(() => {
     Promise.all([
-      base44.auth.me().catch(() => null),
       base44.entities.Solicitud.list("-fecha", 200),
       base44.entities.Equipo.list()
-    ]).then(([u, sol, eq]) => {
-      setUser(u);
+    ]).then(([sol, eq]) => {
       setSolicitudes(sol);
       setEquipos(eq);
       setLoading(false);
