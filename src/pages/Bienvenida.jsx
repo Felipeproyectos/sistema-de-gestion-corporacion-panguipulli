@@ -16,9 +16,14 @@ export default function Bienvenida() {
   useEffect(() => {
     base44.auth.isAuthenticated().then((authed) => {
       if (authed) {
-        // Si hay sesión activa, recargar para que AuthContext haga la
-        // verificación completa (incluye check de usuario registrado).
-        window.location.replace("/Dashboard");
+        // Si hay sesión activa, verificar rol para redirigir al inicio correcto
+        base44.auth.me().then((u) => {
+          if (u?.role === "monitor_corporativo") {
+            window.location.replace("/MonitorCorporativo");
+          } else {
+            window.location.replace("/Dashboard");
+          }
+        }).catch(() => window.location.replace("/Dashboard"));
       } else {
         setChecking(false);
       }
@@ -26,6 +31,7 @@ export default function Bienvenida() {
   }, [navigate]);
 
   const handleLogin = () => {
+    // Tras login, redirigir según rol (el Layout ajustará si es monitor_corporativo)
     base44.auth.redirectToLogin("/Dashboard");
   };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Heart, Menu, X, LogOut } from "lucide-react";
@@ -23,6 +23,14 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   const visibleItems = getNavItemsForRole(user?.role);
+  const navigate = useNavigate();
+
+  // Redirigir al Monitor Corporativo a usuarios con rol exclusivo de visualización
+  useEffect(() => {
+    if (user?.role === "monitor_corporativo" && currentPageName !== "MonitorCorporativo") {
+      navigate("/MonitorCorporativo", { replace: true });
+    }
+  }, [user, currentPageName, navigate]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex" style={{ fontFamily: "'Inter', sans-serif" }}>
