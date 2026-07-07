@@ -415,14 +415,10 @@ function InspeccionCard({ insp, onActualizar }) {
 }
 
 export default function RevisionInspecciones() {
+  const { user } = useAuth();
   const [inspecciones, setInspecciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("pendiente");
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
-  }, []);
 
   const cargar = async () => {
     setLoading(true);
