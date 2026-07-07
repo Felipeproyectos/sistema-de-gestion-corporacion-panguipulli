@@ -10,7 +10,6 @@ import { createPageUrl } from "@/utils";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import OrdenTrabajoCard from "@/components/taller/OrdenTrabajoCard";
 import OrdenTrabajoFormModal from "@/components/taller/OrdenTrabajoFormModal";
-import OrdenDeCompraModule from "@/components/taller/OrdenDeCompraModule";
 import SolicitudRepuestoModule from "@/components/taller/SolicitudRepuestoModule";
 
 const FILTROS = [
@@ -254,9 +253,8 @@ export default function Taller() {
         </div>
       </div>
 
-      {/* Módulos de Taller: Orden de Compra + Solicitud de Repuesto */}
+      {/* Módulo de Taller: Solicitud de Repuestos (enviadas por mecánicos, aprobadas por Jefe de Taller) */}
       <div className="max-w-6xl mx-auto px-4 lg:px-10 pb-10 space-y-4 lg:space-y-6">
-        <OrdenDeCompraModule user={user} />
         <SolicitudRepuestoModule user={user} />
       </div>
 
