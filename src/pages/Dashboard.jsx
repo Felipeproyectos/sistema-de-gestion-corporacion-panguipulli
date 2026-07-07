@@ -188,18 +188,18 @@ export default function Dashboard() {
                     : act.fecha;
                 } catch { timeAgo = act.fecha; }
                 return (
-                  <div key={act.id} className="px-6 py-3.5 flex items-start gap-4 hover:bg-slate-50 transition-colors">
+                  <div key={act.id} className="px-4 lg:px-6 py-3 lg:py-3.5 flex items-start gap-3 lg:gap-4 hover:bg-slate-50 transition-colors">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: cfg.bg }}>
                       <ActIcon className="w-4 h-4" style={{ color: cfg.color }} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold text-slate-800">
                             {TIPO_ACT_LABEL[act.tipo] || act.tipo}
                           </p>
                           {equipo && (
-                            <p className="text-xs text-slate-500 mt-0.5">
+                            <p className="text-xs text-slate-500 mt-0.5 truncate">
                               {equipo.marca} {equipo.modelo}
                               {equipo.patente ? ` · ${equipo.patente}` : ""}
                               {equipo.centro_principal ? ` · ${equipo.centro_principal}` : ""}
@@ -207,14 +207,14 @@ export default function Dashboard() {
                           )}
                           {act.usuario_nombre && (
                             <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                              <User className="w-3 h-3" />{act.usuario_nombre}
+                              <User className="w-3 h-3 flex-shrink-0" />{act.usuario_nombre}
                             </p>
                           )}
                           {act.observaciones && (
-                            <p className="text-xs text-slate-400 mt-0.5 truncate max-w-xs">{act.observaciones}</p>
+                            <p className="text-xs text-slate-400 mt-0.5 break-words line-clamp-2">{act.observaciones}</p>
                           )}
                         </div>
-                        <span className="text-xs font-medium flex-shrink-0" style={{ color: cfg.color }}>{timeAgo}</span>
+                        <span className="text-xs font-medium flex-shrink-0 whitespace-nowrap" style={{ color: cfg.color }}>{timeAgo}</span>
                       </div>
                     </div>
                   </div>
