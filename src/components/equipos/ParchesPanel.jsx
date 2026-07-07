@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, Trash2, Loader2, AlertTriangle, CheckCircle } from "lucide-react";
+import { Plus, Trash2, Loader2 } from "lucide-react";
 import { differenceInDays, parseISO, format } from "date-fns";
 
 export default function ParchesPanel({ equipoId, parches, onRefresh, isAdmin }) {
