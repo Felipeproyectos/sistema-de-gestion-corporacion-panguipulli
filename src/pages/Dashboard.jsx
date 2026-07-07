@@ -84,14 +84,13 @@ export default function Dashboard() {
   // Total notificaciones prioritarias
   const totalNotif = alertas.length + bitacorasPendientes.length + vencidos.length;
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-
   return (
     <div ref={containerRef} className="min-h-screen" style={{ background: "#e8f4fd", overscrollBehavior: "none" }}>
+      {loading && (
+        <div className="fixed top-0 left-0 right-0 z-50 h-1 overflow-hidden" style={{ background: "#bfdbfe" }}>
+          <div className="h-full w-1/3 animate-pulse" style={{ background: "#2563eb" }} />
+        </div>
+      )}
       {refreshing && (
         <div className="flex items-center justify-center py-3 lg:hidden">
           <RefreshCw className="w-5 h-5 text-blue-500 animate-spin" />

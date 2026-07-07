@@ -5,10 +5,23 @@ import { createPageUrl } from "@/utils";
 import {
   ArrowLeft, Wrench, Car, User, Clock, AlertTriangle, CheckCircle2,
   Calendar, ClipboardList, Save, Loader2, Edit3,
-  Stethoscope
+  Stethoscope, Lock
 } from "lucide-react";
 import LineaTiempo from "@/components/taller/LineaTiempo";
 import RepuestosUtilizados from "@/components/taller/RepuestosUtilizados";
+import { useToast } from "@/components/ui/use-toast";
+import { isSimulandoActivo, getEffectiveNavRole, MENSAJE_BLOQUEO_SIMULACION } from "@/lib/roleSimulator";
+
+// Convierte una fecha ISO a valor local para input datetime-local
+function toLocalInput(fecha) {
+  if (!fecha) return "";
+  try {
+    const d = new Date(fecha);
+    if (isNaN(d.getTime())) return "";
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } catch { return ""; }
+}
 
 const ESTADO_CFG = {
   pendiente: { label: "Pendiente", color: "#D97706", bg: "#FFFBEB" },
@@ -38,17 +51,20 @@ export default function OrdenTrabajoDetalle() {
   const [diagnostico, setDiagnostico] = useState("");
   const [editDiag, setEditDiag] = useState(false);
   const [mecanicoSel, setMecanicoSel] = useState("");
-  const [horasEst, setHorasEst] = useState("");
+  const [fechaHora, setFechaHora] = useState("");
+  const [obsAsignacion, setObsAsignacion] = useState("");
   const [horasReales, setHorasReales] = useState("");
   const [manoObra, setManoObra] = useState("");
   const [notasCierre, setNotasCierre] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const { toast } = useToast();
 
-  // Administrador no tiene acceso a Taller (fuera de su ámbito). Mecánico y
-  // Jefe de Taller trabajan el contenido de la OT; solo Jefe de Taller (y
-  // Super Admin) puede cerrarla — el cierre es lo que descuenta stock real.
-  const canEdit = ["super_admin", "jefe_taller", "mecanico"].includes(user?.role);
-  const canCerrar = ["super_admin", "jefe_taller"].includes(user?.role);
+  // Durante "Simular Rol" las escrituras están bloqueadas (solo lectura).
+  // Se respeta el rol efectivo para mostrar/ocultar acciones según el perfil simulado.
+  const effectiveRole = getEffectiveNavRole(user?.role);
+  const simActivo = isSimulandoActivo();
+  const canEdit = !simActivo && ["super_admin", "jefe_taller", "mecanico"].includes(effectiveRole);
+  const canCerrar = !simActivo && ["super_admin", "jefe_taller"].includes(effectiveRole);
 
   const fetchData = useCallback(async () => {
     const [u, rep, users] = await Promise.all([
@@ -63,7 +79,7 @@ export default function OrdenTrabajoDetalle() {
     setOt(otData);
     setDiagnostico(otData?.diagnostico || "");
     setMecanicoSel(otData?.mecanico_email || "");
-    setHorasEst(otData?.horas_estimadas || "");
+    setFechaHora(toLocalInput(otData?.fecha_asignacion));
     setHorasReales(otData?.horas_reales || "");
     setManoObra(otData?.total_mano_obra || "");
     setNotasCierre(otData?.notas_cierre || "");
@@ -100,7 +116,10 @@ export default function OrdenTrabajoDetalle() {
       await base44.entities.OrdenTrabajo.update(ot.id, { diagnostico });
       setOt({ ...ot, diagnostico });
       setEditDiag(false);
-    } catch (e) { console.error(e); }
+      toast({ title: "Diagnóstico guardado" });
+    } catch (e) {
+      toast({ title: "No se pudo guardar", description: e.message, variant: "destructive" });
+    }
     setGuardando(false);
   };
 
@@ -108,17 +127,21 @@ export default function OrdenTrabajoDetalle() {
     setGuardando(true);
     try {
       const mec = mecanicos.find(m => m.email === mecanicoSel);
+      const fechaAsignacion = fechaHora ? new Date(fechaHora).toISOString() : (ot.fecha_asignacion || new Date().toISOString());
       const update = {
         mecanico_email: mecanicoSel || "",
         mecanico_nombre: mec?.full_name || "",
         estado: ot.estado === "pendiente" ? "asignada" : ot.estado,
-        fecha_asignacion: ot.fecha_asignacion || new Date().toISOString().split("T")[0],
-        horas_estimadas: horasEst ? Number(horasEst) : null,
-        linea_tiempo: [...(ot.linea_tiempo || []), addTimeline("Mecánico asignado", mec?.full_name || "")],
+        fecha_asignacion: fechaAsignacion,
+        linea_tiempo: [...(ot.linea_tiempo || []), addTimeline("Mecánico asignado", obsAsignacion || mec?.full_name || "")],
       };
       await base44.entities.OrdenTrabajo.update(ot.id, update);
       setOt({ ...ot, ...update });
-    } catch (e) { console.error(e); }
+      setObsAsignacion("");
+      toast({ title: "Asignación guardada", description: mec?.full_name ? `Mecánico: ${mec.full_name}` : "Sin asignar" });
+    } catch (e) {
+      toast({ title: "No se pudo guardar la asignación", description: e.message, variant: "destructive" });
+    }
     setGuardando(false);
   };
 
@@ -156,7 +179,10 @@ export default function OrdenTrabajoDetalle() {
       }
       await base44.entities.OrdenTrabajo.update(ot.id, update);
       setOt({ ...ot, ...update });
-    } catch (e) { console.error(e); }
+      toast({ title: `Estado: ${ESTADO_CFG[nuevoEstado].label}` });
+    } catch (e) {
+      toast({ title: "No se pudo cambiar el estado", description: e.message, variant: "destructive" });
+    }
     setGuardando(false);
   };
 
@@ -170,11 +196,22 @@ export default function OrdenTrabajoDetalle() {
         horas_reales: horasReales ? Number(horasReales) : ot.horas_reales,
       });
       setOt({ ...ot, total_mano_obra: mo, total: totalRep + mo });
-    } catch (e) { console.error(e); }
+      toast({ title: "Cierre guardado" });
+    } catch (e) {
+      toast({ title: "No se pudo guardar el cierre", description: e.message, variant: "destructive" });
+    }
     setGuardando(false);
   };
 
   const fmtFecha = (f) => f ? new Date(f).toLocaleDateString("es-CL", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+  const fmtFechaHora = (f) => {
+    if (!f) return "—";
+    try {
+      const d = new Date(f);
+      if (isNaN(d.getTime())) return fmtFecha(f);
+      return d.toLocaleString("es-CL", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    } catch { return fmtFecha(f); }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -209,6 +246,11 @@ export default function OrdenTrabajoDetalle() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 lg:px-10 -mt-3 lg:-mt-5 pb-10 space-y-4">
+        {simActivo && (
+          <div className="rounded-2xl px-4 py-3 flex items-center gap-2 text-sm font-semibold" style={{ background: "#F5F3FF", color: "#7C3AED" }}>
+            <Lock className="w-4 h-4 flex-shrink-0" /> {MENSAJE_BLOQUEO_SIMULACION}
+          </div>
+        )}
         {/* Resumen costos */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
@@ -299,9 +341,13 @@ export default function OrdenTrabajoDetalle() {
                   <option key={m.id} value={m.email}>{m.full_name}</option>
                 ))}
               </select>
-              <label className="text-xs text-slate-400 font-semibold mt-3 block">Horas estimadas</label>
-              <input type="number" min="0" step="0.5" value={horasEst} onChange={e => setHorasEst(e.target.value)} disabled={!canEdit}
+              <label className="text-xs text-slate-400 font-semibold mt-3 block">Fecha y hora</label>
+              <input type="datetime-local" value={fechaHora} onChange={e => setFechaHora(e.target.value)} disabled={!canEdit}
                 className="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm disabled:bg-slate-50" />
+              <label className="text-xs text-slate-400 font-semibold mt-3 block">Observaciones (opcional)</label>
+              <textarea rows={2} value={obsAsignacion} onChange={e => setObsAsignacion(e.target.value)} disabled={!canEdit}
+                placeholder="Comentarios para el mecánico..."
+                className="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm resize-none disabled:bg-slate-50" />
               {canEdit && (
                 <button onClick={handleAsignar} disabled={guardando}
                   className="w-full mt-3 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 flex items-center justify-center gap-1"
@@ -316,7 +362,7 @@ export default function OrdenTrabajoDetalle() {
               <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-slate-500" /> Fechas
               </h3>
-              <div className="flex justify-between text-xs"><span className="text-slate-400">Asignación</span><span className="font-semibold text-slate-700">{fmtFecha(ot.fecha_asignacion)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-slate-400">Asignación</span><span className="font-semibold text-slate-700">{fmtFechaHora(ot.fecha_asignacion)}</span></div>
               <div className="flex justify-between text-xs"><span className="text-slate-400">Inicio</span><span className="font-semibold text-slate-700">{fmtFecha(ot.fecha_inicio)}</span></div>
               <div className="flex justify-between text-xs"><span className="text-slate-400">Fin</span><span className="font-semibold text-slate-700">{fmtFecha(ot.fecha_fin)}</span></div>
             </div>
