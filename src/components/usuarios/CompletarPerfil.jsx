@@ -3,8 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { getCentrosEstructura } from "@/lib/centros";
 import { Stethoscope, Wrench, Shield, Loader2, CheckCircle2, UserPlus } from "lucide-react";
 
-const ROLES_TALLER = ["mecanico", "jefe_taller"];
-const ROLES_ADMIN = ["admin", "super_admin", "monitor_corporativo"];
+import { esRolTaller, esSuperAdmin, ROLES } from "@/lib/roles";
 
 export default function CompletarPerfil({ user, onCompleto }) {
   const [open, setOpen] = useState(false);
@@ -20,8 +19,8 @@ export default function CompletarPerfil({ user, onCompleto }) {
     const sinArea = !user.area || !["salud", "taller", "ambas"].includes(user.area);
     if (sinArea) {
       // Pre-derivar área desde el rol
-      if (ROLES_TALLER.includes(user.role)) setArea("taller");
-      else if (ROLES_ADMIN.includes(user.role)) setArea("ambas");
+      if (esRolTaller(user.role)) setArea("taller");
+      else if (esSuperAdmin(user.role) || user.role === ROLES.ADMIN || user.role === ROLES.MONITOR_CORPORATIVO) setArea("ambas");
       else setArea("salud");
       setOpen(true);
       getCentrosEstructura().then(setCentrosList).catch(() => {});
@@ -41,6 +40,7 @@ export default function CompletarPerfil({ user, onCompleto }) {
       const update = {
         area,
         centros_asignados: area === "salud" ? centros : [],
+        centro_principal: area === "salud" ? (centros[0] || "") : "",
       };
       await base44.auth.updateMe(update);
       setDone(true);
