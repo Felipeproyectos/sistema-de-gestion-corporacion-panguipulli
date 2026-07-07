@@ -7,7 +7,7 @@ import { getEffectiveNavRole } from "@/lib/roleSimulator";
 export default function MobileNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [role, setRole] = useState("user");
+  const [role, setRole] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(u => setRole(u?.role || "user")).catch(() => {});
@@ -20,7 +20,7 @@ export default function MobileNav() {
     return () => window.removeEventListener("role-simulator-change", h);
   }, []);
 
-  const items = getNavItemsForRole(getEffectiveNavRole(role)).slice(0, 4);
+  const items = role === null ? [] : getNavItemsForRole(getEffectiveNavRole(role)).slice(0, 4);
 
   const handleTap = (e, item, isActive) => {
     e.preventDefault();

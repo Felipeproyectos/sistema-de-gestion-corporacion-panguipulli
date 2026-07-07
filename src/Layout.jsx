@@ -12,20 +12,21 @@ import { roleLabel } from "@/lib/roles";
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
+  const [userLoading, setUserLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [appConfig, setAppConfig] = useState(null);
   const location = useLocation();
   useDarkMode();
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    base44.auth.me().then(setUser).catch(() => {}).finally(() => setUserLoading(false));
     base44.entities.AppConfig.list().then((list) => {
       if (list.length > 0) setAppConfig(list[0]);
     }).catch(() => {});
   }, []);
 
   const effectiveRole = getEffectiveNavRole(user?.role);
-  const visibleItems = getNavItemsForRole(effectiveRole);
+  const visibleItems = userLoading ? [] : getNavItemsForRole(effectiveRole);
   const navigate = useNavigate();
 
   // Redirigir al Monitor Corporativo a usuarios con rol exclusivo de visualización
