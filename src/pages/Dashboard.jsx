@@ -12,6 +12,7 @@ import { createPageUrl } from "@/utils";
 import { differenceInDays, parseISO, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
+import TallerDashboard from "@/pages/TallerDashboard";
 
 const TIPO_ACT_LABEL = {
   mantenimiento_preventivo: "Mantenimiento Preventivo",
@@ -85,6 +86,9 @@ export default function Dashboard() {
   const { refreshing } = usePullToRefresh(fetchData, containerRef);
 
   const esTallerUser = esRolTaller(user?.role);
+  // Los roles de taller no ven el dashboard de equipos de salud:
+  // ven un panel enfocado en órdenes y solicitudes entrantes desde los centros.
+  if (esTallerUser && !loading) return <TallerDashboard user={user} />;
   const hoy = new Date();
   const vencidos = parches.filter(p => differenceInDays(parseISO(p.fecha_vencimiento), hoy) < 0);
   const operativos = equipos.filter(e => e.estado === "operativo");
