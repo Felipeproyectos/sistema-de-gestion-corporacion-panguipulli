@@ -7,6 +7,7 @@ import UsuarioCard from "@/components/usuarios/UsuarioCard";
 import InviteUserModal from "@/components/usuarios/InviteUserModal";
 import NormalizarUsuarios from "@/components/usuarios/NormalizarUsuarios";
 import { ROLES, esRolSalud, esRolTaller, esSuperAdmin, rolesQuePuedeCrear, roleLabel } from "@/lib/roles";
+import { useAuth } from "@/lib/AuthContext";
 import { getEffectiveNavRole } from "@/lib/roleSimulator";
 
 function getCentros(u) {
@@ -27,8 +28,8 @@ function deriveArea(u) {
 }
 
 export default function Usuarios() {
+  const { user: currentUser } = useAuth();
   const [usuarios, setUsuarios] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
   const [centrosList, setCentrosList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("salud");
@@ -38,12 +39,10 @@ export default function Usuarios() {
   const containerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
-    const [u, list, centros] = await Promise.all([
-      base44.auth.me().catch(() => null),
+    const [list, centros] = await Promise.all([
       base44.entities.User.list().catch(() => []),
       getCentrosEstructura().catch(() => []),
     ]);
-    setCurrentUser(u);
     setUsuarios(list);
     setCentrosList(centros);
   }, []);
