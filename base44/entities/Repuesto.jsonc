@@ -85,6 +85,11 @@
     "orden_compra_url": {
       "type": "string",
       "description": "URL del documento de orden de compra (PDF)"
+    },
+    "activo": {
+      "type": "boolean",
+      "default": true,
+      "description": "Falso = eliminado l\u00f3gicamente (soft delete). Se conserva el registro para auditor\u00eda; no aparece en listados normales."
     }
   },
   "required": [
@@ -96,17 +101,17 @@
       "$or": [
         {
           "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "user_condition": {
             "role": "super_admin"
           }
         },
         {
           "user_condition": {
             "role": "jefe_taller"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "encargado_compras_taller"
           }
         }
       ]
@@ -116,11 +121,6 @@
       "$or": [
         {
           "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "user_condition": {
             "role": "super_admin"
           }
         },
@@ -131,7 +131,7 @@
         },
         {
           "user_condition": {
-            "role": "mecanico"
+            "role": "encargado_compras_taller"
           }
         }
       ]
@@ -140,12 +140,12 @@
       "$or": [
         {
           "user_condition": {
-            "role": "admin"
+            "role": "super_admin"
           }
         },
         {
           "user_condition": {
-            "role": "super_admin"
+            "role": "jefe_taller"
           }
         }
       ]
