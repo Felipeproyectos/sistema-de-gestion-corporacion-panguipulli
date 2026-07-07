@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import OrdenTrabajoCard from "@/components/taller/OrdenTrabajoCard";
+import { useAuth } from "@/lib/AuthContext";
 
 const FILTROS = [
   { value: "asignada", label: "Asignadas" },
@@ -16,16 +17,14 @@ const FILTROS = [
 ];
 
 export default function OrdenesTrabajo() {
+  const { user } = useAuth();
   const [ordenes, setOrdenes] = useState([]);
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("asignada");
   const containerRef = useRef(null);
   const navigate = useNavigate();
 
   const fetchData = useCallback(async () => {
-    const u = await base44.auth.me().catch(() => null);
-    setUser(u);
     const ots = await base44.entities.OrdenTrabajo.list("-created_date", 100).catch(() => []);
     setOrdenes(ots);
   }, []);
