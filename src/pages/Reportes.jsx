@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { FileText, Loader2, Filter, Bell, ClipboardList } from "lucide-react";
 import { CENTROS_ESTRUCTURA, TIPOS_EQUIPO } from "@/lib/centros";
+import ReporteTaller from "@/components/reportes/ReporteTaller";
 import { differenceInDays, parseISO, format } from "date-fns";
 
 export default function Reportes() {
@@ -324,6 +325,9 @@ export default function Reportes() {
             {generandoSolicitudes ? "Generando..." : "Generar PDF de Solicitudes"}
           </button>
         </div>
+
+        {/* Reporte de Taller */}
+        <ReporteTaller />
 
       </div>
     </div>
