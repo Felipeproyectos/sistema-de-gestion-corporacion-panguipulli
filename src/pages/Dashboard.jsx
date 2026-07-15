@@ -61,25 +61,30 @@ export default function Dashboard() {
     // actividades. Se omiten los 4 listados de salud (parches, solicitudes,
     // alertas, bitácoras) para acelerar la carga inicial.
     const esTaller = esRolTaller(u?.role);
-    const comunes = [
-      base44.entities.Equipo.list('-updated_date', 100).catch(() => []),
-      base44.entities.Actividad.list('-created_date', 50).catch(() => []),
-    ];
-    const datos = esTaller
-      ? await Promise.all(comunes)
-      : await Promise.all([
-          ...comunes,
-          base44.entities.Parche.list('-updated_date', 200).catch(() => []),
-          base44.entities.Solicitud.list('-fecha', 200).catch(() => []),
-          base44.entities.Alerta.filter({ estado: 'activa' }).catch(() => []),
-          base44.entities.InspeccionPendiente.filter({ estado: 'pendiente' }).catch(() => []),
-        ]);
-    setEquipos(datos[0]);
-    setActividades(datos[1]);
-    setParches(esTaller ? [] : datos[2]);
-    setSolicitudes(esTaller ? [] : datos[3]);
-    setAlertas(esTaller ? [] : datos[4]);
-    setBitacorasPendientes(esTaller ? [] : datos[5]);
+    // Equipos y parches se obtienen vía función backend (asServiceRole + auth.me)
+    // porque la RLS integrada no resuelve centro_principal/centros_asignados
+    // para encargados de salud ni para usuarios (chofer). La función aplica el
+    // scoping por rol/centro en el servidor.
+    const equiposRes = base44.functions.invoke('getEquiposPorCentro').then(r => r.data || {}).catch(() => ({}));
+    const acts = base44.entities.Actividad.list('-created_date', 50).catch(() => []);
+    if (esTaller) {
+      const [eq, a] = await Promise.all([equiposRes, acts]);
+      setEquipos(eq.equipos || []);
+      setActividades(a);
+      return;
+    }
+    const [eq, a, sols, alts, insps] = await Promise.all([
+      equiposRes, acts,
+      base44.entities.Solicitud.list('-fecha', 200).catch(() => []),
+      base44.entities.Alerta.filter({ estado: 'activa' }).catch(() => []),
+      base44.entities.InspeccionPendiente.filter({ estado: 'pendiente' }).catch(() => []),
+    ]);
+    setEquipos(eq.equipos || []);
+    setActividades(a);
+    setParches(eq.parches || []);
+    setSolicitudes(sols);
+    setAlertas(alts);
+    setBitacorasPendientes(insps);
   }, [user]);
 
   useEffect(() => {
