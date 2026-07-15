@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { X, Building2, ShoppingCart, FileText, TrendingUp } from "lucide-react";
+import { X, Building2, ShoppingCart, FileText, Printer } from "lucide-react";
+import { generarInformeFinanciero } from "@/utils/generarInformeFinanciero";
 
 const ESTADO_CFG = {
   borrador: { color: "#64748B", bg: "#F1F5F9", label: "Borrador" },
@@ -12,6 +13,8 @@ const ESTADO_CFG = {
 export default function ProveedorHistorialModal({ open, onClose, proveedor }) {
   const [ordenes, setOrdenes] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
 
   useEffect(() => {
     if (!open || !proveedor) return;
@@ -22,12 +25,32 @@ export default function ProveedorHistorialModal({ open, onClose, proveedor }) {
       .finally(() => setLoading(false));
   }, [open, proveedor]);
 
+  useEffect(() => {
+    if (open) { setFechaDesde(""); setFechaHasta(""); }
+  }, [open, proveedor]);
+
   if (!open || !proveedor) return null;
 
-  const totalComprado = ordenes
-    .filter(o => o.estado !== "cancelada")
-    .reduce((s, o) => s + (o.total || 0), 0);
-  const ordenesValidas = ordenes.filter(o => o.estado !== "cancelada");
+  const enRango = (fecha) => {
+    if (!fecha) return true;
+    if (fechaDesde && fecha < fechaDesde) return false;
+    if (fechaHasta && fecha > fechaHasta) return false;
+    return true;
+  };
+
+  const ordenesFiltradas = ordenes.filter(o => enRango(o.fecha_emision));
+  const ordenesValidas = ordenesFiltradas.filter(o => o.estado !== "cancelada");
+  const totalComprado = ordenesValidas.reduce((s, o) => s + (o.total || 0), 0);
+
+  const handleImprimir = () => {
+    generarInformeFinanciero({
+      proveedores: [proveedor],
+      ordenes: ordenesFiltradas,
+      fechaDesde,
+      fechaHasta,
+      esMulti: false,
+    });
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center" style={{ background: "rgba(15,23,42,0.5)" }}>
@@ -49,10 +72,29 @@ export default function ProveedorHistorialModal({ open, onClose, proveedor }) {
         </div>
 
         <div className="p-6 space-y-4">
+          {/* Filtros de fecha */}
+          <div className="bg-slate-50 rounded-2xl p-3 flex flex-wrap items-end gap-3">
+            <div className="flex-1 min-w-32">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Desde</label>
+              <input type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300" />
+            </div>
+            <div className="flex-1 min-w-32">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Hasta</label>
+              <input type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300" />
+            </div>
+            <button onClick={handleImprimir} disabled={ordenesFiltradas.length === 0}
+              className="px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 transition-all disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg,#1565c0,#0288d1)", color: "white" }}>
+              <Printer className="w-4 h-4" /> Imprimir Informe
+            </button>
+          </div>
+
           {/* Resumen */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-blue-50 rounded-2xl p-3 text-center">
-              <p className="text-2xl font-bold text-blue-600">{ordenes.length}</p>
+              <p className="text-2xl font-bold text-blue-600">{ordenesFiltradas.length}</p>
               <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-0.5">Órdenes</p>
             </div>
             <div className="bg-green-50 rounded-2xl p-3 text-center">
@@ -68,14 +110,14 @@ export default function ProveedorHistorialModal({ open, onClose, proveedor }) {
           {/* Lista de órdenes */}
           {loading ? (
             <div className="text-center py-12 text-slate-400 text-sm">Cargando historial...</div>
-          ) : ordenes.length === 0 ? (
+          ) : ordenesFiltradas.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="w-10 h-10 text-slate-200 mx-auto mb-2" />
-              <p className="text-slate-400 text-sm">Este proveedor aún no tiene compras registradas.</p>
+              <p className="text-slate-400 text-sm">{ordenes.length === 0 ? "Este proveedor aún no tiene compras registradas." : "No hay órdenes en el rango de fechas seleccionado."}</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {ordenes.map((o) => {
+              {ordenesFiltradas.map((o) => {
                 const cfg = ESTADO_CFG[o.estado] || ESTADO_CFG.emitida;
                 return (
                   <div key={o.id} className="border border-slate-200 rounded-2xl p-3.5">

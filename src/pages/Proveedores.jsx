@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { Building2, Plus, RefreshCw, Search } from "lucide-react";
+import { Building2, Plus, RefreshCw, Search, FileBarChart } from "lucide-react";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import ProveedorCard from "@/components/taller/ProveedorCard";
 import ProveedorFormModal from "@/components/taller/ProveedorFormModal";
 import ProveedorHistorialModal from "@/components/taller/ProveedorHistorialModal";
+import InformeFinancieroModal from "@/components/taller/InformeFinancieroModal";
 
 const RUBROS = [
   { value: "todos", label: "Todos" },
@@ -23,6 +24,7 @@ export default function Proveedores() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editando, setEditando] = useState(null);
   const [historialProveedor, setHistorialProveedor] = useState(null);
+  const [informeOpen, setInformeOpen] = useState(false);
   const containerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
@@ -67,11 +69,18 @@ export default function Proveedores() {
               <p className="text-slate-300 text-xs lg:text-sm mt-0.5">{proveedores.length} registrados</p>
             </div>
           </div>
-          <button onClick={() => { setEditando(null); setModalOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
-            style={{ background: "#2563EB" }}>
-            <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nuevo</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setInformeOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
+              style={{ background: "rgba(255,255,255,0.15)" }}>
+              <FileBarChart className="w-4 h-4" /> <span className="hidden sm:inline">Informe</span>
+            </button>
+            <button onClick={() => { setEditando(null); setModalOpen(true); }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
+              style={{ background: "#2563EB" }}>
+              <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nuevo</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -117,6 +126,7 @@ export default function Proveedores() {
 
       <ProveedorFormModal open={modalOpen} onClose={() => { setModalOpen(false); setEditando(null); }} onGuardar={handleGuardar} editando={editando} />
       <ProveedorHistorialModal open={!!historialProveedor} proveedor={historialProveedor} onClose={() => setHistorialProveedor(null)} />
+      <InformeFinancieroModal open={informeOpen} onClose={() => setInformeOpen(false)} proveedores={proveedores} />
     </div>
   );
 }
