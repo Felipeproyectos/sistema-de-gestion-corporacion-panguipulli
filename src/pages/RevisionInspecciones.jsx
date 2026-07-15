@@ -2,6 +2,24 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/AuthContext";
+import { ROLES } from "@/lib/roles";
+
+// Devuelve la lista de centros que el usuario puede ver, o null si ve todos.
+function centrosPermitidos(user) {
+  if (!user) return null;
+  if ([ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MONITOR_CORPORATIVO].includes(user.role)) return null;
+  const set = new Set();
+  if (user.centro_principal) set.add(user.centro_principal);
+  (user.centros_asignados || []).forEach(c => set.add(c));
+  return set.size ? [...set] : null;
+}
+
+function centroDeInspeccion(insp) {
+  try {
+    const datos = insp.datos_json ? JSON.parse(insp.datos_json) : {};
+    return datos.equipo?.centro_principal || "";
+  } catch { return ""; }
+}
 import {
   CheckCircle, XCircle, ChevronDown, ChevronUp, ClipboardCheck, Car, MapPin, User, Calendar,
   Fuel, Gauge, Zap, Wrench, Package, FileText, AlertCircle
@@ -432,8 +450,12 @@ export default function RevisionInspecciones() {
 
 
 
-  const filtradas = inspecciones.filter(i => filtro === "todos" || i.estado === filtro);
-  const pendientes = inspecciones.filter(i => i.estado === "pendiente").length;
+  const permitidos = centrosPermitidos(user);
+  const enAlcance = permitidos
+    ? inspecciones.filter(i => permitidos.includes(centroDeInspeccion(i)))
+    : inspecciones;
+  const filtradas = enAlcance.filter(i => filtro === "todos" || i.estado === filtro);
+  const pendientes = enAlcance.filter(i => i.estado === "pendiente").length;
 
   // Agrupar por centro principal
   const porCentro = filtradas.reduce((acc, insp) => {
