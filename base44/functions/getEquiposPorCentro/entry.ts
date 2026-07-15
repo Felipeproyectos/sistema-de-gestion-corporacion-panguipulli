@@ -16,12 +16,22 @@ Deno.serve(async (req) => {
     const activos = allEquipos.filter(e => e.activo !== false);
 
     const role = user.role;
+    // Centros permitidos del usuario: unión de centro_principal y centros_asignados.
+    const centrosPermitidos = Array.from(new Set([
+      ...(user.centro_principal ? [user.centro_principal] : []),
+      ...(Array.isArray(user.centros_asignados) ? user.centros_asignados : [])
+    ].filter(Boolean)));
+
     let permitidos;
     if (role === 'super_admin' || role === 'admin' || role === 'monitor_corporativo') {
       permitidos = activos;
-    } else if (role === 'encargado_salud') {
-      const cp = user.centro_principal;
-      permitidos = cp ? activos.filter(e => e.centro_principal === cp) : [];
+    } else if (role === 'encargado_salud' || role === 'encargado_compras_salud' || role === 'user') {
+      // Roles de salud con alcance por centro: equipos de sus centros asignados
+      // o explícitamente asignados a su email.
+      permitidos = activos.filter(e =>
+        centrosPermitidos.includes(e.centro_principal) ||
+        (e.usuarios_asignados || []).includes(user.email)
+      );
     } else if (role === 'jefe_taller' || role === 'mecanico' || role === 'encargado_compras_taller') {
       permitidos = activos.filter(e => e.tipo === 'ambulancia');
     } else {
