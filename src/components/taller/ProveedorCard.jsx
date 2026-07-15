@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Building2, Phone, Mail, MapPin, Globe, Pencil, Trash2 } from "lucide-react";
+import { Building2, Phone, Mail, MapPin, Globe, Pencil, Trash2, ShoppingCart } from "lucide-react";
 
 const RUBRO_CFG = {
   repuestos: { color: "#2563EB", bg: "#EFF6FF" },
@@ -9,7 +9,7 @@ const RUBRO_CFG = {
   otros: { color: "#64748B", bg: "#F1F5F9" },
 };
 
-export default function ProveedorCard({ proveedor, onEditar, onDelete, onNotificar }) {
+export default function ProveedorCard({ proveedor, onEditar, onDelete, onNotificar, onHistorial }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const cfg = RUBRO_CFG[proveedor.rubro] || RUBRO_CFG.otros;
 
@@ -57,6 +57,11 @@ export default function ProveedorCard({ proveedor, onEditar, onDelete, onNotific
         </div>
       </div>
       <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+        {onHistorial && (
+          <button onClick={() => onHistorial(proveedor)} className="flex-1 py-2 rounded-xl text-xs font-bold text-violet-600 flex items-center justify-center gap-1.5" style={{ background: "#F5F3FF" }}>
+            <ShoppingCart className="w-3.5 h-3.5" /> Historial
+          </button>
+        )}
         <button onClick={() => onEditar(proveedor)} className="flex-1 py-2 rounded-xl text-xs font-bold text-blue-600 flex items-center justify-center gap-1.5" style={{ background: "#EFF6FF" }}>
           <Pencil className="w-3.5 h-3.5" /> Editar
         </button>

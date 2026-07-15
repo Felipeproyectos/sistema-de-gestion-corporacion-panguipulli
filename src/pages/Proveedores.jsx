@@ -4,6 +4,7 @@ import { Building2, Plus, RefreshCw, Search } from "lucide-react";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import ProveedorCard from "@/components/taller/ProveedorCard";
 import ProveedorFormModal from "@/components/taller/ProveedorFormModal";
+import ProveedorHistorialModal from "@/components/taller/ProveedorHistorialModal";
 
 const RUBROS = [
   { value: "todos", label: "Todos" },
@@ -21,6 +22,7 @@ export default function Proveedores() {
   const [busqueda, setBusqueda] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editando, setEditando] = useState(null);
+  const [historialProveedor, setHistorialProveedor] = useState(null);
   const containerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
@@ -107,13 +109,14 @@ export default function Proveedores() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {filtrados.map(p => (
-              <ProveedorCard key={p.id} proveedor={p} onEditar={handleEditar} onDelete={handleEliminar} />
+              <ProveedorCard key={p.id} proveedor={p} onEditar={handleEditar} onDelete={handleEliminar} onHistorial={setHistorialProveedor} />
             ))}
           </div>
         )}
       </div>
 
       <ProveedorFormModal open={modalOpen} onClose={() => { setModalOpen(false); setEditando(null); }} onGuardar={handleGuardar} editando={editando} />
+      <ProveedorHistorialModal open={!!historialProveedor} proveedor={historialProveedor} onClose={() => setHistorialProveedor(null)} />
     </div>
   );
 }
