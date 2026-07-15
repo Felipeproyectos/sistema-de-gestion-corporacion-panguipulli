@@ -39,11 +39,14 @@ export default function Usuarios() {
   const containerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
-    const [list, centros] = await Promise.all([
-      base44.entities.User.list().catch(() => []),
+    // Se usa una función de backend (asServiceRole + auth.me) porque la RLS
+    // integrada de User solo permite listar a admins; los encargados de salud
+    // quedaban en 0. La función aplica el scoping por rol/centro en el servidor.
+    const [usersRes, centros] = await Promise.all([
+      base44.functions.invoke('getUsuariosPorCentro').then(r => r.data || []).catch(() => []),
       getCentrosEstructura().catch(() => []),
     ]);
-    setUsuarios(list);
+    setUsuarios(usersRes);
     setCentrosList(centros);
   }, []);
 
