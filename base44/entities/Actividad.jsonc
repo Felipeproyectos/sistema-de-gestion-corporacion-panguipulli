@@ -91,7 +91,7 @@
               }
             },
             {
-              "data.centro_principal": "{{user.centro_principal}}"
+              "data.centro_principal": "{{user.data.centro_principal}}"
             }
           ]
         },
@@ -120,7 +120,7 @@
               }
             },
             {
-              "data.centro_principal": "{{user.centro_principal}}"
+              "data.centro_principal": "{{user.data.centro_principal}}"
             }
           ]
         },
@@ -149,7 +149,7 @@
               }
             },
             {
-              "data.centro_principal": "{{user.centro_principal}}"
+              "data.centro_principal": "{{user.data.centro_principal}}"
             }
           ]
         },
