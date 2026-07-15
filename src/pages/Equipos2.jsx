@@ -23,12 +23,13 @@ export default function Equipos2() {
   const containerRef = useRef(null);
 
   const reload = useCallback(async () => {
-    const [eq, pa] = await Promise.all([
-      base44.entities.Equipo.list(),
-      base44.entities.Parche.list()
-    ]);
-    setEquipos(eq);
-    setParches(pa);
+    // Se usa una función de backend (asServiceRole + auth.me) en lugar de
+    // Equipo.list()/Parche.list(), porque las plantillas RLS no resuelven
+    // centro_principal (campo personalizado) para encargados de salud.
+    const res = await base44.functions.invoke('getEquiposPorCentro');
+    const data = res.data || {};
+    setEquipos(data.equipos || []);
+    setParches(data.parches || []);
   }, []);
 
   useEffect(() => {
