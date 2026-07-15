@@ -13,6 +13,7 @@ import { differenceInDays, parseISO, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import TallerDashboard from "@/pages/TallerDashboard";
+import MonitorCorporativo from "@/pages/MonitorCorporativo";
 import { useAuth } from "@/lib/AuthContext";
 
 const TIPO_ACT_LABEL = {
@@ -97,8 +98,10 @@ export default function Dashboard() {
   const esTallerUser = esRolTaller(user?.role);
   // El mecánico aterriza directo en su módulo de Órdenes de Trabajo.
   if (user?.role === ROLES.MECANICO && !loading) return <Navigate to="/OrdenesTrabajo" replace />;
-  // Los roles de taller no ven el dashboard de equipos de salud:
-  // ven un panel enfocado en órdenes y solicitudes entrantes desde los centros.
+  // El Jefe de Taller visualiza el mismo dashboard consolidado que el Monitor
+  // Corporativo (Área Salud + Taller), que se ve ordenado y profesional.
+  if (user?.role === ROLES.JEFE_TALLER && !loading) return <MonitorCorporativo />;
+  // El resto de roles de taller ven un panel enfocado en órdenes y solicitudes.
   if (esTallerUser && !loading) return <TallerDashboard user={user} />;
   const hoy = new Date();
   const vencidos = parches.filter(p => differenceInDays(parseISO(p.fecha_vencimiento), hoy) < 0);
