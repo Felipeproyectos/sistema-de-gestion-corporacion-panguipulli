@@ -30,7 +30,7 @@ export const ROLE_LABELS = {
   [ROLES.JEFE_TALLER]: "Jefe de Taller",
   [ROLES.ENCARGADO_COMPRAS_TALLER]: "Encargado Compras Taller",
   [ROLES.MECANICO]: "Mecánico",
-  [ROLES.USER]: "Usuario / Chofer",
+  [ROLES.USER]: "Usuario",
 };
 
 export function roleLabel(role) {
