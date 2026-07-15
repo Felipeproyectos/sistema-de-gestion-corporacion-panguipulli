@@ -20,7 +20,7 @@ export default function Reportes() {
 
   useEffect(() => {
     Promise.all([
-      base44.entities.Equipo.list(),
+      base44.entities.Equipo.list('-created_date', 500),
       base44.entities.Parche.list('-updated_date', 300),
       base44.entities.Alerta.list('-created_date', 300),
       base44.entities.Solicitud.list('-fecha', 300)

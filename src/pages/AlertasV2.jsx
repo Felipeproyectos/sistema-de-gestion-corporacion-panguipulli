@@ -52,50 +52,29 @@ export default function AlertasV2() {
 
   useEffect(() => {
     const init = async () => {
-      const [eqs, pa, al, usrs] = await Promise.all([
-        base44.entities.Equipo.list(),
-        base44.entities.Parche.list(),
-        base44.entities.Alerta.list(),
-        base44.entities.User.list().catch(() => [])
+      const [eqs, pa, al, usrs, sols] = await Promise.all([
+        base44.entities.Equipo.list('-created_date', 500),
+        base44.entities.Parche.list('-created_date', 2000),
+        base44.entities.Alerta.list('-created_date', 500),
+        base44.entities.User.list('-created_date', 100).catch(() => []),
+        base44.entities.Solicitud.list("-created_date", 200).catch(() => [])
       ]);
       setEquipos(eqs);
       setParches(pa);
       setUsuarios(usrs);
-      await generarAlertasAutomaticas(eqs, pa, al);
-      const [alFinal, sols] = await Promise.all([
-        base44.entities.Alerta.list(),
-        base44.entities.Solicitud.list("-created_date").catch(() => [])
-      ]);
-      setAlertas(alFinal);
+      setAlertas(al);
       setSolicitudes(sols);
       setLoading(false);
     };
     init();
   }, []);
 
-  const generarAlertasAutomaticas = async (eqs, pa, alertasExistentes) => {
-    const hoy = new Date();
-    const nuevas = [];
-    for (const eq of eqs) {
-      const parchesEq = pa.filter(p => p.equipo_id === eq.id && p.activo !== false);
-      for (const parche of parchesEq) {
-        if (!parche.fecha_vencimiento) continue;
-        const dias = differenceInDays(parseISO(parche.fecha_vencimiento), hoy);
-        const tipo = dias < 0 ? "parche_vencido" : dias <= 90 ? "parche_por_vencer" : null;
-        if (!tipo) continue;
-        const yaExiste = alertasExistentes.some(a => a.equipo_id === eq.id && a.tipo === tipo && a.estado === "activa");
-        if (!yaExiste) nuevas.push({ equipo_id: eq.id, tipo, nivel: dias < 0 ? "critica" : "advertencia", descripcion: `Parche ${parche.tipo} ${dias < 0 ? "vencido" : `vence en ${dias} días`}`, estado: "activa", centro: eq.centro_principal, subsede: eq.subsede || "" });
-      }
-      if (eq.fecha_vencimiento_bateria) {
-        const dias = differenceInDays(parseISO(eq.fecha_vencimiento_bateria), hoy);
-        const tipo = dias < 0 ? "bateria_vencida" : dias <= 90 ? "bateria_por_vencer" : null;
-        if (tipo && !alertasExistentes.some(a => a.equipo_id === eq.id && a.tipo === tipo && a.estado === "activa")) {
-          nuevas.push({ equipo_id: eq.id, tipo, nivel: dias < 0 ? "critica" : "advertencia", descripcion: `Batería ${dias < 0 ? "vencida" : `vence en ${dias} días`}`, estado: "activa", centro: eq.centro_principal, subsede: eq.subsede || "" });
-        }
-      }
-    }
-    for (const a of nuevas) await base44.entities.Alerta.create(a);
-  };
+  // Las alertas automáticas de vencimiento ahora se generan vía automatización
+  // programada (función generarAlertasAutomaticas, 1 vez al día) con dedup
+  // server-side. Se elimina la generación client-side que causaba thundering
+  // herd y alertas duplicadas con múltiples usuarios.
+
+
 
   const handleResolver = async (alerta) => {
     await base44.entities.Alerta.update(alerta.id, { estado: "resuelta", fecha_resolucion: new Date().toISOString().split("T")[0] });
@@ -125,9 +104,9 @@ export default function AlertasV2() {
 <p><strong>Descripción:</strong> ${form.descripcion}</p>
 <p><strong>Nivel:</strong> ${NIVEL_CONFIG[form.nivel]?.label}</p>
 <br/><p style="color:#666;font-size:12px">Sistema de Gestión de Equipos – Corporación Municipal Panguipulli</p>`;
-      for (const email of form.destinatarios) {
-        await base44.integrations.Core.SendEmail({ to: email, subject: `[Alerta] ${TIPOS_ALERTA.find(t=>t.value===form.tipo)?.label}`, body }).catch(() => {});
-      }
+      await Promise.all(form.destinatarios.map(email =>
+        base44.integrations.Core.SendEmail({ to: email, subject: `[Alerta] ${TIPOS_ALERTA.find(t=>t.value===form.tipo)?.label}`, body }).catch(() => {})
+      ));
       setEnviando(false);
     }
 

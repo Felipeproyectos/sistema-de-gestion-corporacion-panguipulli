@@ -35,8 +35,8 @@ export default function Taller() {
   const fetchData = useCallback(async () => {
     const [ots, reps, eqs] = await Promise.all([
       base44.entities.OrdenTrabajo.list("-created_date", 100).catch(() => []),
-      base44.entities.Repuesto.list().catch(() => []),
-      base44.entities.Equipo.list().catch(() => []),
+      base44.entities.Repuesto.list("-created_date", 200).catch(() => []),
+      base44.entities.Equipo.list("-created_date", 500).catch(() => []),
     ]);
     setOrdenes(ots);
     setRepuestos(reps);

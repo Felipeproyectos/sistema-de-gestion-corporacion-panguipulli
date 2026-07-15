@@ -28,7 +28,7 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
   const handleImprimirInforme = async () => {
     let conductorActivo = equipo.conductor_responsable;
     try {
-      const kms = await base44.entities.Kilometraje.filter({ equipo_id: equipo.id });
+      const kms = await base44.entities.Kilometraje.filter({ equipo_id: equipo.id }, "-created_date", 50);
       const activo = kms.find(r => !r.km_final);
       if (activo?.conductor) conductorActivo = activo.conductor;
     } catch (_) {}
@@ -40,11 +40,11 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
   const esAmbulancia = equipo.tipo === "ambulancia";
 
   useEffect(() => {
-    base44.entities.Actividad.filter({ equipo_id: equipo.id }).then(setActividades).catch(() => {});
+    base44.entities.Actividad.filter({ equipo_id: equipo.id }, "-created_date", 100).then(setActividades).catch(() => {});
   }, [equipo.id]);
 
   const reloadActividades = () => {
-    base44.entities.Actividad.filter({ equipo_id: equipo.id }).then(setActividades).catch(() => {});
+    base44.entities.Actividad.filter({ equipo_id: equipo.id }, "-created_date", 100).then(setActividades).catch(() => {});
     onActividadCreada && onActividadCreada();
   };
 

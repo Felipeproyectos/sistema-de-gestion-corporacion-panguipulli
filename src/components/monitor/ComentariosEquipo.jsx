@@ -28,7 +28,7 @@ export default function ComentariosEquipo({ equipoId, equipoLabel, ordenTrabajoI
 
   const fetchComentarios = useCallback(async () => {
     if (!equipoId) return;
-    const lista = await base44.entities.Comentario.filter({ equipo_id: equipoId }).catch(() => []);
+    const lista = await base44.entities.Comentario.filter({ equipo_id: equipoId }, "-created_date", 50).catch(() => []);
     setComentarios(lista.sort((a, b) => new Date(a.created_date) - new Date(b.created_date)));
   }, [equipoId]);
 

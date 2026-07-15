@@ -77,8 +77,8 @@ export default function Dashboard() {
     const [eq, a, sols, alts, insps] = await Promise.all([
       equiposRes, acts,
       base44.entities.Solicitud.list('-fecha', 200).catch(() => []),
-      base44.entities.Alerta.filter({ estado: 'activa' }).catch(() => []),
-      base44.entities.InspeccionPendiente.filter({ estado: 'pendiente' }).catch(() => []),
+      base44.entities.Alerta.filter({ estado: 'activa' }, '-created_date', 500).catch(() => []),
+      base44.entities.InspeccionPendiente.filter({ estado: 'pendiente' }, '-created_date', 500).catch(() => []),
     ]);
     setEquipos(eq.equipos || []);
     setActividades(a);

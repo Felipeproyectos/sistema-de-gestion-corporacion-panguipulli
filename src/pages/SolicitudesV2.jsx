@@ -24,7 +24,7 @@ export default function SolicitudesV2() {
   useEffect(() => {
     Promise.all([
       base44.entities.Solicitud.list("-fecha", 200),
-      base44.entities.Equipo.list()
+      base44.entities.Equipo.list("-created_date", 500)
     ]).then(([sol, eq]) => {
       setSolicitudes(sol);
       setEquipos(eq);

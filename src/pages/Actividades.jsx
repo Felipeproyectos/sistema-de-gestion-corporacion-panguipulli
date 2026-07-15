@@ -43,7 +43,7 @@ export default function Actividades() {
   useEffect(() => {
     Promise.all([
       base44.entities.Actividad.list("-fecha", 200).catch(() => []),
-      base44.entities.Equipo.list().catch(() => []),
+      base44.entities.Equipo.list("-created_date", 500).catch(() => []),
       base44.entities.Historial.list("-created_date", 200).catch(() => []),
     ]).then(([acts, eqs, hist]) => {
       setActividades(acts);

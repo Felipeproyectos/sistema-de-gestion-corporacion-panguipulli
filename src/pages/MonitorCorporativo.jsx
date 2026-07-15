@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   Monitor, AlertTriangle, ClipboardCheck, ClipboardList, Activity,
@@ -60,70 +60,87 @@ export default function MonitorCorporativo() {
   const containerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
-    const [equipos, parches, alertas, solicitudes, inspecciones, ordenes, repuestos, proveedores, centros] = await Promise.all([
-      base44.entities.Equipo.list().catch(() => []),
-      base44.entities.Parche.list().catch(() => []),
-      base44.entities.Alerta.filter({ estado: "activa" }).catch(() => []),
-      base44.entities.Solicitud.filter({ estado: "pendiente" }).catch(() => []),
-      base44.entities.InspeccionPendiente.filter({ estado: "pendiente" }).catch(() => []),
-      base44.entities.OrdenTrabajo.list('-created_date', 300).catch(() => []),
-      base44.entities.Repuesto.list().catch(() => []),
-      base44.entities.Proveedor.list().catch(() => []),
+    const [res, centros] = await Promise.all([
+      base44.functions.invoke('getMonitorData').catch(() => ({ data: {} })),
       getCentrosEstructura().catch(() => []),
     ]);
-    setData({ equipos, parches, alertas, solicitudes, inspecciones, ordenes, repuestos, proveedores, centros });
+    const d = res.data || {};
+    setData({
+      equipos: d.equipos || [],
+      parches: d.parches || [],
+      alertas: d.alertas || [],
+      solicitudes: d.solicitudes || [],
+      inspecciones: d.inspecciones || [],
+      ordenes: d.ordenes || [],
+      repuestos: d.repuestos || [],
+      proveedores: d.proveedores || [],
+      centros,
+    });
   }, []);
 
   useEffect(() => { fetchData().finally(() => setLoading(false)); }, [fetchData]);
   const { refreshing } = usePullToRefresh(fetchData, containerRef);
+
+  const { equipos = [], parches = [], alertas = [], solicitudes = [], inspecciones = [], ordenes = [], repuestos = [], proveedores = [], centros = [] } = data || {};
+  const hoy = new Date();
+
+  const kpis = useMemo(() => {
+    const operativos = equipos.filter(e => e.estado === "operativo");
+    const enMantenimiento = equipos.filter(e => e.estado === "mantenimiento");
+    const fueraServicio = equipos.filter(e => e.estado === "fuera_de_servicio");
+    const ambulancias = equipos.filter(e => e.tipo === "ambulancia");
+    const deas = equipos.filter(e => e.tipo === "dea" || e.tipo === "monitor_desfibrilador");
+    const parchesVencidos = parches.filter(p => differenceInDays(parseISO(p.fecha_vencimiento), hoy) < 0);
+    const alertasCriticas = alertas.filter(a => a.nivel === "critica");
+
+    const otPendientes = ordenes.filter(o => o.estado === "pendiente");
+    const otEnProceso = ordenes.filter(o => ["asignada", "en_proceso"].includes(o.estado));
+    const otCompletadas = ordenes.filter(o => o.estado === "completada");
+    const otPorInspeccion = ordenes.filter(o => o.origen === "inspeccion");
+    const stockBajo = repuestos.filter(r => (r.stock_actual || 0) <= (r.stock_minimo || 0));
+    const valorInventario = repuestos.reduce((s, r) => s + (r.precio_unitario || 0) * (r.stock_actual || 0), 0);
+    const totalCostoOT = ordenes.reduce((s, o) => s + (o.total || 0), 0);
+    const proveedoresActivos = proveedores.filter(p => p.activo !== false);
+
+    const estadoEquiposData = [
+      { name: "Operativos", value: operativos.length, color: ESTADO_EQUIPO_COLORS.operativo },
+      { name: "En Mantención", value: enMantenimiento.length, color: ESTADO_EQUIPO_COLORS.mantenimiento },
+      { name: "Fuera Servicio", value: fueraServicio.length, color: ESTADO_EQUIPO_COLORS.fuera_de_servicio },
+    ];
+
+    const otEstadosData = Object.keys(OT_ESTADO_LABELS).map(k => ({
+      name: OT_ESTADO_LABELS[k],
+      value: ordenes.filter(o => o.estado === k).length,
+      color: OT_ESTADO_COLORS[k],
+    })).filter(d => d.value > 0);
+
+    const alertasPorTipo = Object.keys(ALERTA_TIPO_LABELS).map(k => ({
+      name: ALERTA_TIPO_LABELS[k],
+      value: alertas.filter(a => a.tipo === k).length,
+    })).filter(d => d.value > 0);
+
+    return {
+      operativos, enMantenimiento, fueraServicio, ambulancias, deas,
+      parchesVencidos, alertasCriticas,
+      otPendientes, otEnProceso, otCompletadas, otPorInspeccion,
+      stockBajo, valorInventario, totalCostoOT, proveedoresActivos,
+      estadoEquiposData, otEstadosData, alertasPorTipo,
+    };
+  }, [equipos, parches, alertas, ordenes, repuestos, proveedores]);
+
+  const {
+    operativos, enMantenimiento, fueraServicio, ambulancias, deas,
+    parchesVencidos, alertasCriticas,
+    otPendientes, otEnProceso, otCompletadas, otPorInspeccion,
+    stockBajo, valorInventario, totalCostoOT, proveedoresActivos,
+    estadoEquiposData, otEstadosData, alertasPorTipo,
+  } = kpis;
 
   if (loading || !data) return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
-
-  const { equipos, parches, alertas, solicitudes, inspecciones, ordenes, repuestos, proveedores, centros } = data;
-  const hoy = new Date();
-
-  // KPIs Salud
-  const operativos = equipos.filter(e => e.estado === "operativo");
-  const enMantenimiento = equipos.filter(e => e.estado === "mantenimiento");
-  const fueraServicio = equipos.filter(e => e.estado === "fuera_de_servicio");
-  const ambulancias = equipos.filter(e => e.tipo === "ambulancia");
-  const deas = equipos.filter(e => e.tipo === "dea" || e.tipo === "monitor_desfibrilador");
-  const parchesVencidos = parches.filter(p => differenceInDays(parseISO(p.fecha_vencimiento), hoy) < 0);
-  const alertasCriticas = alertas.filter(a => a.nivel === "critica");
-
-  // KPIs Taller
-  const otPendientes = ordenes.filter(o => o.estado === "pendiente");
-  const otEnProceso = ordenes.filter(o => ["asignada", "en_proceso"].includes(o.estado));
-  const otCompletadas = ordenes.filter(o => o.estado === "completada");
-  const otPorInspeccion = ordenes.filter(o => o.origen === "inspeccion");
-  const stockBajo = repuestos.filter(r => (r.stock_actual || 0) <= (r.stock_minimo || 0));
-  const valorInventario = repuestos.reduce((s, r) => s + (r.precio_unitario || 0) * (r.stock_actual || 0), 0);
-  const totalCostoOT = ordenes.reduce((s, o) => s + (o.total || 0), 0);
-  const proveedoresActivos = proveedores.filter(p => p.activo !== false);
-
-  // Gráfico estado equipos
-  const estadoEquiposData = [
-    { name: "Operativos", value: operativos.length, color: ESTADO_EQUIPO_COLORS.operativo },
-    { name: "En Mantención", value: enMantenimiento.length, color: ESTADO_EQUIPO_COLORS.mantenimiento },
-    { name: "Fuera Servicio", value: fueraServicio.length, color: ESTADO_EQUIPO_COLORS.fuera_de_servicio },
-  ];
-
-  // Gráfico OT por estado
-  const otEstadosData = Object.keys(OT_ESTADO_LABELS).map(k => ({
-    name: OT_ESTADO_LABELS[k],
-    value: ordenes.filter(o => o.estado === k).length,
-    color: OT_ESTADO_COLORS[k],
-  })).filter(d => d.value > 0);
-
-  // Gráfico alertas por tipo
-  const alertasPorTipo = Object.keys(ALERTA_TIPO_LABELS).map(k => ({
-    name: ALERTA_TIPO_LABELS[k],
-    value: alertas.filter(a => a.tipo === k).length,
-  })).filter(d => d.value > 0);
 
   return (
     <div ref={containerRef} className="min-h-screen" style={{ background: "#f8fafc", overscrollBehavior: "none" }}>

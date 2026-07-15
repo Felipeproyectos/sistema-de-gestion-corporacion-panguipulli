@@ -38,7 +38,7 @@ export default function Repuestos() {
   const fetchData = useCallback(async () => {
     const [reps, provs] = await Promise.all([
       base44.entities.Repuesto.list("-created_date", 200).catch(() => []),
-      base44.entities.Proveedor.list().catch(() => []),
+      base44.entities.Proveedor.list("-created_date", 200).catch(() => []),
     ]);
     setRepuestos(reps);
     setProveedores(provs);

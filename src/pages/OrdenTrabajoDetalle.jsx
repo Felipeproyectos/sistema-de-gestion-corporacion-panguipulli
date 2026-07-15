@@ -70,8 +70,8 @@ export default function OrdenTrabajoDetalle() {
 
   const fetchData = useCallback(async () => {
     const [rep, users] = await Promise.all([
-      base44.entities.Repuesto.list().catch(() => []),
-      base44.entities.User.list().catch(() => []),
+      base44.entities.Repuesto.list("-created_date", 200).catch(() => []),
+      base44.entities.User.list("-created_date", 100).catch(() => []),
     ]);
     setRepuestos(rep);
     setMecanicos(users.filter(us => ["mecanico", "jefe_taller"].includes(us.role)));
