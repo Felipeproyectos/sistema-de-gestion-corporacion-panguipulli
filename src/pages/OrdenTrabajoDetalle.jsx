@@ -69,11 +69,12 @@ export default function OrdenTrabajoDetalle() {
   const canCerrar = !simActivo && ["super_admin", "jefe_taller"].includes(effectiveRole);
 
   const fetchData = useCallback(async () => {
-    const [rep, users] = await Promise.all([
+    const [rep, usersRes] = await Promise.all([
       base44.entities.Repuesto.list("-created_date", 200).catch(() => []),
-      base44.entities.User.list("-created_date", 100).catch(() => []),
+      base44.functions.invoke("getUsuariosPorCentro").catch(() => ({ data: [] })),
     ]);
     setRepuestos(rep);
+    const users = Array.isArray(usersRes?.data) ? usersRes.data : [];
     setMecanicos(users.filter(us => ["mecanico", "jefe_taller"].includes(us.role)));
     const otData = await base44.entities.OrdenTrabajo.get(id).catch(() => null);
     setOt(otData);
