@@ -10,6 +10,7 @@ import {
 import LineaTiempo from "@/components/taller/LineaTiempo";
 import RepuestosUtilizados from "@/components/taller/RepuestosUtilizados";
 import ComentariosOT from "@/components/taller/ComentariosOT";
+import ReporteAvance from "@/components/taller/ReporteAvance";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { isSimulandoActivo, getEffectiveNavRole, MENSAJE_BLOQUEO_SIMULACION } from "@/lib/roleSimulator";
@@ -65,8 +66,12 @@ export default function OrdenTrabajoDetalle() {
   // Se respeta el rol efectivo para mostrar/ocultar acciones según el perfil simulado.
   const effectiveRole = getEffectiveNavRole(user?.role);
   const simActivo = isSimulandoActivo();
+  // El mecánico puede editar diagnóstico y repuestos, y reportar avances,
+  // pero NO asignar mecánicos ni cerrar la OT con costos (eso es del Jefe de Taller).
   const canEdit = !simActivo && ["super_admin", "jefe_taller", "mecanico"].includes(effectiveRole);
-  const canCerrar = !simActivo && ["super_admin", "jefe_taller"].includes(effectiveRole);
+  const esJefe = !simActivo && ["super_admin", "jefe_taller"].includes(effectiveRole);
+  const esMecanico = !simActivo && effectiveRole === "mecanico";
+  const canCerrar = esJefe;
 
   const fetchData = useCallback(async () => {
     const [rep, usersRes] = await Promise.all([
@@ -318,6 +323,11 @@ export default function OrdenTrabajoDetalle() {
             {/* Repuestos utilizizados */}
             <RepuestosUtilizados ot={ot} repuestos={repuestos} onActualizado={fetchData} user={user} editable={canEdit && ot.estado !== "completada"} />
 
+            {/* Reporte de avance del mecánico */}
+            {(esMecanico || esJefe) && (
+              <ReporteAvance ot={ot} user={user} onActualizado={fetchData} />
+            )}
+
             {/* Línea de tiempo */}
             <div className="bg-white rounded-2xl p-5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
               <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
@@ -338,7 +348,7 @@ export default function OrdenTrabajoDetalle() {
                 <User className="w-4 h-4 text-blue-600" /> Asignación
               </h3>
               <label className="text-xs text-slate-400 font-semibold">Mecánico asignado</label>
-              <select value={mecanicoSel} onChange={e => setMecanicoSel(e.target.value)} disabled={!canEdit}
+              <select value={mecanicoSel} onChange={e => setMecanicoSel(e.target.value)} disabled={!esJefe}
                 className="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white disabled:bg-slate-50">
                 <option value="">Sin asignar</option>
                 {mecanicos.map(m => (
@@ -346,13 +356,13 @@ export default function OrdenTrabajoDetalle() {
                 ))}
               </select>
               <label className="text-xs text-slate-400 font-semibold mt-3 block">Fecha y hora</label>
-              <input type="datetime-local" value={fechaHora} onChange={e => setFechaHora(e.target.value)} disabled={!canEdit}
+              <input type="datetime-local" value={fechaHora} onChange={e => setFechaHora(e.target.value)} disabled={!esJefe}
                 className="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm disabled:bg-slate-50" />
               <label className="text-xs text-slate-400 font-semibold mt-3 block">Observaciones (opcional)</label>
-              <textarea rows={2} value={obsAsignacion} onChange={e => setObsAsignacion(e.target.value)} disabled={!canEdit}
+              <textarea rows={2} value={obsAsignacion} onChange={e => setObsAsignacion(e.target.value)} disabled={!esJefe}
                 placeholder="Comentarios para el mecánico..."
                 className="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm resize-none disabled:bg-slate-50" />
-              {canEdit && (
+              {esJefe && (
                 <button onClick={handleAsignar} disabled={guardando}
                   className="w-full mt-3 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 flex items-center justify-center gap-1"
                   style={{ background: "#2563EB" }}>
@@ -377,15 +387,15 @@ export default function OrdenTrabajoDetalle() {
                 <CheckCircle2 className="w-4 h-4 text-green-600" /> Cierre de OT
               </h3>
               <label className="text-xs text-slate-400 font-semibold">Horas reales</label>
-              <input type="number" min="0" step="0.5" value={horasReales} onChange={e => setHorasReales(e.target.value)} disabled={!canEdit}
+              <input type="number" min="0" step="0.5" value={horasReales} onChange={e => setHorasReales(e.target.value)} disabled={!esJefe}
                 className="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm disabled:bg-slate-50" />
               <label className="text-xs text-slate-400 font-semibold mt-3 block">Costo mano de obra ($)</label>
-              <input type="number" min="0" value={manoObra} onChange={e => setManoObra(e.target.value)} disabled={!canEdit}
+              <input type="number" min="0" value={manoObra} onChange={e => setManoObra(e.target.value)} disabled={!esJefe}
                 className="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm disabled:bg-slate-50" />
               <label className="text-xs text-slate-400 font-semibold mt-3 block">Notas de cierre</label>
-              <textarea rows={2} value={notasCierre} onChange={e => setNotasCierre(e.target.value)} disabled={!canEdit}
+              <textarea rows={2} value={notasCierre} onChange={e => setNotasCierre(e.target.value)} disabled={!esJefe}
                 className="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm resize-none disabled:bg-slate-50" />
-              {canEdit && ot.estado !== "completada" && (
+              {esJefe && ot.estado !== "completada" && (
                 <button onClick={handleGuardarManoObra} disabled={guardando}
                   className="w-full mt-3 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 flex items-center justify-center gap-1"
                   style={{ background: "#16A34A" }}>
@@ -394,8 +404,8 @@ export default function OrdenTrabajoDetalle() {
               )}
             </div>
 
-            {/* Cambio de estado rápido */}
-            {canEdit && (
+            {/* Cambio de estado rápido — solo Jefe de Taller / super admin */}
+            {esJefe && (
               <div className="bg-white rounded-2xl p-5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                 <h3 className="text-sm font-bold text-slate-700 mb-3">Cambiar estado</h3>
                 <div className="grid grid-cols-2 gap-2">
