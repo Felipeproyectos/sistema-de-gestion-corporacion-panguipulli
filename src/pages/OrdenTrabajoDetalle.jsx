@@ -5,8 +5,9 @@ import { createPageUrl } from "@/utils";
 import {
   ArrowLeft, Wrench, Car, User, Clock, AlertTriangle, CheckCircle2,
   Calendar, ClipboardList, Save, Loader2, Edit3,
-  Stethoscope, Lock
+  Stethoscope, Lock, FileDown
 } from "lucide-react";
+import { generarPDFOrdenTrabajo } from "@/utils/generarPDFOrdenTrabajo";
 import LineaTiempo from "@/components/taller/LineaTiempo";
 import RepuestosUtilizados from "@/components/taller/RepuestosUtilizados";
 import ComentariosOT from "@/components/taller/ComentariosOT";
@@ -247,6 +248,13 @@ export default function OrdenTrabajoDetalle() {
                 <span className="text-sm font-semibold text-white">{ot.equipo_label}{ot.patente ? ` · ${ot.patente}` : ""}</span>
               </div>
             </div>
+            {ot.estado === "completada" && (
+              <button onClick={() => generarPDFOrdenTrabajo(ot)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white flex-shrink-0"
+                style={{ background: "rgba(255,255,255,0.15)" }}>
+                <FileDown className="w-4 h-4" /> Descargar PDF
+              </button>
+            )}
           </div>
         </div>
       </div>
