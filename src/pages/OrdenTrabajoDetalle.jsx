@@ -342,7 +342,18 @@ export default function OrdenTrabajoDetalle() {
 
           {/* Columna lateral */}
           <div className="space-y-4">
-            {/* Asignación mecánico */}
+            {/* Asignación mecánico — solo el Jefe de Taller la gestiona.
+                Cuando ya hay un mecánico asignado se muestra un resumen simple
+                en lugar del formulario editable. */}
+            {esJefe && ot.mecanico_email ? (
+              <div className="bg-white rounded-2xl p-5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                  <User className="w-4 h-4 text-blue-600" /> Mecánico asignado
+                </h3>
+                <p className="text-sm font-semibold text-slate-800">{ot.mecanico_nombre || ot.mecanico_email}</p>
+                <p className="text-xs text-slate-400 mt-1">Asignado el {fmtFechaHora(ot.fecha_asignacion)}</p>
+              </div>
+            ) : esJefe ? (
             <div className="bg-white rounded-2xl p-5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
               <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
                 <User className="w-4 h-4 text-blue-600" /> Asignación
@@ -370,6 +381,7 @@ export default function OrdenTrabajoDetalle() {
                 </button>
               )}
             </div>
+            ) : null}
 
             {/* Fechas */}
             <div className="bg-white rounded-2xl p-5 space-y-2" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
