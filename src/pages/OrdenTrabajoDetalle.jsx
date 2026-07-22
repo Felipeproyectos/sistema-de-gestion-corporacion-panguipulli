@@ -321,7 +321,7 @@ export default function OrdenTrabajoDetalle() {
             </div>
 
             {/* Repuestos utilizizados */}
-            <RepuestosUtilizados ot={ot} repuestos={repuestos} onActualizado={fetchData} user={user} editable={canEdit && ot.estado !== "completada"} />
+            <RepuestosUtilizados ot={ot} repuestosDisponibles={repuestos} onUpdate={fetchData} editable={canEdit && ot.estado !== "completada"} />
 
             {/* Reporte de avance del mecánico */}
             {(esMecanico || esJefe) && (
