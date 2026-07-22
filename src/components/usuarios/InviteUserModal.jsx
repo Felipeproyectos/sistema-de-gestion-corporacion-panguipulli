@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { getCentrosEstructura } from "@/lib/centros";
 import { X, Mail, Loader2 } from "lucide-react";
-import { ROLES, rolesQuePuedeCrear, roleLabel, esRolSalud } from "@/lib/roles";
+import { ROLES, rolesQuePuedeCrear, roleLabel, esRolSalud, rolBasePlataforma } from "@/lib/roles";
 
 export default function InviteUserModal({ open, onClose, onInvited, currentUser }) {
   const [email, setEmail] = useState("");
@@ -49,11 +49,22 @@ export default function InviteUserModal({ open, onClose, onInvited, currentUser 
     }
     setEnviando(true);
     try {
-      await base44.users.inviteUser(email.trim(), role);
-      const centroInfo = centroFijo || centroSel[0];
+      const correo = email.trim().toLowerCase();
+      const centroInfo = centroFijo || centroSel[0] || "";
+      // La plataforma solo acepta "user"/"admin"; el rol específico se aplica al aceptar.
+      await base44.users.inviteUser(correo, rolBasePlataforma(role));
+      // Guardamos el rol real deseado para aplicarlo automáticamente cuando el usuario ingrese.
+      await base44.entities.InvitacionPendiente.create({
+        email: correo,
+        rol_asignado: role,
+        centro_principal: centroInfo,
+        invitado_por_email: currentUser?.email || "",
+        invitado_por_nombre: currentUser?.full_name || "",
+        aplicada: false,
+      }).catch(() => {});
       setMsg(
-        `Invitación enviada a ${email.trim()} (${roleLabel(role)})` +
-        (centroInfo ? ` — recuerda confirmar su centro (${centroInfo}) y subsedes desde la lista una vez que acepte.` : ".")
+        `Invitación enviada a ${correo} (${roleLabel(role)}). Su rol se aplicará automáticamente cuando acepte.` +
+        (centroInfo ? ` Centro asignado: ${centroInfo}.` : "")
       );
       setEmail("");
       setCentroSel([]);

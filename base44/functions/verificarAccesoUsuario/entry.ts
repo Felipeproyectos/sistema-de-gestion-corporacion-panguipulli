@@ -22,6 +22,22 @@ Deno.serve(async (req) => {
     const me = await base44.auth.me();
     if (!me) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+    // Aplicar invitación pendiente: si un Jefe/Admin invitó a este correo con un
+    // rol específico (mecánico, etc.), se aplica ahora que el usuario ingresó.
+    try {
+      const correo = (me.email || '').toLowerCase();
+      const invitaciones = await base44.asServiceRole.entities.InvitacionPendiente.filter({ email: correo, aplicada: false });
+      const inv = invitaciones?.[0];
+      if (inv) {
+        const cambios: Record<string, unknown> = { estado_acceso: 'aprobado' };
+        if (inv.rol_asignado) cambios.role = inv.rol_asignado;
+        if (inv.centro_principal) cambios.centro_principal = inv.centro_principal;
+        await base44.asServiceRole.entities.User.update(me.id, cambios).catch(() => {});
+        await base44.asServiceRole.entities.InvitacionPendiente.update(inv.id, { aplicada: true }).catch(() => {});
+        return Response.json({ acceso: true, estado: 'aprobado' });
+      }
+    } catch (_) { /* si falla la aplicación, se sigue con el flujo normal */ }
+
     // super_admin / admin siempre entran.
     if (ROLES_PRIVILEGIADOS.includes(me.role)) {
       return Response.json({ acceso: true, estado: 'aprobado' });
