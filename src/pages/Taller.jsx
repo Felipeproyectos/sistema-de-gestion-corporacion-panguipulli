@@ -12,11 +12,13 @@ import OrdenTrabajoCard from "@/components/taller/OrdenTrabajoCard";
 import OrdenTrabajoFormModal from "@/components/taller/OrdenTrabajoFormModal";
 import SolicitudRepuestoModule from "@/components/taller/SolicitudRepuestoModule";
 import { useAuth } from "@/lib/AuthContext";
+import { getEffectiveNavRole, isSimulandoActivo } from "@/lib/roleSimulator";
 
 const FILTROS = [
   { value: "pendiente", label: "Pendientes" },
   { value: "asignada", label: "Asignadas" },
   { value: "en_proceso", label: "En Proceso" },
+  { value: "en_revision", label: "En Revisión" },
   { value: "completada", label: "Completadas" },
   { value: "todas", label: "Todas" },
 ];
@@ -49,6 +51,8 @@ export default function Taller() {
 
   const { refreshing } = usePullToRefresh(fetchData, containerRef);
 
+  // Solo el Jefe de Taller (o super_admin) puede cerrar una OT (marcarla como completada)
+  const esJefe = !isSimulandoActivo() && ["super_admin", "jefe_taller"].includes(getEffectiveNavRole(user?.role));
   const stockBajo = repuestos.filter(r => (r.stock_actual || 0) <= (r.stock_minimo || 0));
   const filtradas = filtro === "todas" ? ordenes : ordenes.filter(o => o.estado === filtro);
   const pendientes = ordenes.filter(o => o.estado === "pendiente").length;
@@ -163,7 +167,7 @@ export default function Taller() {
           ) : (
             <div className="space-y-3">
               {filtradas.map(ot => (
-                <OrdenTrabajoCard key={ot.id} ot={ot} onActualizar={fetchData} onEditar={handleEditar} />
+                <OrdenTrabajoCard key={ot.id} ot={ot} onActualizar={fetchData} onEditar={handleEditar} puedeCerrar={esJefe} />
               ))}
             </div>
           )}

@@ -12,6 +12,7 @@ const FILTROS = [
   { value: "asignada", label: "Asignadas" },
   { value: "en_proceso", label: "En Proceso" },
   { value: "pausada", label: "Pausadas" },
+  { value: "en_revision", label: "En Revisión" },
   { value: "completada", label: "Completadas" },
   { value: "todas", label: "Todas" },
 ];

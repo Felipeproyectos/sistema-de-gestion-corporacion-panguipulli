@@ -46,6 +46,7 @@
         "asignada",
         "en_proceso",
         "pausada",
+        "en_revision",
         "completada",
         "cancelada"
       ],

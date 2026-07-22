@@ -32,6 +32,7 @@ const ESTADO_CFG = {
   asignada: { label: "Asignada", color: "#2563EB", bg: "#EFF6FF" },
   en_proceso: { label: "En Proceso", color: "#7C3AED", bg: "#F5F3FF" },
   pausada: { label: "Pausada", color: "#64748B", bg: "#F1F5F9" },
+  en_revision: { label: "En Revisión", color: "#D97706", bg: "#FFFBEB" },
   completada: { label: "Completada", color: "#16A34A", bg: "#F0FDF4" },
   cancelada: { label: "Cancelada", color: "#DC2626", bg: "#FEF2F2" },
 };

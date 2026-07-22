@@ -11,6 +11,7 @@ const ESTADO_CFG = {
   asignada: { label: "Asignada", color: "#2563EB", bg: "#EFF6FF", border: "#BFDBFE" },
   en_proceso: { label: "En Proceso", color: "#7C3AED", bg: "#F5F3FF", border: "#DDD6FE" },
   pausada: { label: "Pausada", color: "#64748B", bg: "#F1F5F9", border: "#E2E8F0" },
+  en_revision: { label: "En Revisión", color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" },
   completada: { label: "Completada", color: "#16A34A", bg: "#F0FDF4", border: "#BBF7D0" },
   cancelada: { label: "Cancelada", color: "#DC2626", bg: "#FEF2F2", border: "#FECACA" },
 };
@@ -21,7 +22,7 @@ const PRIORIDAD_CFG = {
   baja: { label: "Baja", color: "#2563EB", bg: "#EFF6FF" },
 };
 
-export default function OrdenTrabajoCard({ ot, onActualizar, onEditar }) {
+export default function OrdenTrabajoCard({ ot, onActualizar, onEditar, puedeCerrar = false }) {
   const [expandida, setExpandida] = useState(false);
   const [cambiando, setCambiando] = useState(false);
   const navigate = useNavigate();
@@ -127,7 +128,8 @@ export default function OrdenTrabajoCard({ ot, onActualizar, onEditar }) {
               className="text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 bg-white"
             >
               {Object.entries(ESTADO_CFG).map(([k, v]) => (
-                <option key={k} value={k}>{v.label}</option>
+                // Solo el Jefe de Taller puede cerrar la OT (marcarla como completada)
+                <option key={k} value={k} disabled={k === "completada" && !puedeCerrar}>{v.label}</option>
               ))}
             </select>
             <button onClick={(e) => { e.stopPropagation(); navigate(createPageUrl(`OrdenTrabajoDetalle/${ot.id}`)); }}

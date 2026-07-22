@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Activity, Play, Pause, Loader2, Send } from "lucide-react";
+import { Activity, Play, Pause, Loader2, Send, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 // Panel para que el mecánico registre su avance en la reparación.
@@ -75,6 +75,20 @@ export default function ReporteAvance({ ot, user, onActualizado }) {
             style={{ background: "#2563EB" }}>
             {guardando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Registrar avance
           </button>
+
+          {/* El mecánico entrega la OT terminada; el cierre final lo hace el Jefe de Taller */}
+          {ot.estado === "en_revision" ? (
+            <p className="mt-3 text-xs font-semibold text-center rounded-xl px-3 py-2.5" style={{ background: "#FFFBEB", color: "#D97706" }}>
+              Trabajo entregado. Pendiente de cierre por el Jefe de Taller.
+            </p>
+          ) : (
+            <button onClick={() => registrar("Trabajo terminado — enviado a revisión del Jefe de Taller", nota, "en_revision")}
+              disabled={guardando}
+              className="w-full mt-3 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40 flex items-center justify-center gap-1"
+              style={{ background: "#16A34A" }}>
+              {guardando ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} Marcar como terminada
+            </button>
+          )}
         </>
       )}
     </div>
