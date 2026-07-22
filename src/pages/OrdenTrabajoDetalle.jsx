@@ -75,7 +75,7 @@ export default function OrdenTrabajoDetalle() {
     ]);
     setRepuestos(rep);
     const users = Array.isArray(usersRes?.data) ? usersRes.data : [];
-    setMecanicos(users.filter(us => ["mecanico", "jefe_taller"].includes(us.role)));
+    setMecanicos(users.filter(us => us.role === "mecanico"));
     const otData = await base44.entities.OrdenTrabajo.get(id).catch(() => null);
     setOt(otData);
     setDiagnostico(otData?.diagnostico || "");
