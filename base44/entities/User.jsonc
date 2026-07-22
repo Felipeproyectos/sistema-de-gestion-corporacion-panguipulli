@@ -18,6 +18,16 @@
       "default": "user",
       "description": "Rol jer\u00e1rquico del usuario en el sistema. 'super_admin' se muestra en la interfaz como \"Base del Sistema\". 'user' representa el perfil Usuario/Chofer."
     },
+    "estado_acceso": {
+      "type": "string",
+      "enum": [
+        "pendiente",
+        "aprobado",
+        "rechazado"
+      ],
+      "default": "pendiente",
+      "description": "Control de acceso a la app. Solo super_admin y admin aprueban ingresos. Un usuario 'pendiente' o 'rechazado' no puede usar el sistema."
+    },
     "area": {
       "type": "string",
       "enum": [

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getCentrosEstructura } from "@/lib/centros";
-import { Shield, Wrench, Stethoscope, ChevronDown, ChevronUp } from "lucide-react";
+import { Shield, Wrench, Stethoscope, ChevronDown, ChevronUp, Check, X, Clock } from "lucide-react";
 import { ROLES, roleLabel, esRolTaller, esSuperAdmin, esRolSalud, rolesQuePuedeCrear } from "@/lib/roles";
 
 const ROLE_COLORS = {
@@ -28,6 +28,7 @@ export default function UsuarioCard({ usuario, currentUser, onUpdated }) {
   const [subsedes, setSubsedes] = useState(usuario.subsedes_asignadas || []);
   const [guardando, setGuardando] = useState(false);
   const [centrosList, setCentrosList] = useState([]);
+  const [cambiandoAcceso, setCambiandoAcceso] = useState(false);
 
   useEffect(() => {
     getCentrosEstructura().then(setCentrosList).catch(() => {});
@@ -35,6 +36,22 @@ export default function UsuarioCard({ usuario, currentUser, onUpdated }) {
 
   const isSelf = usuario.id === currentUser?.id;
   const rolesAsignables = rolesQuePuedeCrear(currentUser?.role);
+
+  // Solo super_admin y admin aprueban/rechazan el acceso de un usuario.
+  const puedeAprobarAcceso = !isSelf && (esSuperAdmin(currentUser?.role) || currentUser?.role === ROLES.ADMIN);
+  const estadoAcceso = usuario.estado_acceso;
+
+  const cambiarAcceso = async (nuevoEstado) => {
+    setCambiandoAcceso(true);
+    try {
+      await base44.functions.invoke("aprobarAccesoUsuario", { usuario_id: usuario.id, estado: nuevoEstado });
+      onUpdated?.(usuario.id, { estado_acceso: nuevoEstado });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setCambiandoAcceso(false);
+    }
+  };
   // Puede editar si es super_admin, o si el rol actual del usuario está dentro
   // de lo que este editor puede crear/gestionar (coherente con la jerarquía).
   const canEdit = !isSelf && (esSuperAdmin(currentUser?.role) || rolesAsignables.includes(usuario.role));
@@ -79,6 +96,16 @@ export default function UsuarioCard({ usuario, currentUser, onUpdated }) {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          {estadoAcceso === "pendiente" && (
+            <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "#FEF3C7", color: "#B45309" }}>
+              <Clock className="w-3 h-3" /> Pendiente
+            </span>
+          )}
+          {estadoAcceso === "rechazado" && (
+            <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "#FEE2E2", color: "#B91C1C" }}>
+              <X className="w-3 h-3" /> Rechazado
+            </span>
+          )}
           <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full" style={{ background: `${color}15`, color }}>
             <AreaIcon className="w-3 h-3" />
             {roleLabel(usuario.role)}
@@ -88,6 +115,40 @@ export default function UsuarioCard({ usuario, currentUser, onUpdated }) {
           </button>
         </div>
       </div>
+
+      {/* Control de acceso: aprobar / rechazar ingreso (solo super_admin y admin) */}
+      {puedeAprobarAcceso && estadoAcceso !== "aprobado" && (
+        <div className="px-4 pb-3 flex items-center gap-2">
+          <button
+            onClick={() => cambiarAcceso("aprobado")}
+            disabled={cambiandoAcceso}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold text-white disabled:opacity-50"
+            style={{ background: "#059669" }}
+          >
+            <Check className="w-3.5 h-3.5" /> Aprobar acceso
+          </button>
+          {estadoAcceso !== "rechazado" && (
+            <button
+              onClick={() => cambiarAcceso("rechazado")}
+              disabled={cambiandoAcceso}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-50"
+            >
+              <X className="w-3.5 h-3.5" /> Rechazar
+            </button>
+          )}
+        </div>
+      )}
+      {puedeAprobarAcceso && estadoAcceso === "aprobado" && (
+        <div className="px-4 pb-3">
+          <button
+            onClick={() => cambiarAcceso("rechazado")}
+            disabled={cambiandoAcceso}
+            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-50"
+          >
+            <X className="w-3.5 h-3.5" /> Revocar acceso
+          </button>
+        </div>
+      )}
 
       {expandido && (
         <div className="px-4 pb-4 pt-1 border-t border-slate-50 space-y-3">

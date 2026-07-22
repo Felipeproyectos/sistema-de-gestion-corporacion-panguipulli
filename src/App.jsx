@@ -7,6 +7,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import AccesoPendiente from '@/components/AccesoPendiente';
+import { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
 
 import Centros from './pages/Centros';
 import Historial from './pages/Historial';
@@ -60,7 +63,20 @@ const AnimatedRoutes = ({ children }) => {
 };
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, isAuthenticated } = useAuth();
+
+  // Control de acceso: un usuario autenticado debe estar aprobado por un
+  // super_admin/admin. Se verifica en el servidor (verificarAccesoUsuario).
+  const [accesoCheck, setAccesoCheck] = useState(null); // null=cargando, {acceso, estado}=resuelto
+
+  useEffect(() => {
+    if (!isAuthenticated || authError) return;
+    let activo = true;
+    base44.functions.invoke('verificarAccesoUsuario')
+      .then(r => { if (activo) setAccesoCheck(r.data || { acceso: false, estado: 'pendiente' }); })
+      .catch(() => { if (activo) setAccesoCheck({ acceso: true, estado: 'aprobado' }); }); // fail-open ante error de red
+    return () => { activo = false; };
+  }, [isAuthenticated, authError]);
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -81,6 +97,24 @@ const AuthenticatedApp = () => {
     } else {
       navigateToLogin();
       return null;
+    }
+  }
+
+  // Rutas públicas no requieren aprobación de acceso.
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+  const isPublic = pathname === '/bitacora-publica' || pathname.startsWith('/bitacora-publica/');
+
+  // Esperar la verificación de acceso antes de renderizar la app.
+  if (!isPublic && isAuthenticated) {
+    if (accesoCheck === null) {
+      return (
+        <div className="fixed inset-0 flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+        </div>
+      );
+    }
+    if (!accesoCheck.acceso) {
+      return <AccesoPendiente rechazado={accesoCheck.estado === 'rechazado'} />;
     }
   }
 
