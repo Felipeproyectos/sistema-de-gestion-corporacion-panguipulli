@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   ShoppingCart, CheckCircle2, Package, Loader2, RefreshCw, User,
-  Wrench, Calendar, Building2, DollarSign, FileDown, Warehouse,
+  Wrench, Calendar, Building2, DollarSign, FileDown, Warehouse, ClipboardList,
 } from "lucide-react";
 import { generarPDFSolicitudRepuesto } from "@/utils/generarPDFSolicitudRepuesto";
 import { useToast } from "@/components/ui/use-toast";
@@ -10,7 +10,7 @@ import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import { useAuth } from "@/lib/AuthContext";
-import EjecutarCompraModal from "@/components/taller/EjecutarCompraModal";
+import SeguimientoCompraModal from "@/components/taller/SeguimientoCompraModal";
 
 const COLS = [
   { key: "aprobada", label: "Pendientes de Compra", icon: ShoppingCart, color: "#D97706", bg: "#FEF3C7" },
@@ -24,8 +24,7 @@ export default function ComprasTablero() {
   const { user } = useAuth();
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selComprar, setSelComprar] = useState(null);
-  const [recibiendo, setRecibiendo] = useState(null);
+  const [selSeguimiento, setSelSeguimiento] = useState(null);
   const containerRef = useRef(null);
   const { toast } = useToast();
 
@@ -43,29 +42,12 @@ export default function ComprasTablero() {
   const compradas = solicitudes.filter(s => s.estado === "comprada");
   const recibidas = solicitudes.filter(s => s.estado === "recibida");
 
-  const marcarRecibida = async (sol) => {
-    setRecibiendo(sol.id);
-    try {
-      await base44.entities.SolicitudRepuesto.update(sol.id, {
-        estado: "recibida",
-        fecha_recepcion_bodega: new Date().toISOString().split("T")[0],
-        recibido_por_email: user?.email,
-        recibido_por_nombre: user?.full_name,
-      });
-      toast({ title: "Recepción registrada", description: `"${sol.repuesto_nombre}" llegó a bodega.` });
-      fetch();
-    } catch (e) {
-      toast({ title: "No se pudo registrar", description: e.message, variant: "destructive" });
-    }
-    setRecibiendo(null);
-  };
-
   const timeAgo = (d) => {
     try { return d ? formatDistanceToNow(new Date(d), { addSuffix: true, locale: es }) : ""; }
     catch { return ""; }
   };
 
-  const Card = ({ sol, showActions }) => (
+  const Card = ({ sol }) => (
     <div className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 4px 14px rgba(15,45,107,0.07)" }}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -97,18 +79,11 @@ export default function ComprasTablero() {
       )}
 
       <div className="mt-3 flex items-center gap-2 flex-wrap">
-        {showActions === "comprar" && (
-          <button onClick={() => setSelComprar(sol)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white" style={{ background: "#2563EB" }}>
-            <ShoppingCart className="w-3.5 h-3.5" /> Ejecutar Compra
-          </button>
-        )}
-        {showActions === "recibir" && (
-          <button onClick={() => marcarRecibida(sol)} disabled={recibiendo === sol.id}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white disabled:opacity-50" style={{ background: "#16A34A" }}>
-            {recibiendo === sol.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Warehouse className="w-3.5 h-3.5" />} Registrar Recepción
-          </button>
-        )}
+        <button onClick={() => setSelSeguimiento(sol)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white"
+          style={{ background: sol.estado === "aprobada" ? "#D97706" : sol.estado === "comprada" ? "#2563EB" : "#16A34A" }}>
+          <ClipboardList className="w-3.5 h-3.5" /> Seguimiento
+        </button>
         <button onClick={() => generarPDFSolicitudRepuesto(sol)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold" style={{ background: "#F1F5F9", color: "#334155" }}>
           <FileDown className="w-3.5 h-3.5" /> PDF
@@ -221,11 +196,11 @@ export default function ComprasTablero() {
         </div>
       )}
 
-      <EjecutarCompraModal
-        solicitud={selComprar}
+      <SeguimientoCompraModal
+        solicitud={selSeguimiento}
         user={user}
-        onClose={() => setSelComprar(null)}
-        onGuardado={() => { fetch(); setSelComprar(null); }}
+        onClose={() => setSelSeguimiento(null)}
+        onActualizado={fetch}
       />
     </div>
   );

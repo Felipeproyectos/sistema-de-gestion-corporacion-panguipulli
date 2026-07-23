@@ -2,6 +2,7 @@ import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Loader2, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { agregarEventoCompra } from "@/utils/compraTimeline";
 
 export default function EjecutarCompraModal({ solicitud, user, onClose, onGuardado }) {
   const [form, setForm] = useState({
@@ -29,6 +30,8 @@ export default function EjecutarCompraModal({ solicitud, user, onClose, onGuarda
         comprado_por_email: user?.email,
         comprado_por_nombre: user?.full_name,
       });
+      const detalle = [form.proveedor_compra_nombre && `Proveedor: ${form.proveedor_compra_nombre}`, Number(form.precio_total_compra) > 0 && `$${form.precio_total_compra}`].filter(Boolean).join(" · ");
+      await agregarEventoCompra(solicitud.id, "Compra ejecutada", detalle, user).catch(() => {});
       toast({ title: "Compra registrada", description: `"${solicitud.repuesto_nombre}" marcada como comprada.` });
       onGuardado();
       onClose();

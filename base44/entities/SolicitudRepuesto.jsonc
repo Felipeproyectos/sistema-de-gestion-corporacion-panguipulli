@@ -120,6 +120,32 @@
     "observaciones_compra": {
       "type": "string",
       "description": "Notas del Encargado de Compras sobre la compra o recepci\u00f3n"
+    },
+    "linea_tiempo": {
+      "type": "array",
+      "description": "Registro cronol\u00f3gico del seguimiento de la compra (reportes de avance y cambios de estado)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "evento": {
+            "type": "string",
+            "description": "Tipo de evento: 'Reporte de avance', 'Compra ejecutada', 'Recibida en bodega', etc."
+          },
+          "usuario_email": {
+            "type": "string"
+          },
+          "usuario_nombre": {
+            "type": "string"
+          },
+          "notas": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "required": [
