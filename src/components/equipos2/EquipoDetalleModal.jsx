@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { TIPOS_EQUIPO, ESTADOS_EQUIPO } from "@/lib/centros";
 import RepuestosTab from "./RepuestosTab";
+import ChecklistPlano from "./ChecklistPlano";
 import PautaInspeccionSemanal from "@/components/bitacora/PautaInspeccionSemanal";
 import PautaPlaceholder from "@/components/bitacora/PautaPlaceholder";
 import PautaSemanalDesfibrilador from "@/components/bitacora/PautaSemanalDesfibrilador";
@@ -1033,8 +1034,13 @@ function InspeccionCard({ act }) {
                 )}
               </div>
 
-              {/* Checklists */}
-              {["luces", "motor", "accesorios", "documentos"].map(cat => {
+              {/* Checklist plano (Monitor Desfibrilador / Multiparámetros) */}
+              {inspeccionData.checklist && (
+                <ChecklistPlano data={inspeccionData.checklist} descripcion={inspeccionData.descripcion} />
+              )}
+
+              {/* Checklists ambulancia */}
+              {!inspeccionData.checklist && ["luces", "motor", "accesorios", "documentos"].map(cat => {
                 const data = inspeccionData[cat];
                 if (!data) return null;
                 const items = Object.entries(data);
