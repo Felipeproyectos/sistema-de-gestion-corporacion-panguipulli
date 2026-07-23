@@ -67,13 +67,15 @@ export default function MonitorCorporativo() {
   const [loading, setLoading] = useState(true);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState("");
   const [selSeguimiento, setSelSeguimiento] = useState(null);
+  const [selSeguimientoSalud, setSelSeguimientoSalud] = useState(null);
   const containerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
-    const [res, centros, solicitudesCompra] = await Promise.all([
+    const [res, centros, solicitudesCompra, solicitudesCompraSalud] = await Promise.all([
       base44.functions.invoke('getMonitorData').catch(() => ({ data: {} })),
       getCentrosEstructura().catch(() => []),
       base44.entities.SolicitudRepuesto.list("-created_date", 100).catch(() => []),
+      base44.entities.SolicitudRepuestoSalud.list("-created_date", 100).catch(() => []),
     ]);
     const d = res.data || {};
     setData({
@@ -87,17 +89,21 @@ export default function MonitorCorporativo() {
       proveedores: d.proveedores || [],
       centros,
       solicitudesCompra,
+      solicitudesCompraSalud,
     });
   }, []);
 
   useEffect(() => { fetchData().finally(() => setLoading(false)); }, [fetchData]);
   const { refreshing } = usePullToRefresh(fetchData, containerRef);
 
-  const { equipos = [], parches = [], alertas = [], solicitudes = [], inspecciones = [], ordenes = [], repuestos = [], proveedores = [], centros = [], solicitudesCompra = [] } = data || {};
+  const { equipos = [], parches = [], alertas = [], solicitudes = [], inspecciones = [], ordenes = [], repuestos = [], proveedores = [], centros = [], solicitudesCompra = [], solicitudesCompraSalud = [] } = data || {};
   const hoy = new Date();
   const compraPendientes = solicitudesCompra.filter(s => s.estado === "aprobada");
   const compraCompradas = solicitudesCompra.filter(s => s.estado === "comprada");
   const compraRecibidas = solicitudesCompra.filter(s => s.estado === "recibida");
+  const compraSaludPendientes = solicitudesCompraSalud.filter(s => s.estado === "aprobada");
+  const compraSaludCompradas = solicitudesCompraSalud.filter(s => s.estado === "comprada");
+  const compraSaludRecibidas = solicitudesCompraSalud.filter(s => s.estado === "recibida");
 
   const kpis = useMemo(() => {
     const operativos = equipos.filter(e => e.estado === "operativo");
@@ -383,6 +389,46 @@ export default function MonitorCorporativo() {
           )}
         </SeccionArea>
 
+        {/* ===== SOLICITUDES DE COMPRA DE SALUD ===== */}
+        <SeccionArea
+          titulo="Solicitudes de Compra de Salud" subtitulo="Insumos médicos (parches, baterías, electrodos) solicitados por Encargado de Salud y gestionados por Compras Salud · Solo lectura"
+          icon={Heart} color="#0d9488" bg="#ccfbf1">
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            <KpiCard label="Pendientes de Compra" value={compraSaludPendientes.length} icon={ShoppingCart} color="#d97706" bg="#fffbeb" />
+            <KpiCard label="Compradas" value={compraSaludCompradas.length} icon={Package} color="#0d9488" bg="#ccfbf1" />
+            <KpiCard label="Recibidas en Bodega" value={compraSaludRecibidas.length} icon={CheckCircle2} color="#16a34a" bg="#dcfce7" />
+          </div>
+          {solicitudesCompraSalud.length === 0 ? (
+            <div className="bg-white rounded-2xl p-8 text-center" style={{ boxShadow: "0 4px 20px rgba(15,45,107,0.06)" }}>
+              <Heart className="w-10 h-10 text-slate-200 mx-auto mb-2" />
+              <p className="text-slate-400 text-sm">No hay solicitudes de compra de insumos médicos.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {solicitudesCompraSalud.slice(0, 12).map(sol => {
+                const cfg = COMPRA_ESTADO[sol.estado] || COMPRA_ESTADO.pendiente;
+                const Icon = cfg.icon;
+                return (
+                  <div key={sol.id} className="bg-white rounded-2xl p-4 flex items-center gap-3" style={{ boxShadow: "0 4px 14px rgba(15,45,107,0.06)" }}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: cfg.bg }}>
+                      <Icon className="w-5 h-5" style={{ color: cfg.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-800 text-sm truncate">{sol.repuesto_nombre}</p>
+                      <p className="text-[11px] text-slate-400">{sol.numero_solicitud} · {sol.cantidad} unid. · {sol.solicitante_nombre || sol.solicitante_email}</p>
+                    </div>
+                    <span className="text-[11px] font-bold px-2 py-1 rounded-full flex-shrink-0 hidden sm:inline" style={{ background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
+                    <button onClick={() => setSelSeguimientoSalud(sol)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold flex-shrink-0" style={{ background: "#CCFBF1", color: "#0F766E", border: "1px solid #99F6E4" }}>
+                      <ClipboardList className="w-3.5 h-3.5" /> Ver Seguimiento
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </SeccionArea>
+
         {/* ===== NOTAS Y CONSULTAS (bidireccional: Monitor Corporativo, Jefe de Taller, Encargado Salud) ===== */}
         <SeccionArea
           titulo="Notas y Consultas" subtitulo="Hilo por equipo, visible para Monitor Corporativo, Jefe de Taller y Encargado Salud del centro"
@@ -433,6 +479,14 @@ export default function MonitorCorporativo() {
         onClose={() => setSelSeguimiento(null)}
         onActualizado={fetchData}
         readOnly
+      />
+      <SeguimientoCompraModal
+        solicitud={selSeguimientoSalud}
+        user={currentUser}
+        onClose={() => setSelSeguimientoSalud(null)}
+        onActualizado={fetchData}
+        readOnly
+        entityName="SolicitudRepuestoSalud"
       />
     </div>
   );

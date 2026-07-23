@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Monitor, Bell, ClipboardList, FileText, History,
-  Settings, Wrench, Building2, Package, ShieldX, BarChart3, Users, ClipboardCheck, ShoppingCart
+  Settings, Wrench, Building2, Package, ShieldX, BarChart3, Users, ClipboardCheck, ShoppingCart, Heart
 } from "lucide-react";
 import { ROLES } from "@/lib/roles";
 
@@ -39,6 +39,9 @@ export const NAV_ITEMS = [
   { label: "Tablero de Compras", page: "ComprasTablero", path: "/ComprasTablero", icon: ShoppingCart,
     roles: [ROLES.SUPER_ADMIN, ROLES.ENCARGADO_COMPRAS_TALLER] },
 
+  { label: "Tablero de Compras Salud", page: "ComprasSaludTablero", path: "/ComprasSaludTablero", icon: Heart,
+    roles: [ROLES.SUPER_ADMIN, ROLES.ENCARGADO_COMPRAS_SALUD, ROLES.ENCARGADO_SALUD] },
+
   { label: "Proveedores", page: "Proveedores", path: "/Proveedores", icon: Building2,
     roles: [ROLES.SUPER_ADMIN, ROLES.JEFE_TALLER, ROLES.ENCARGADO_COMPRAS_TALLER, ROLES.ENCARGADO_COMPRAS_SALUD] },
 
@@ -69,6 +72,7 @@ export const NAV_ITEMS = [
 // orden definido en NAV_ITEMS.
 const ROLE_ORDER = {
   [ROLES.ENCARGADO_COMPRAS_TALLER]: ["ComprasTablero"],
+  [ROLES.ENCARGADO_COMPRAS_SALUD]: ["ComprasSaludTablero"],
 };
 
 export function getNavItemsForRole(role) {

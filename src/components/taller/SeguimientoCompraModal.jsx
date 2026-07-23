@@ -35,7 +35,7 @@ function fmtFecha(fecha) {
   }
 }
 
-export default function SeguimientoCompraModal({ solicitud, user, onClose, onActualizado, readOnly = false }) {
+export default function SeguimientoCompraModal({ solicitud, user, onClose, onActualizado, readOnly = false, entityName = "SolicitudRepuesto" }) {
   const [reporte, setReporte] = useState("");
   const [saving, setSaving] = useState(false);
   const [subComprar, setSubComprar] = useState(false);
@@ -60,7 +60,7 @@ export default function SeguimientoCompraModal({ solicitud, user, onClose, onAct
     if (!reporte.trim()) return;
     setSaving(true);
     try {
-      await agregarEventoCompra(solicitud.id, "Reporte de avance", reporte.trim(), user);
+      await agregarEventoCompra(solicitud.id, "Reporte de avance", reporte.trim(), user, entityName);
       setReporte("");
       toast({ title: "Reporte agregado al seguimiento" });
       onActualizado();
@@ -73,13 +73,13 @@ export default function SeguimientoCompraModal({ solicitud, user, onClose, onAct
   const registrarRecepcion = async () => {
     setSaving(true);
     try {
-      await base44.entities.SolicitudRepuesto.update(solicitud.id, {
+      await base44.entities[entityName].update(solicitud.id, {
         estado: "recibida",
         fecha_recepcion_bodega: new Date().toISOString().split("T")[0],
         recibido_por_email: user?.email,
         recibido_por_nombre: user?.full_name,
       });
-      await agregarEventoCompra(solicitud.id, "Recibida en bodega", "", user).catch(() => {});
+      await agregarEventoCompra(solicitud.id, "Recibida en bodega", "", user, entityName).catch(() => {});
       toast({ title: "Recepción registrada", description: `"${solicitud.repuesto_nombre}" llegó a bodega.` });
       onActualizado();
     } catch (e) {
@@ -226,6 +226,7 @@ export default function SeguimientoCompraModal({ solicitud, user, onClose, onAct
           user={user}
           onClose={() => setSubComprar(false)}
           onGuardado={() => { setSubComprar(false); onActualizado(); }}
+          entityName={entityName}
         />
       )}
     </div>

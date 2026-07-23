@@ -4,7 +4,7 @@ import { Loader2, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { agregarEventoCompra } from "@/utils/compraTimeline";
 
-export default function EjecutarCompraModal({ solicitud, user, onClose, onGuardado }) {
+export default function EjecutarCompraModal({ solicitud, user, onClose, onGuardado, entityName = "SolicitudRepuesto" }) {
   const [form, setForm] = useState({
     proveedor_compra_nombre: solicitud?.proveedor_compra_nombre || "",
     precio_total_compra: solicitud?.precio_total_compra || "",
@@ -21,7 +21,7 @@ export default function EjecutarCompraModal({ solicitud, user, onClose, onGuarda
   const submit = async () => {
     setSaving(true);
     try {
-      await base44.entities.SolicitudRepuesto.update(solicitud.id, {
+      await base44.entities[entityName].update(solicitud.id, {
         estado: "comprada",
         proveedor_compra_nombre: form.proveedor_compra_nombre || undefined,
         precio_total_compra: Number(form.precio_total_compra) || 0,
@@ -31,7 +31,7 @@ export default function EjecutarCompraModal({ solicitud, user, onClose, onGuarda
         comprado_por_nombre: user?.full_name,
       });
       const detalle = [form.proveedor_compra_nombre && `Proveedor: ${form.proveedor_compra_nombre}`, Number(form.precio_total_compra) > 0 && `$${form.precio_total_compra}`].filter(Boolean).join(" · ");
-      await agregarEventoCompra(solicitud.id, "Compra ejecutada", detalle, user).catch(() => {});
+      await agregarEventoCompra(solicitud.id, "Compra ejecutada", detalle, user, entityName).catch(() => {});
       toast({ title: "Compra registrada", description: `"${solicitud.repuesto_nombre}" marcada como comprada.` });
       onGuardado();
       onClose();
