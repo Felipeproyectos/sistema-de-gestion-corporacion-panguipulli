@@ -9,6 +9,7 @@ import {
 import { TIPOS_EQUIPO, ESTADOS_EQUIPO } from "@/lib/centros";
 import RepuestosTab from "./RepuestosTab";
 import ChecklistPlano from "./ChecklistPlano";
+import ImprimirHistorialModal from "./ImprimirHistorialModal";
 import PautaInspeccionSemanal from "@/components/bitacora/PautaInspeccionSemanal";
 import PautaPlaceholder from "@/components/bitacora/PautaPlaceholder";
 import PautaSemanalDesfibrilador from "@/components/bitacora/PautaSemanalDesfibrilador";
@@ -527,6 +528,7 @@ function MantenimientoTab({ equipo, actividades, user, onUpdated }) {
 function InspeccionesTab({ equipo, actividades, user, onUpdated }) {
   // null = cerrado, "selector" = eligiendo tipo, "diaria"|"semanal"|"anual" = pauta abierta
   const [pautaActiva, setPautaActiva] = useState(null);
+  const [showImprimir, setShowImprimir] = useState(false);
   // Para pauta diaria: "inicio" | "termino"
   const [momentoDiario, setMomentoDiario] = useState(null);
 
@@ -576,11 +578,18 @@ function InspeccionesTab({ equipo, actividades, user, onUpdated }) {
           <h2 className="text-xl font-bold text-slate-900">Historial de Inspección</h2>
         </div>
         {!pautaActiva && (
-          <button onClick={() => setPautaActiva("selector")}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-            style={{ background: "#2563EB" }}>
-            <Plus className="w-4 h-4" /> Nuevo Reporte
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowImprimir(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+              style={{ background: "#F0FDF4", color: "#16A34A", border: "1px solid #BBF7D0" }}>
+              <Printer className="w-4 h-4" /> Imprimir Historial
+            </button>
+            <button onClick={() => setPautaActiva("selector")}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+              style={{ background: "#2563EB" }}>
+              <Plus className="w-4 h-4" /> Nuevo Reporte
+            </button>
+          </div>
         )}
       </div>
 
@@ -824,6 +833,14 @@ function InspeccionesTab({ equipo, actividades, user, onUpdated }) {
           <FileUploadButton label="Subir Documento" color="#2563EB" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
         </div>
       </div>
+
+      {showImprimir && (
+        <ImprimirHistorialModal
+          equipo={equipo}
+          actividades={actividades}
+          onClose={() => setShowImprimir(false)}
+        />
+      )}
     </div>
   );
 }
@@ -1037,6 +1054,22 @@ function InspeccionCard({ act }) {
               {/* Checklist plano (Monitor Desfibrilador / Multiparámetros) */}
               {inspeccionData.checklist && (
                 <ChecklistPlano data={inspeccionData.checklist} descripcion={inspeccionData.descripcion} />
+              )}
+
+              {/* Observaciones (pautas semanales sin checklist almacenado) */}
+              {!inspeccionData.checklist && act.observaciones && (
+                <div className="space-y-1.5">
+                  {act.observaciones.split(" | ").filter(Boolean).map((linea, i) => {
+                    const isFalla = linea.includes("Fallas:");
+                    return (
+                      <div key={i} className="flex items-start gap-2 py-1 rounded-lg px-2"
+                        style={{ background: isFalla ? "#FFF5F5" : "transparent", border: isFalla ? "1px solid #FECACA" : "none" }}>
+                        <span className="flex-shrink-0 mt-0.5" style={{ color: isFalla ? "#EF4444" : "#94A3B8" }}>{isFalla ? "⚠" : "•"}</span>
+                        <p className="text-xs leading-relaxed" style={{ color: isFalla ? "#DC2626" : "#475569" }}>{linea}</p>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
 
               {/* Checklists ambulancia */}
