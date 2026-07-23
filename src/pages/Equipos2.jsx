@@ -26,10 +26,22 @@ export default function Equipos2() {
     // Se usa una función de backend (asServiceRole + auth.me) en lugar de
     // Equipo.list()/Parche.list(), porque las plantillas RLS no resuelven
     // centro_principal (campo personalizado) para encargados de salud.
-    const res = await base44.functions.invoke('getEquiposPorCentro');
-    const data = res.data || {};
-    setEquipos(data.equipos || []);
-    setParches(data.parches || []);
+    try {
+      const res = await base44.functions.invoke('getEquiposPorCentro');
+      const data = res.data || {};
+      setEquipos(data.equipos || []);
+      setParches(data.parches || []);
+    } catch (e) {
+      // En modo "Simular Rol" (solo lectura) o ante error de red, la invocación
+      // de funciones se bloquea: caemos a lectura directa de entidades para
+      // que la página siga renderizando en lugar de romper.
+      const [eqs, pchs] = await Promise.all([
+        base44.entities.Equipo.list("-updated_date", 500).catch(() => []),
+        base44.entities.Parche.list("-updated_date", 500).catch(() => []),
+      ]);
+      setEquipos(eqs);
+      setParches(pchs);
+    }
   }, []);
 
   useEffect(() => {
