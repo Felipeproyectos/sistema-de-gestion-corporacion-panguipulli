@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import {
   Monitor, AlertTriangle, ClipboardCheck, ClipboardList, Activity,
   Wrench, Package, CheckCircle2, TrendingUp, BarChart3,
-  ShieldCheck, RefreshCw, Heart, Stethoscope
+  ShieldCheck, RefreshCw, Heart, Stethoscope, ShoppingCart
 } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar,
@@ -17,6 +17,7 @@ import KpiCard from "@/components/monitor/KpiCard";
 import CentroBreakdown from "@/components/monitor/CentroBreakdown";
 import { getCentrosEstructura } from "@/lib/centros";
 import ComentariosEquipo from "@/components/monitor/ComentariosEquipo";
+import SeguimientoCompraModal from "@/components/taller/SeguimientoCompraModal";
 import { MessageCircle } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -52,17 +53,27 @@ const ALERTA_TIPO_LABELS = {
   equipo_fuera_servicio: "Fuera de servicio",
 };
 
+const COMPRA_ESTADO = {
+  pendiente: { label: "Pendiente", color: "#D97706", bg: "#FEF3C7", icon: ClipboardList },
+  aprobada: { label: "Pendiente de Compra", color: "#D97706", bg: "#FEF3C7", icon: ShoppingCart },
+  comprada: { label: "Comprada", color: "#2563EB", bg: "#DBEAFE", icon: Package },
+  recibida: { label: "Recibida en Bodega", color: "#16A34A", bg: "#DCFCE7", icon: CheckCircle2 },
+  rechazada: { label: "Rechazada", color: "#DC2626", bg: "#FEE2E2", icon: AlertTriangle },
+};
+
 export default function MonitorCorporativo() {
   const { user: currentUser } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState("");
+  const [selSeguimiento, setSelSeguimiento] = useState(null);
   const containerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
-    const [res, centros] = await Promise.all([
+    const [res, centros, solicitudesCompra] = await Promise.all([
       base44.functions.invoke('getMonitorData').catch(() => ({ data: {} })),
       getCentrosEstructura().catch(() => []),
+      base44.entities.SolicitudRepuesto.list("-created_date", 100).catch(() => []),
     ]);
     const d = res.data || {};
     setData({
@@ -75,14 +86,18 @@ export default function MonitorCorporativo() {
       repuestos: d.repuestos || [],
       proveedores: d.proveedores || [],
       centros,
+      solicitudesCompra,
     });
   }, []);
 
   useEffect(() => { fetchData().finally(() => setLoading(false)); }, [fetchData]);
   const { refreshing } = usePullToRefresh(fetchData, containerRef);
 
-  const { equipos = [], parches = [], alertas = [], solicitudes = [], inspecciones = [], ordenes = [], repuestos = [], proveedores = [], centros = [] } = data || {};
+  const { equipos = [], parches = [], alertas = [], solicitudes = [], inspecciones = [], ordenes = [], repuestos = [], proveedores = [], centros = [], solicitudesCompra = [] } = data || {};
   const hoy = new Date();
+  const compraPendientes = solicitudesCompra.filter(s => s.estado === "aprobada");
+  const compraCompradas = solicitudesCompra.filter(s => s.estado === "comprada");
+  const compraRecibidas = solicitudesCompra.filter(s => s.estado === "recibida");
 
   const kpis = useMemo(() => {
     const operativos = equipos.filter(e => e.estado === "operativo");
@@ -328,6 +343,46 @@ export default function MonitorCorporativo() {
           </div>
         </SeccionArea>
 
+        {/* ===== SOLICITUDES DE COMPRA DE TALLER ===== */}
+        <SeccionArea
+          titulo="Solicitudes de Compra de Taller" subtitulo="Repuestos solicitados por el Jefe de Taller y gestionados por Compras · Solo lectura"
+          icon={ShoppingCart} color="#2563eb" bg="#eff6ff">
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            <KpiCard label="Pendientes de Compra" value={compraPendientes.length} icon={ShoppingCart} color="#d97706" bg="#fffbeb" />
+            <KpiCard label="Compradas" value={compraCompradas.length} icon={Package} color="#2563eb" bg="#eff6ff" />
+            <KpiCard label="Recibidas en Bodega" value={compraRecibidas.length} icon={CheckCircle2} color="#16a34a" bg="#dcfce7" />
+          </div>
+          {solicitudesCompra.length === 0 ? (
+            <div className="bg-white rounded-2xl p-8 text-center" style={{ boxShadow: "0 4px 20px rgba(15,45,107,0.06)" }}>
+              <ShoppingCart className="w-10 h-10 text-slate-200 mx-auto mb-2" />
+              <p className="text-slate-400 text-sm">No hay solicitudes de compra registradas.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {solicitudesCompra.slice(0, 12).map(sol => {
+                const cfg = COMPRA_ESTADO[sol.estado] || COMPRA_ESTADO.pendiente;
+                const Icon = cfg.icon;
+                return (
+                  <div key={sol.id} className="bg-white rounded-2xl p-4 flex items-center gap-3" style={{ boxShadow: "0 4px 14px rgba(15,45,107,0.06)" }}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: cfg.bg }}>
+                      <Icon className="w-5 h-5" style={{ color: cfg.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-800 text-sm truncate">{sol.repuesto_nombre}</p>
+                      <p className="text-[11px] text-slate-400">{sol.numero_solicitud} · {sol.cantidad} unid. · {sol.solicitante_nombre || sol.solicitante_email}</p>
+                    </div>
+                    <span className="text-[11px] font-bold px-2 py-1 rounded-full flex-shrink-0 hidden sm:inline" style={{ background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
+                    <button onClick={() => setSelSeguimiento(sol)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold flex-shrink-0" style={{ background: "#EFF6FF", color: "#1D4ED8", border: "1px solid #BFDBFE" }}>
+                      <ClipboardList className="w-3.5 h-3.5" /> Ver Seguimiento
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </SeccionArea>
+
         {/* ===== NOTAS Y CONSULTAS (bidireccional: Monitor Corporativo, Jefe de Taller, Encargado Salud) ===== */}
         <SeccionArea
           titulo="Notas y Consultas" subtitulo="Hilo por equipo, visible para Monitor Corporativo, Jefe de Taller y Encargado Salud del centro"
@@ -371,6 +426,14 @@ export default function MonitorCorporativo() {
         />
 
       </div>
+
+      <SeguimientoCompraModal
+        solicitud={selSeguimiento}
+        user={currentUser}
+        onClose={() => setSelSeguimiento(null)}
+        onActualizado={fetchData}
+        readOnly
+      />
     </div>
   );
 }
