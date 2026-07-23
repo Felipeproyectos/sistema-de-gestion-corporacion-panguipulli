@@ -23,6 +23,12 @@ function normItem(v) {
   return { estado: "", obs: "" };
 }
 
+const PARCHES_LABELS = {
+  parches_adulto: "Parches Adulto",
+  parches_pediatrico: "Parches Pediátrico",
+  parches_mixto: "Parches Mixto",
+};
+
 function checklistHtml(datos) {
   if (!datos?.checklist) return "";
   const entries = Object.entries(datos.checklist).filter(([, v]) => {
@@ -42,6 +48,30 @@ function checklistHtml(datos) {
   }).join("");
   return `<div style="margin-top:6px;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
     <div style="background:#f8fafc;padding:4px 8px;font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em">Checklist</div>
+    <table style="width:100%;border-collapse:collapse;font-size:9px">${filas}</table>
+  </div>`;
+}
+
+function parchesHtml(datos) {
+  if (!datos?.parches) return "";
+  const entries = Object.entries(datos.parches).filter(([, v]) => {
+    const { estado } = normItem(v);
+    return !!estado;
+  });
+  if (entries.length === 0) return "";
+  const filas = entries.map(([key, v]) => {
+    const { estado, obs } = normItem(v);
+    const simb = estado === "ok" ? "✓" : estado === "malo" ? "✗" : "N/A";
+    const color = estado === "ok" ? "#16a34a" : estado === "malo" ? "#dc2626" : "#94a3b8";
+    const label = PARCHES_LABELS[key] || key;
+    return `<tr>
+      <td style="padding:3px 6px;color:${color};font-weight:700;width:20px;text-align:center">${simb}</td>
+      <td style="padding:3px 6px">${label}</td>
+      <td style="padding:3px 6px;color:#64748b">${obs || "—"}</td>
+    </tr>`;
+  }).join("");
+  return `<div style="margin-top:6px;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
+    <div style="background:#f8fafc;padding:4px 8px;font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em">Electrodos / Parches</div>
     <table style="width:100%;border-collapse:collapse;font-size:9px">${filas}</table>
   </div>`;
 }
@@ -101,6 +131,7 @@ export function generarPDFHistorialInspecciones({ equipo, items, fechaDesde, fec
               </tr>
             </table>
             ${checklistHtml(it.datos)}
+            ${parchesHtml(it.datos)}
             ${desc}
             ${obs}
           </div>

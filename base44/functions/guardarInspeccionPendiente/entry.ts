@@ -55,6 +55,7 @@ Deno.serve(async (req) => {
         problemasDetectados: data.problemasDetectados || null,
         accionesTomadas: data.accionesTomadas || null,
         checklist: data.checklist || null,
+        parches: data.parches || null,
         descripcion: data.descripcion || null,
       }),
       estado: 'pendiente',

@@ -1053,7 +1053,7 @@ function InspeccionCard({ act }) {
 
               {/* Checklist plano (Monitor Desfibrilador / Multiparámetros) */}
               {inspeccionData.checklist && (
-                <ChecklistPlano data={inspeccionData.checklist} descripcion={inspeccionData.descripcion} />
+                <ChecklistPlano data={inspeccionData.checklist} parches={inspeccionData.parches} descripcion={inspeccionData.descripcion} />
               )}
 
               {/* Observaciones (pautas semanales sin checklist almacenado) */}
