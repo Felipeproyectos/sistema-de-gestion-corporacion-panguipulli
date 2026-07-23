@@ -83,8 +83,10 @@ export const QUIEN_CREA_A_QUIEN = {
 };
 
 // Roles que puede asignar/crear un usuario dado (para poblar selects de invitación)
+// "Base del Sistema" (super_admin) NUNCA se asigna por invitación: es el rol de
+// máxima autoridad y solo se gestiona fuera del flujo de invitación de la app.
 export function rolesQuePuedeCrear(creadorRole) {
-  return QUIEN_CREA_A_QUIEN[creadorRole] || [];
+  return (QUIEN_CREA_A_QUIEN[creadorRole] || []).filter(r => r !== ROLES.SUPER_ADMIN);
 }
 
 export function puedeCrearRol(creadorRole, rolObjetivo) {
