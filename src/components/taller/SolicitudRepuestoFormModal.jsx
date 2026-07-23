@@ -18,6 +18,11 @@ export default function SolicitudRepuestoFormModal({ open, onClose, onGuardar, u
   // directamente al Encargado de Compras de Taller.
   const destino = user?.role === "mecanico" ? "el Jefe de Taller" : "el Encargado de Compras de Taller";
 
+  // El mecánico debe esperar aprobación del Jefe de Taller; el Jefe de Taller
+  // (y admins) generan solicitudes de compra que se auto-aprueban y van
+  // directamente al Encargado de Compras de Taller.
+  const esAutoAprueba = ["jefe_taller", "super_admin", "admin"].includes(user?.role);
+
   const submit = async () => {
     if (!form.repuesto_nombre.trim()) { toast({ title: "Indica el repuesto", variant: "destructive" }); return; }
     if (requiereOT && !form.orden_trabajo_id) { toast({ title: "Selecciona la orden de trabajo", description: "Debes vincular la solicitud a un vehículo en taller", variant: "destructive" }); return; }
@@ -25,7 +30,8 @@ export default function SolicitudRepuestoFormModal({ open, onClose, onGuardar, u
     try {
       const numero = `SR-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Date.now().toString().slice(-5)}`;
       const otSel = ordenesActivas.find(o => o.id === form.orden_trabajo_id);
-      await base44.entities.SolicitudRepuesto.create({
+      const hoy = new Date().toISOString().split("T")[0];
+      const base = {
         repuesto_nombre: form.repuesto_nombre,
         categoria: form.categoria,
         cantidad: Number(form.cantidad) || 1,
@@ -36,10 +42,21 @@ export default function SolicitudRepuestoFormModal({ open, onClose, onGuardar, u
         numero_solicitud: numero,
         solicitante_email: user?.email,
         solicitante_nombre: user?.full_name,
-        estado: "pendiente",
-        fecha_solicitud: new Date().toISOString().split("T")[0],
-      });
-      toast({ title: "Solicitud enviada", description: `Será revisada por ${destino}` });
+        fecha_solicitud: hoy,
+      };
+      if (esAutoAprueba) {
+        Object.assign(base, {
+          estado: "aprobada",
+          aprobador_email: user?.email,
+          aprobador_nombre: user?.full_name,
+          fecha_aprobacion: hoy,
+          comentario_aprobador: "Solicitud de compra generada por Jefe de Taller",
+        });
+      } else {
+        base.estado = "pendiente";
+      }
+      await base44.entities.SolicitudRepuesto.create(base);
+      toast({ title: esAutoAprueba ? "Solicitud de compra enviada" : "Solicitud enviada", description: esAutoAprueba ? "Notificada al Encargado de Compras de Taller" : `Será revisada por ${destino}` });
       setForm({ repuesto_nombre: "", categoria: "otros", cantidad: 1, urgencia: "media", motivo: "", orden_trabajo_id: "" });
       onGuardar();
       onClose();

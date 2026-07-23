@@ -201,7 +201,7 @@ export default function AprobacionRepuestos() {
                         </p>
                       )}
                       <div className="mt-3 flex items-center gap-2 flex-wrap">
-                        {esPendiente && (
+                        {esPendiente && sol.solicitante_email !== user?.email && (
                           <button onClick={() => setSeleccionada(sol)}
                             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white" style={{ background: "#D97706" }}>
                             <ClipboardCheck className="w-4 h-4" /> Revisar y resolver
