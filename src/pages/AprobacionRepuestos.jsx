@@ -61,10 +61,14 @@ export default function AprobacionRepuestos() {
 
   const { refreshing } = usePullToRefresh(fetch, containerRef);
 
-  const filtradas = filtro === "todas" ? solicitudes : solicitudes.filter(s => s.estado === filtro);
-  const pendientes = solicitudes.filter(s => s.estado === "pendiente").length;
-  const aprobadas = solicitudes.filter(s => s.estado === "aprobada").length;
-  const rechazadas = solicitudes.filter(s => s.estado === "rechazada").length;
+  // Un aprobador no debe ver ni actuar sobre sus propias solicitudes en este
+  // módulo (evita auto-aprobación / auto-compra). Las solicitudes propias se
+  // gestionan desde la lista de solicitudes del usuario, no desde aprobación.
+  const visibles = solicitudes.filter(s => s.solicitante_email !== user?.email);
+  const filtradas = filtro === "todas" ? visibles : visibles.filter(s => s.estado === filtro);
+  const pendientes = visibles.filter(s => s.estado === "pendiente").length;
+  const aprobadas = visibles.filter(s => s.estado === "aprobada").length;
+  const rechazadas = visibles.filter(s => s.estado === "rechazada").length;
 
   const onResolver = (estado, error, data) => {
     if (error) {
@@ -152,7 +156,7 @@ export default function AprobacionRepuestos() {
                 ? { background: "#1E293B", color: "white" }
                 : { background: "white", color: "#64748B", border: "1px solid #E2E8F0" }}>
               {f.label}
-              <span className="ml-1.5 text-xs">({f.value === "todas" ? solicitudes.length : solicitudes.filter(s => s.estado === f.value).length})</span>
+              <span className="ml-1.5 text-xs">({f.value === "todas" ? visibles.length : visibles.filter(s => s.estado === f.value).length})</span>
             </button>
           ))}
         </div>
