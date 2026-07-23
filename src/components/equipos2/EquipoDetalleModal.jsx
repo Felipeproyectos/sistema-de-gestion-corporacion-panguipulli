@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import {
-  X, Edit, Trash2, Plus, Info, Wrench, ClipboardCheck, Package, BookOpen,
+  X, Edit, Trash2, Plus, Info, Wrench, ClipboardCheck, Package, BookOpen, Hammer,
   MapPin, Calendar, User, Upload, AlertTriangle, Activity, Car, Zap, Monitor,
   Hash, Gauge, FileText, Shield, CheckCircle, Clock, ArrowLeft,
   Loader2, ExternalLink, Printer, ChevronDown
@@ -15,6 +15,7 @@ import PautaPlaceholder from "@/components/bitacora/PautaPlaceholder";
 import PautaSemanalDesfibrilador from "@/components/bitacora/PautaSemanalDesfibrilador";
 import PautaSemanalMultiparametros from "@/components/bitacora/PautaSemanalMultiparametros";
 import PautaDiariaAmbulancia from "@/components/bitacora/PautaDiariaAmbulancia";
+import TallerTab from "./TallerTab";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { generarPDFEquipo } from "@/utils/generarPDFEquipo";
 
@@ -70,6 +71,7 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
     { key: "inspecciones", label: "Mantenimiento Interno", icon: ClipboardCheck },
     ...(!esAmbulancia && !sinParches ? [{ key: "parches", label: "Parches", icon: Package }] : []),
     ...(esAmbulancia ? [
+      { key: "taller", label: "Taller", icon: Hammer },
       { key: "repuestos", label: "Repuestos", icon: Gauge },
       { key: "bitacora", label: "Bitácora", icon: BookOpen }
     ] : [])
@@ -161,6 +163,7 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
             {tab === "mantenimiento" && <MantenimientoTab equipo={equipo} actividades={actividades} user={user} onUpdated={reloadActividades} />}
             {tab === "inspecciones" && <InspeccionesTab equipo={equipo} actividades={actividades} user={user} onUpdated={reloadActividades} />}
             {tab === "parches" && <ParchesTab equipo={equipo} parches={parches} user={user} onUpdated={onActividadCreada} />}
+            {tab === "taller" && <TallerTab equipo={equipo} />}
             {tab === "repuestos" && <RepuestosTab equipo={equipo} user={user} />}
             {tab === "bitacora" && <BitacoraTab equipo={equipo} user={user} />}
           </div>
