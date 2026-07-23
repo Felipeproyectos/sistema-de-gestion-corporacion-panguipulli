@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   Package, ClipboardCheck, CheckCircle2, XCircle, Clock, Loader2,
-  RefreshCw, User, Wrench, ArrowRight,
+  RefreshCw, User, Wrench, ArrowRight, FileDown, ShoppingCart,
 } from "lucide-react";
+import { generarPDFSolicitudRepuesto } from "@/utils/generarPDFSolicitudRepuesto";
 import { useToast } from "@/components/ui/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -21,6 +22,7 @@ const ESTADO_CFG = {
 const FILTROS = [
   { value: "pendiente", label: "Pendientes" },
   { value: "aprobada", label: "Aprobadas" },
+  { value: "comprada", label: "Compradas" },
   { value: "rechazada", label: "Rechazadas" },
   { value: "todas", label: "Todas" },
 ];
@@ -31,8 +33,23 @@ export default function AprobacionRepuestos() {
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("pendiente");
   const [seleccionada, setSeleccionada] = useState(null);
+  const [comprando, setComprando] = useState(null);
   const containerRef = useRef(null);
   const { toast } = useToast();
+
+  const puedeComprar = ["super_admin", "admin", "jefe_taller", "encargado_compras_taller"].includes(user?.role);
+
+  const marcarComprada = async (sol) => {
+    setComprando(sol.id);
+    try {
+      await base44.entities.SolicitudRepuesto.update(sol.id, { estado: "comprada" });
+      toast({ title: "Compra registrada", description: `"${sol.repuesto_nombre}" marcada como comprada.` });
+      fetch();
+    } catch (e) {
+      toast({ title: "No se pudo registrar la compra", description: e.message, variant: "destructive" });
+    }
+    setComprando(null);
+  };
 
   const fetch = useCallback(async () => {
     const list = await base44.entities.SolicitudRepuesto.list("-created_date", 200).catch(() => []);
@@ -183,14 +200,24 @@ export default function AprobacionRepuestos() {
                           <span>"{sol.comentario_aprobador}" — {sol.aprobador_nombre || sol.aprobador_email}</span>
                         </p>
                       )}
-                      {esPendiente && (
-                        <div className="mt-3">
+                      <div className="mt-3 flex items-center gap-2 flex-wrap">
+                        {esPendiente && (
                           <button onClick={() => setSeleccionada(sol)}
                             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white" style={{ background: "#D97706" }}>
                             <ClipboardCheck className="w-4 h-4" /> Revisar y resolver
                           </button>
-                        </div>
-                      )}
+                        )}
+                        {sol.estado === "aprobada" && puedeComprar && (
+                          <button onClick={() => marcarComprada(sol)} disabled={comprando === sol.id}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white disabled:opacity-50" style={{ background: "#2563EB" }}>
+                            {comprando === sol.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />} Marcar Comprada
+                          </button>
+                        )}
+                        <button onClick={() => generarPDFSolicitudRepuesto(sol)}
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold" style={{ background: "#F1F5F9", color: "#334155" }}>
+                          <FileDown className="w-4 h-4" /> PDF
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

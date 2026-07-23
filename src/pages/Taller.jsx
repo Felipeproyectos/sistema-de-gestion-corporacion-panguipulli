@@ -11,6 +11,7 @@ import usePullToRefresh from "@/hooks/usePullToRefresh";
 import OrdenTrabajoCard from "@/components/taller/OrdenTrabajoCard";
 import OrdenTrabajoFormModal from "@/components/taller/OrdenTrabajoFormModal";
 import SolicitudRepuestoModule from "@/components/taller/SolicitudRepuestoModule";
+import HistorialSolicitudesModal from "@/components/taller/HistorialSolicitudesModal";
 import { useAuth } from "@/lib/AuthContext";
 import { getEffectiveNavRole, isSimulandoActivo } from "@/lib/roleSimulator";
 
@@ -32,6 +33,7 @@ export default function Taller() {
   const [filtro, setFiltro] = useState("pendiente");
   const [modalOpen, setModalOpen] = useState(false);
   const [editando, setEditando] = useState(null);
+  const [solicitudesOpen, setSolicitudesOpen] = useState(false);
   const containerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
@@ -99,11 +101,18 @@ export default function Taller() {
                 <p className="text-slate-300 text-xs lg:text-sm mt-0.5">Gestión de órdenes de trabajo y repuestos</p>
               </div>
             </div>
-            <button onClick={() => { setEditando(null); setModalOpen(true); }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
-              style={{ background: "#2563EB" }}>
-              <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nueva Orden</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setSolicitudesOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
+                style={{ background: "#D97706" }}>
+                <Package className="w-4 h-4" /> <span className="hidden sm:inline">Solicitud de Repuesto</span>
+              </button>
+              <button onClick={() => { setEditando(null); setModalOpen(true); }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
+                style={{ background: "#2563EB" }}>
+                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Nueva Orden</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -260,6 +269,8 @@ export default function Taller() {
       <div className="max-w-6xl mx-auto px-4 lg:px-10 pb-10 space-y-4 lg:space-y-6">
         <SolicitudRepuestoModule user={user} />
       </div>
+
+      <HistorialSolicitudesModal open={solicitudesOpen} onClose={() => setSolicitudesOpen(false)} user={user} />
 
       <OrdenTrabajoFormModal
         open={modalOpen}

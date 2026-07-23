@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { Package, Plus, RefreshCw, Search, AlertTriangle, UploadCloud } from "lucide-react";
+import { Package, Plus, RefreshCw, Search, AlertTriangle, UploadCloud, ShoppingCart } from "lucide-react";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import RepuestoCard from "@/components/taller/RepuestoCard";
 import RepuestoFormModal from "@/components/taller/RepuestoFormModal";
 import CargaMasivaRepuestos from "@/components/taller/CargaMasivaRepuestos";
 import ConsumoDirectoModal from "@/components/taller/ConsumoDirectoModal";
+import HistorialSolicitudesModal from "@/components/taller/HistorialSolicitudesModal";
 import { useAuth } from "@/lib/AuthContext";
 
 const CATEGORIAS = [
@@ -33,6 +34,7 @@ export default function Repuestos() {
   const [cargaMasivaOpen, setCargaMasivaOpen] = useState(false);
   const [editando, setEditando] = useState(null);
   const [consumoRepuesto, setConsumoRepuesto] = useState(null);
+  const [solicitudesOpen, setSolicitudesOpen] = useState(false);
   const containerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
@@ -82,6 +84,11 @@ export default function Repuestos() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={() => setSolicitudesOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
+              style={{ background: "#D97706" }}>
+              <ShoppingCart className="w-4 h-4" /> <span className="hidden sm:inline">Solicitud de Compra</span>
+            </button>
             <button onClick={() => setCargaMasivaOpen(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
               style={{ background: "#059669" }}>
@@ -145,6 +152,7 @@ export default function Repuestos() {
       <RepuestoFormModal open={modalOpen} onClose={() => { setModalOpen(false); setEditando(null); }} onGuardar={handleGuardar} editando={editando} proveedores={proveedores} />
       <CargaMasivaRepuestos open={cargaMasivaOpen} onClose={() => setCargaMasivaOpen(false)} onComplete={fetchData} proveedores={proveedores} />
       <ConsumoDirectoModal repuesto={consumoRepuesto} user={user} onClose={() => setConsumoRepuesto(null)} onConsumido={fetchData} />
+      <HistorialSolicitudesModal open={solicitudesOpen} onClose={() => setSolicitudesOpen(false)} user={user} />
     </div>
   );
 }
