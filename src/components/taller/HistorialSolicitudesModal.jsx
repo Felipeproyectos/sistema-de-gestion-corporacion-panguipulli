@@ -5,7 +5,7 @@ import SolicitudRepuestoFormModal from "./SolicitudRepuestoFormModal";
 import { generarPDFSolicitudRepuesto } from "@/utils/generarPDFSolicitudRepuesto";
 
 const ESTADO_CFG = {
-  pendiente: { label: "Pendiente", seguimiento: "En espera de aprobación", color: "#D97706", bg: "#FEF3C7", icon: Clock },
+  pendiente: { label: "Pendiente", seguimiento: "Enviada a Compras de Taller", color: "#D97706", bg: "#FEF3C7", icon: Clock },
   aprobada: { label: "Aprobada", seguimiento: "Compra pendiente de ejecución", color: "#16A34A", bg: "#DCFCE7", icon: CheckCircle2 },
   rechazada: { label: "Rechazada", seguimiento: "Compra no ejecutada", color: "#DC2626", bg: "#FEE2E2", icon: XCircle },
   comprada: { label: "Comprada", seguimiento: "Compra ejecutada ✔", color: "#2563EB", bg: "#DBEAFE", icon: ShoppingCart },

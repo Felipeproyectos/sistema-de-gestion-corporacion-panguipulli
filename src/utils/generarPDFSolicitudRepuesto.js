@@ -8,7 +8,7 @@ const ESTADO_STYLES = {
 };
 
 const SEGUIMIENTO = {
-  pendiente: "En espera de aprobación del Jefe de Taller.",
+  pendiente: "Enviada al Encargado de Compras de Taller — en espera de gestión.",
   aprobada: "Aprobada — compra pendiente de ejecución por Compras de Taller.",
   rechazada: "Solicitud rechazada. No se ejecutará la compra.",
   comprada: "✔ Compra ejecutada por Compras de Taller.",

@@ -2,7 +2,9 @@
 import { useState, useEffect } from "react";
 
 const TOAST_LIMIT = 20;
-const TOAST_REMOVE_DELAY = 1000000;
+const TOAST_REMOVE_DELAY = 1000;
+// Los toasts se cierran solos después de este tiempo
+const TOAST_AUTO_DISMISS = 4000;
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -134,6 +136,9 @@ function toast({ ...props }) {
     },
   });
 
+  // Cierre automático del toast
+  setTimeout(dismiss, TOAST_AUTO_DISMISS);
+
   return {
     id,
     dismiss,
@@ -161,4 +166,4 @@ function useToast() {
   };
 }
 
-export { useToast, toast }; 
+export { useToast, toast };
