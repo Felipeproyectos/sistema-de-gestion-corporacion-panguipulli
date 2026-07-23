@@ -31,6 +31,7 @@ import OrdenTrabajoDetalle from './pages/OrdenTrabajoDetalle';
 import AprobacionRepuestos from './pages/AprobacionRepuestos';
 import OrdenesTrabajo from './pages/OrdenesTrabajo';
 import SolicitudRepuestos from './pages/SolicitudRepuestos';
+import ComprasTablero from './pages/ComprasTablero';
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
@@ -157,6 +158,7 @@ const AuthenticatedApp = () => {
       <Route path="/AprobacionRepuestos" element={<LayoutWrapper currentPageName="AprobacionRepuestos"><PageWrapper><AprobacionRepuestos /></PageWrapper></LayoutWrapper>} />
       <Route path="/OrdenesTrabajo" element={<LayoutWrapper currentPageName="OrdenesTrabajo"><PageWrapper><OrdenesTrabajo /></PageWrapper></LayoutWrapper>} />
       <Route path="/SolicitudRepuestos" element={<LayoutWrapper currentPageName="SolicitudRepuestos"><PageWrapper><SolicitudRepuestos /></PageWrapper></LayoutWrapper>} />
+      <Route path="/ComprasTablero" element={<LayoutWrapper currentPageName="ComprasTablero"><PageWrapper><ComprasTablero /></PageWrapper></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </AnimatedRoutes>
   );
