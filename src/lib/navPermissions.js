@@ -64,6 +64,19 @@ export const NAV_ITEMS = [
     roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.ENCARGADO_SALUD, ROLES.JEFE_TALLER] },
 ];
 
+// Orden prioritario por rol: estos ítems aparecen primero en el menú del rol,
+// sin alterar el orden del resto de roles. El resto de ítems conservan el
+// orden definido en NAV_ITEMS.
+const ROLE_ORDER = {
+  [ROLES.ENCARGADO_COMPRAS_TALLER]: ["ComprasTablero"],
+};
+
 export function getNavItemsForRole(role) {
-  return NAV_ITEMS.filter(item => item.roles.includes(role || ROLES.USER));
+  const items = NAV_ITEMS.filter(item => item.roles.includes(role || ROLES.USER));
+  const priority = ROLE_ORDER[role];
+  if (!priority?.length) return items;
+  return [
+    ...priority.map(page => items.find(i => i.page === page)).filter(Boolean),
+    ...items.filter(i => !priority.includes(i.page)),
+  ];
 }
