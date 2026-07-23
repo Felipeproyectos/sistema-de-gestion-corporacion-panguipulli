@@ -134,6 +134,51 @@
           },
           "proveedor_nombre": {
             "type": "string"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "stock",
+              "compra_directa"
+            ],
+            "default": "stock",
+            "description": "stock = tomado del inventario; compra_directa = comprado y pagado directamente por el Jefe de Taller"
+          },
+          "descripcion": {
+            "type": "string",
+            "description": "Descripci\u00f3n del repuesto comprado directamente"
+          },
+          "boleta_url": {
+            "type": "string",
+            "description": "URL de la imagen de la boleta o factura (respaldo del reembolso)"
+          },
+          "foto_repuesto_url": {
+            "type": "string",
+            "description": "URL de la foto del repuesto comprado"
+          },
+          "precio_total": {
+            "type": "number",
+            "default": 0,
+            "description": "Monto total pagado (para reembolso)"
+          },
+          "pagado_por_email": {
+            "type": "string"
+          },
+          "pagado_por_nombre": {
+            "type": "string"
+          },
+          "fecha_compra": {
+            "type": "string",
+            "format": "date"
+          },
+          "estado_reembolso": {
+            "type": "string",
+            "enum": [
+              "pendiente",
+              "reembolsado"
+            ],
+            "default": "pendiente",
+            "description": "Estado del reembolso solicitado por el Jefe de Taller"
           }
         }
       },
