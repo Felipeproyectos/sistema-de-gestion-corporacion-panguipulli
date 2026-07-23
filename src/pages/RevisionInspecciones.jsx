@@ -438,6 +438,7 @@ export default function RevisionInspecciones() {
   const [inspecciones, setInspecciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("pendiente");
+  const [centroSeleccionado, setCentroSeleccionado] = useState("todos");
 
   const cargar = async () => {
     setLoading(true);
@@ -469,6 +470,7 @@ export default function RevisionInspecciones() {
     return acc;
   }, {});
   const centrosOrdenados = Object.keys(porCentro).sort((a, b) => a.localeCompare(b, "es"));
+  const centrosAMostrar = centroSeleccionado === "todos" ? centrosOrdenados : centrosOrdenados.filter(c => c === centroSeleccionado);
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 lg:p-8">
@@ -504,17 +506,36 @@ export default function RevisionInspecciones() {
           ))}
         </div>
 
+        {/* Selector de centro */}
+        {centrosOrdenados.length > 1 && (
+          <div className="mb-5">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Centro</label>
+            <div className="relative">
+              <MapPin className="w-4 h-4 text-blue-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <select value={centroSeleccionado} onChange={e => setCentroSeleccionado(e.target.value)}
+                className="w-full pl-9 pr-9 py-2.5 rounded-xl text-sm font-semibold text-slate-700 appearance-none cursor-pointer"
+                style={{ background: "white", border: "1px solid #E2E8F0" }}>
+                <option value="todos">Todos los centros ({filtradas.length})</option>
+                {centrosOrdenados.map(c => (
+                  <option key={c} value={c}>{c} ({porCentro[c].length})</option>
+                ))}
+              </select>
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+        )}
+
         {/* Lista */}
         {loading ? (
           <div className="text-center py-16 text-slate-400 text-sm">Cargando...</div>
-        ) : filtradas.length === 0 ? (
+        ) : centrosAMostrar.length === 0 ? (
           <div className="text-center py-16">
             <ClipboardCheck className="w-12 h-12 text-slate-200 mx-auto mb-3" />
             <p className="text-slate-400 text-sm">No hay registros {filtro !== "todos" ? `con estado "${filtro}"` : ""}.</p>
           </div>
         ) : (
           <div className="space-y-6">
-            {centrosOrdenados.map(centro => (
+            {centrosAMostrar.map(centro => (
               <div key={centro}>
                 {/* Encabezado de centro */}
                 <div className="flex items-center gap-2 mb-3">
