@@ -7,6 +7,7 @@ import {
   Loader2, ExternalLink, Printer, ChevronDown
 } from "lucide-react";
 import { TIPOS_EQUIPO, ESTADOS_EQUIPO } from "@/lib/centros";
+import { esRolTaller, ROLES } from "@/lib/roles";
 import RepuestosTab from "./RepuestosTab";
 import ChecklistPlano from "./ChecklistPlano";
 import ImprimirHistorialModal from "./ImprimirHistorialModal";
@@ -65,6 +66,12 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
 
   const sinParches = ["monitor_multiparametros", "monitor_desfibrilador"].includes(equipo.tipo);
 
+  // La pestaña "Repuestos" (gestión de repuestos críticos del vehículo) es
+  // exclusiva del área Taller + Base del Sistema. Los perfiles de Salud no la
+  // usan, ya que el inventario y reposición de insumos médicos se gestiona
+  // en otro módulo.
+  const puedeVerRepuestos = esRolTaller(user?.role) || user?.role === ROLES.SUPER_ADMIN;
+
   const navItems = [
     { key: "info", label: "Información", icon: Info },
     { key: "mantenimiento", label: "Mantenimiento Externo", icon: Wrench },
@@ -72,7 +79,7 @@ export default function EquipoDetalleModal({ equipo, parches, onClose, onEdit, o
     ...(!esAmbulancia && !sinParches ? [{ key: "parches", label: "Parches", icon: Package }] : []),
     ...(esAmbulancia ? [
       { key: "taller", label: "Taller", icon: Hammer },
-      { key: "repuestos", label: "Repuestos", icon: Gauge },
+      ...(puedeVerRepuestos ? [{ key: "repuestos", label: "Repuestos", icon: Gauge }] : []),
       { key: "bitacora", label: "Bitácora", icon: BookOpen }
     ] : [])
   ];
