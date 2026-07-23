@@ -35,7 +35,7 @@ function fmtFecha(fecha) {
   }
 }
 
-export default function SeguimientoCompraModal({ solicitud, user, onClose, onActualizado }) {
+export default function SeguimientoCompraModal({ solicitud, user, onClose, onActualizado, readOnly = false }) {
   const [reporte, setReporte] = useState("");
   const [saving, setSaving] = useState(false);
   const [subComprar, setSubComprar] = useState(false);
@@ -176,7 +176,7 @@ export default function SeguimientoCompraModal({ solicitud, user, onClose, onAct
           </div>
 
           {/* Agregar reporte */}
-          {!esRecibida && (
+          {!esRecibida && !readOnly && (
             <div className="bg-amber-50 rounded-2xl p-3" style={{ border: "1px solid #FDE68A" }}>
               <label className="text-xs font-semibold text-amber-700 block mb-1.5">Agregar reporte de avance</label>
               <div className="flex gap-2">
@@ -199,13 +199,13 @@ export default function SeguimientoCompraModal({ solicitud, user, onClose, onAct
 
         {/* Acciones según estado */}
         <div className="px-5 py-4 border-t border-slate-100 flex gap-2">
-          {esAprobada && (
+          {esAprobada && !readOnly && (
             <button onClick={() => setSubComprar(true)}
               className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-1.5" style={{ background: "#2563EB" }}>
               <ShoppingCart className="w-4 h-4" /> Ejecutar Compra
             </button>
           )}
-          {esComprada && (
+          {esComprada && !readOnly && (
             <button onClick={registrarRecepcion} disabled={saving}
               className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-1.5 disabled:opacity-50" style={{ background: "#16A34A" }}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Warehouse className="w-4 h-4" />} Registrar Recepción

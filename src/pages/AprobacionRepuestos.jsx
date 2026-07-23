@@ -10,7 +10,9 @@ import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import AprobacionRepuestoModal from "@/components/taller/AprobacionRepuestoModal";
+import SeguimientoCompraModal from "@/components/taller/SeguimientoCompraModal";
 import { useAuth } from "@/lib/AuthContext";
+import { ClipboardList } from "lucide-react";
 
 const ESTADO_CFG = {
   pendiente: { label: "Pendiente", color: "#D97706", bg: "#FEF3C7", icon: Clock },
@@ -34,6 +36,7 @@ export default function AprobacionRepuestos() {
   const [filtro, setFiltro] = useState("pendiente");
   const [seleccionada, setSeleccionada] = useState(null);
   const [comprando, setComprando] = useState(null);
+  const [selSeguimiento, setSelSeguimiento] = useState(null);
   const containerRef = useRef(null);
   const { toast } = useToast();
 
@@ -217,6 +220,12 @@ export default function AprobacionRepuestos() {
                             {comprando === sol.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />} Marcar Comprada
                           </button>
                         )}
+                        {!esPendiente && (
+                          <button onClick={() => setSelSeguimiento(sol)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold" style={{ background: "#EFF6FF", color: "#1D4ED8", border: "1px solid #BFDBFE" }}>
+                            <ClipboardList className="w-4 h-4" /> Ver Seguimiento
+                          </button>
+                        )}
                         <button onClick={() => generarPDFSolicitudRepuesto(sol)}
                           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold" style={{ background: "#F1F5F9", color: "#334155" }}>
                           <FileDown className="w-4 h-4" /> PDF
@@ -232,6 +241,13 @@ export default function AprobacionRepuestos() {
       </div>
 
       <AprobacionRepuestoModal solicitud={seleccionada} user={user} onClose={() => setSeleccionada(null)} onResolver={onResolver} />
+      <SeguimientoCompraModal
+        solicitud={selSeguimiento}
+        user={user}
+        onClose={() => setSelSeguimiento(null)}
+        onActualizado={fetch}
+        readOnly
+      />
     </div>
   );
 }
