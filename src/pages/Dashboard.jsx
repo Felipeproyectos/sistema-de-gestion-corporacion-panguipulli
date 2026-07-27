@@ -15,6 +15,7 @@ import usePullToRefresh from "@/hooks/usePullToRefresh";
 import TallerDashboard from "@/pages/TallerDashboard";
 import MonitorCorporativo from "@/pages/MonitorCorporativo";
 import { useAuth } from "@/lib/AuthContext";
+import { getEffectiveNavRole } from "@/lib/roleSimulator";
 
 const TIPO_ACT_LABEL = {
   mantenimiento_preventivo: "Mantenimiento Preventivo",
@@ -44,6 +45,11 @@ const TIPO_ACT_COLOR = {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  // Rol efectivo: cuando Base del Sistema simula otro rol, este es el rol que
+  // determina qué dashboard ver (igual que el menú lateral). Sin simulación,
+  // coincide con user.role. Esto evita que el contenido quede "pegado" en el
+  // dashboard del rol real mientras el menú muestra el rol simulado.
+  const effectiveRole = getEffectiveNavRole(user?.role);
   const [equipos, setEquipos] = useState([]);
   const [parches, setParches] = useState([]);
   const [solicitudes, setSolicitudes] = useState([]);
@@ -54,14 +60,13 @@ export default function Dashboard() {
   const containerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
-    const u = user;
     // El mecánico se redirige a su módulo de Órdenes de Trabajo;
     // no necesita cargar ningún listado del dashboard.
-    if (u?.role === ROLES.MECANICO) return;
+    if (effectiveRole === ROLES.MECANICO) return;
     // El taller (jefe/encargado compras) solo necesita equipos y
     // actividades. Se omiten los 4 listados de salud (parches, solicitudes,
     // alertas, bitácoras) para acelerar la carga inicial.
-    const esTaller = esRolTaller(u?.role);
+    const esTaller = esRolTaller(effectiveRole);
     // Equipos y parches se obtienen vía función backend (asServiceRole + auth.me)
     // porque la RLS integrada no resuelve centro_principal/centros_asignados
     // para encargados de salud ni para usuarios (chofer). La función aplica el
@@ -86,7 +91,7 @@ export default function Dashboard() {
     setSolicitudes(sols);
     setAlertas(alts);
     setBitacorasPendientes(insps);
-  }, [user]);
+  }, [user, effectiveRole]);
 
   useEffect(() => {
     if (!user) return;
@@ -95,12 +100,12 @@ export default function Dashboard() {
 
   const { refreshing } = usePullToRefresh(fetchData, containerRef);
 
-  const esTallerUser = esRolTaller(user?.role);
+  const esTallerUser = esRolTaller(effectiveRole);
   // El mecánico aterriza directo en su módulo de Órdenes de Trabajo.
-  if (user?.role === ROLES.MECANICO && !loading) return <Navigate to="/OrdenesTrabajo" replace />;
+  if (effectiveRole === ROLES.MECANICO && !loading) return <Navigate to="/OrdenesTrabajo" replace />;
   // El Jefe de Taller visualiza el mismo dashboard consolidado que el Monitor
   // Corporativo (Área Salud + Taller), que se ve ordenado y profesional.
-  if (user?.role === ROLES.JEFE_TALLER && !loading) return <MonitorCorporativo />;
+  if (effectiveRole === ROLES.JEFE_TALLER && !loading) return <MonitorCorporativo />;
   // El resto de roles de taller ven un panel enfocado en órdenes y solicitudes.
   if (esTallerUser && !loading) return <TallerDashboard user={user} />;
   const hoy = new Date();
