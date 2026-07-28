@@ -5,7 +5,6 @@ import { Users as UsersIcon, Plus, Search, Stethoscope, Wrench, Shield, Building
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import UsuarioCard from "@/components/usuarios/UsuarioCard";
 import InviteUserModal from "@/components/usuarios/InviteUserModal";
-import NormalizarUsuarios from "@/components/usuarios/NormalizarUsuarios";
 import { ROLES, esRolSalud, esRolTaller, esSuperAdmin, rolesQuePuedeCrear, roleLabel } from "@/lib/roles";
 import { useAuth } from "@/lib/AuthContext";
 import { getEffectiveNavRole } from "@/lib/roleSimulator";
@@ -171,10 +170,6 @@ export default function Usuarios() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 lg:px-10 pb-10">
-        {esSuperAdmin(effectiveRole) && (
-          <NormalizarUsuarios usuarios={usuarios} onCompleto={fetchData} />
-        )}
-
         {/* Tabs de área */}
         {TABS.length > 1 && (
           <div className="grid gap-2 mb-4 -mt-2" style={{ gridTemplateColumns: `repeat(${TABS.length}, minmax(0,1fr))` }}>
@@ -248,7 +243,14 @@ export default function Usuarios() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-            {filtrados.map(u => (
+            {filtrados
+              .slice()
+              .sort((a, b) => {
+                const prio = (u) => u.estado_acceso === "pendiente" ? 0 : u.estado_acceso === "rechazado" ? 1 : 2;
+                if (prio(a) !== prio(b)) return prio(a) - prio(b);
+                return (a.full_name || "").localeCompare(b.full_name || "");
+              })
+              .map(u => (
               <UsuarioCard key={u.id} usuario={u} currentUser={currentUser} onUpdated={handleUpdated} />
             ))}
           </div>
