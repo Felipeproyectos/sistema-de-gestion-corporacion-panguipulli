@@ -4,12 +4,16 @@ import { X, Upload, Loader2 } from "lucide-react";
 import { getCentrosEstructura, TIPOS_EQUIPO, ESTADOS_EQUIPO } from "@/lib/centros";
 
 export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
-  const isAdmin = user?.role === "admin";
+  // Pueden elegir cualquier centro: super_admin y admin. El encargado de salud
+  // queda fijo a su centro (solo lectura). Antes solo se permitía a "admin",
+  // lo que dejaba el campo en blanco para super_admin y encargado_salud.
+  const puedeElegirCentro = user?.role === "super_admin" || user?.role === "admin";
+  const centroFijoUsuario = user?.centro_principal || user?.centro_asignado || user?.centro || "";
   const [centrosEstructura, setCentrosEstructura] = useState([]);
   const [form, setForm] = useState({
     numero_inventario: "", tipo: "dea", marca: "", modelo: "", numero_serie: "",
     anio_adquisicion: new Date().getFullYear(), estado: "operativo",
-    centro_principal: isAdmin ? "" : (user?.centro || ""),
+    centro_principal: puedeElegirCentro ? "" : centroFijoUsuario,
     subsede: "", ubicacion_especifica: "", fecha_vencimiento_bateria: "",
     patente: "", valor: "", notas: "",
     conductor_responsable: "",
@@ -99,7 +103,7 @@ export default function EquipoFormModal({ equipo, onClose, onSaved, user }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1">Centro Principal *</label>
-              {isAdmin ? (
+              {puedeElegirCentro ? (
                 <select required className={selectCls} value={form.centro_principal} onChange={e => { set("centro_principal", e.target.value); set("subsede", ""); }}>
                   <option value="">Seleccionar...</option>
                   {centrosEstructura.map(c => <option key={c.nombre} value={c.nombre}>{c.nombre}</option>)}
