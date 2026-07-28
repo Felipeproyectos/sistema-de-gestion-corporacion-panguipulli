@@ -76,7 +76,7 @@ const AuthenticatedApp = () => {
     let activo = true;
     base44.functions.invoke('verificarAccesoUsuario')
       .then(r => { if (activo) setAccesoCheck(r.data || { acceso: false, estado: 'pendiente' }); })
-      .catch(() => { if (activo) setAccesoCheck({ acceso: true, estado: 'aprobado' }); }); // fail-open ante error de red
+      .catch(() => { if (activo) setAccesoCheck({ acceso: false, estado: 'pendiente' }); }); // fail-closed: ante error se bloquea el acceso por seguridad
     return () => { activo = false; };
   }, [isAuthenticated, authError]);
 
