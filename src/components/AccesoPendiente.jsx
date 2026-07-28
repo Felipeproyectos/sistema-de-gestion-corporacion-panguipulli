@@ -4,7 +4,7 @@ import { Clock, ShieldX, LogOut, Mail } from 'lucide-react';
 
 // Pantalla mostrada a un usuario autenticado pero cuyo acceso a la app aún no
 // ha sido aprobado (estado 'pendiente') o fue rechazado por un administrador.
-export default function AccesoPendiente({ email, rechazado = false }) {
+export default function AccesoPendiente({ email, rechazado = false, bloqueadoPorIntentos = false }) {
   const Icon = rechazado ? ShieldX : Clock;
   const titulo = rechazado ? 'Acceso Denegado' : 'Acceso Pendiente de Aprobación';
 
@@ -25,7 +25,13 @@ export default function AccesoPendiente({ email, rechazado = false }) {
         <div className="px-8 py-7 space-y-5">
           <p className="text-slate-700 text-sm text-center leading-relaxed">
             {rechazado ? (
-              <>Tu solicitud de acceso <strong>fue rechazada</strong>. Si crees que esto es un error, contacta al administrador del sistema.</>
+              <>
+                {bloqueadoPorIntentos ? (
+                  <>Tu cuenta fue <strong>bloqueada automáticamente</strong> tras varios intentos de acceso sin autorización. Por seguridad, contacta al administrador del sistema para reactivarla.</>
+                ) : (
+                  <>Tu solicitud de acceso <strong>fue rechazada</strong>. Si crees que esto es un error, contacta al administrador del sistema.</>
+                )}
+              </>
             ) : (
               <>Tu cuenta fue registrada pero <strong>aún no ha sido autorizada</strong>. Un administrador debe aprobar tu acceso antes de que puedas ingresar al sistema.</>
             )}

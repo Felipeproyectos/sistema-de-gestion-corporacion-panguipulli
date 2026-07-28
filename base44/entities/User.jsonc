@@ -28,6 +28,11 @@
       "default": "pendiente",
       "description": "Control de acceso a la app. Solo super_admin y admin aprueban ingresos. Un usuario 'pendiente' o 'rechazado' no puede usar el sistema."
     },
+    "intentos_acceso": {
+      "type": "number",
+      "default": 0,
+      "description": "Contador de intentos de acceso mientras el usuario est\u00e1 pendiente o rechazado. Tras superar el umbral (5) el usuario se bloquea autom\u00e1ticamente por seguridad."
+    },
     "area": {
       "type": "string",
       "enum": [

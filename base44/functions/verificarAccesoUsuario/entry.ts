@@ -3,6 +3,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 // Roles con acceso siempre permitido (no requieren aprobación explícita).
 const ROLES_PRIVILEGIADOS = ['super_admin', 'admin'];
 
+// Número de intentos de acceso sin autorización antes de bloquear al usuario.
+const UMBRAL_INTENTOS = 5;
+
 // Un usuario se considera "ya en operación" (legacy, previo a la aprobación
 // obligatoria) si tiene un rol distinto de 'user' o si ya tiene área/centro
 // asignado. A estos se les concede acceso automáticamente para no bloquear a
@@ -16,11 +19,24 @@ function pareceUsuarioLegitimo(u) {
   return false;
 }
 
+async function registrarIntentoAudit(base44, email, userAgent, notas) {
+  try {
+    await base44.asServiceRole.entities.AccesoNoAutorizado.create({
+      email,
+      fecha_intento: new Date().toISOString(),
+      user_agent: userAgent || '',
+      notas
+    });
+  } catch { /* auditoría best-effort */ }
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const me = await base44.auth.me();
     if (!me) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const userAgent = req.headers.get('user-agent') || '';
 
     // Aplicar invitación pendiente: si un Jefe/Admin invitó a este correo con un
     // rol específico (mecánico, etc.), se aplica ahora que el usuario ingresó.
@@ -29,7 +45,7 @@ Deno.serve(async (req) => {
       const invitaciones = await base44.asServiceRole.entities.InvitacionPendiente.filter({ email: correo, aplicada: false });
       const inv = invitaciones?.[0];
       if (inv) {
-        const cambios: Record<string, unknown> = { estado_acceso: 'aprobado' };
+        const cambios: Record<string, unknown> = { estado_acceso: 'aprobado', intentos_acceso: 0 };
         if (inv.rol_asignado) cambios.role = inv.rol_asignado;
         if (inv.centro_principal) cambios.centro_principal = inv.centro_principal;
         await base44.asServiceRole.entities.User.update(me.id, cambios).catch(() => {});
@@ -43,29 +59,47 @@ Deno.serve(async (req) => {
       return Response.json({ acceso: true, estado: 'aprobado' });
     }
 
-    // Ya aprobado explícitamente.
+    // Ya aprobado explícitamente: reiniciar contador de intentos.
     if (me.estado_acceso === 'aprobado') {
+      if (me.intentos_acceso) {
+        await base44.asServiceRole.entities.User.update(me.id, { intentos_acceso: 0 }).catch(() => {});
+      }
       return Response.json({ acceso: true, estado: 'aprobado' });
     }
 
-    // Rechazado explícitamente: bloqueado.
+    // Rechazado explícitamente: bloqueado. Registrar intento recurrente para auditoría.
     if (me.estado_acceso === 'rechazado') {
+      await registrarIntentoAudit(base44, me.email, userAgent, 'Intento de acceso con cuenta rechazada');
       return Response.json({ acceso: false, estado: 'rechazado' });
     }
 
     // Sin estado definido (usuario legacy previo al control de acceso): si ya
     // tenía rol/centro operativo, se marca como aprobado y se le deja entrar.
     if (!me.estado_acceso && pareceUsuarioLegitimo(me)) {
-      await base44.asServiceRole.entities.User.update(me.id, { estado_acceso: 'aprobado' }).catch(() => {});
+      await base44.asServiceRole.entities.User.update(me.id, { estado_acceso: 'aprobado', intentos_acceso: 0 }).catch(() => {});
       return Response.json({ acceso: true, estado: 'aprobado' });
     }
 
-    // Usuario recién auto-registrado (rol 'user', sin nada asignado): pendiente
-    // de aprobación por un super_admin / admin.
-    if (!me.estado_acceso) {
-      await base44.asServiceRole.entities.User.update(me.id, { estado_acceso: 'pendiente' }).catch(() => {});
+    // Usuario pendiente (o sin estado, no legítimo): contar el intento de acceso.
+    // Tras superar el umbral, se bloquea automáticamente por seguridad.
+    const intentos = (me.intentos_acceso || 0) + 1;
+    if (intentos >= UMBRAL_INTENTOS) {
+      await base44.asServiceRole.entities.User.update(me.id, {
+        estado_acceso: 'rechazado',
+        intentos_acceso: intentos
+      }).catch(() => {});
+      await registrarIntentoAudit(
+        base44, me.email, userAgent,
+        `Bloqueado automáticamente tras ${intentos} intentos de acceso sin autorización`
+      );
+      return Response.json({ acceso: false, estado: 'rechazado', bloqueado_por_intentos: true });
     }
-    return Response.json({ acceso: false, estado: 'pendiente' });
+
+    await base44.asServiceRole.entities.User.update(me.id, {
+      estado_acceso: 'pendiente',
+      intentos_acceso: intentos
+    }).catch(() => {});
+    return Response.json({ acceso: false, estado: 'pendiente', intentos });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

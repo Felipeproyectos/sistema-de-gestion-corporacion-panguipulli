@@ -116,7 +116,7 @@ const AuthenticatedApp = () => {
       );
     }
     if (!accesoCheck.acceso) {
-      return <AccesoPendiente rechazado={accesoCheck.estado === 'rechazado'} />;
+      return <AccesoPendiente rechazado={accesoCheck.estado === 'rechazado'} bloqueadoPorIntentos={accesoCheck.bloqueado_por_intentos} />;
     }
   }
 

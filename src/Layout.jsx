@@ -10,6 +10,8 @@ import { getEffectiveNavRole } from "@/lib/roleSimulator";
 import useDarkMode from "@/hooks/useDarkMode";
 import { roleLabel } from "@/lib/roles";
 import { useAuth } from "@/lib/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
+import useInactivityLogout from "@/hooks/useInactivityLogout";
 
 export default function Layout({ children, currentPageName }) {
   // El usuario ya se obtiene una sola vez en AuthContext (a nivel de App),
@@ -20,6 +22,17 @@ export default function Layout({ children, currentPageName }) {
   const [appConfig, setAppConfig] = useState(null);
   const location = useLocation();
   useDarkMode();
+  const { toast } = useToast();
+
+  // Cierre automático de sesión tras 30 minutos de inactividad.
+  useInactivityLogout(() => {
+    toast({
+      title: "Sesión cerrada por inactividad",
+      description: "Tu sesión se cerró automáticamente tras 30 minutos sin actividad.",
+      variant: "destructive"
+    });
+    setTimeout(() => base44.auth.logout(), 1200);
+  });
 
   useEffect(() => {
     base44.entities.AppConfig.list().then((list) => {
