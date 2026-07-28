@@ -38,6 +38,35 @@ Deno.serve(async (req) => {
 
     const userAgent = req.headers.get('user-agent') || '';
 
+    // super_admin / admin siempre entran.
+    if (ROLES_PRIVILEGIADOS.includes(me.role)) {
+      return Response.json({ acceso: true, estado: 'aprobado' });
+    }
+
+    // Rechazado explícitamente: bloqueado (tiene prioridad sobre cualquier
+    // invitación pendiente). Registrar intento recurrente para auditoría.
+    if (me.estado_acceso === 'rechazado') {
+      await registrarIntentoAudit(base44, me.email, userAgent, 'Intento de acceso con cuenta rechazada');
+      // Marcar cualquier invitación pendiente como aplicada para que no
+      // resucite el acceso del usuario rechazado en futuros ingresos.
+      try {
+        const correo = (me.email || '').toLowerCase();
+        const invs = await base44.asServiceRole.entities.InvitacionPendiente.filter({ email: correo, aplicada: false });
+        if (invs?.length) {
+          await Promise.all(invs.map(inv => base44.asServiceRole.entities.InvitacionPendiente.update(inv.id, { aplicada: true }).catch(() => {})));
+        }
+      } catch (_) { /* best-effort */ }
+      return Response.json({ acceso: false, estado: 'rechazado' });
+    }
+
+    // Ya aprobado explícitamente: reiniciar contador de intentos.
+    if (me.estado_acceso === 'aprobado') {
+      if (me.intentos_acceso) {
+        await base44.asServiceRole.entities.User.update(me.id, { intentos_acceso: 0 }).catch(() => {});
+      }
+      return Response.json({ acceso: true, estado: 'aprobado' });
+    }
+
     // Aplicar invitación pendiente: si un Jefe/Admin invitó a este correo con un
     // rol específico (mecánico, etc.), se aplica ahora que el usuario ingresó.
     try {
@@ -53,25 +82,6 @@ Deno.serve(async (req) => {
         return Response.json({ acceso: true, estado: 'aprobado' });
       }
     } catch (_) { /* si falla la aplicación, se sigue con el flujo normal */ }
-
-    // super_admin / admin siempre entran.
-    if (ROLES_PRIVILEGIADOS.includes(me.role)) {
-      return Response.json({ acceso: true, estado: 'aprobado' });
-    }
-
-    // Ya aprobado explícitamente: reiniciar contador de intentos.
-    if (me.estado_acceso === 'aprobado') {
-      if (me.intentos_acceso) {
-        await base44.asServiceRole.entities.User.update(me.id, { intentos_acceso: 0 }).catch(() => {});
-      }
-      return Response.json({ acceso: true, estado: 'aprobado' });
-    }
-
-    // Rechazado explícitamente: bloqueado. Registrar intento recurrente para auditoría.
-    if (me.estado_acceso === 'rechazado') {
-      await registrarIntentoAudit(base44, me.email, userAgent, 'Intento de acceso con cuenta rechazada');
-      return Response.json({ acceso: false, estado: 'rechazado' });
-    }
 
     // Sin estado definido (usuario legacy previo al control de acceso): si ya
     // tenía rol/centro operativo, se marca como aprobado y se le deja entrar.
