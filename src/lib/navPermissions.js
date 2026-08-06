@@ -1,6 +1,6 @@
 import {
-  LayoutDashboard, Monitor, Bell, ClipboardList, FileText, History,
-  Settings, Wrench, Building2, Package, ShieldX, BarChart3, Users, ClipboardCheck, ShoppingCart, Heart
+  LayoutDashboard, Monitor, Bell, ClipboardList, FileText,
+  Settings, Wrench, Building2, Package, ScrollText, BarChart3, Users, ClipboardCheck, ShoppingCart, Heart
 } from "lucide-react";
 import { ROLES } from "@/lib/roles";
 
@@ -54,13 +54,10 @@ export const NAV_ITEMS = [
   { label: "Monitor Corporativo", page: "MonitorCorporativo", path: "/MonitorCorporativo", icon: BarChart3,
     roles: [ROLES.SUPER_ADMIN, ROLES.MONITOR_CORPORATIVO] },
 
-  { label: "Historial", page: "Historial", path: "/Historial", icon: History,
-    roles: [ROLES.SUPER_ADMIN] },
-
   { label: "Configuración", page: "Configuracion", path: "/Configuracion", icon: Settings,
     roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
 
-  { label: "Accesos No Autorizados", page: "AccesosNoAutorizados", path: "/AccesosNoAutorizados", icon: ShieldX,
+  { label: "Auditoría", page: "Auditoria", path: "/Auditoria", icon: ScrollText,
     roles: [ROLES.SUPER_ADMIN] },
 
   { label: "Usuarios", page: "Usuarios", path: "/Usuarios", icon: Users,

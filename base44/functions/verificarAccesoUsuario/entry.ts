@@ -19,13 +19,17 @@ function pareceUsuarioLegitimo(u) {
   return false;
 }
 
-async function registrarIntentoAudit(base44, email, userAgent, notas) {
+// Registra cada evento de acceso (exitoso o fallido) para auditoría.
+async function logAcceso(base44, me, resultado, userAgent, notas = '') {
   try {
     await base44.asServiceRole.entities.AccesoNoAutorizado.create({
-      email,
+      email: me.email || '',
       fecha_intento: new Date().toISOString(),
       user_agent: userAgent || '',
-      notas
+      resultado,
+      usuario_nombre: me.full_name || '',
+      rol: me.role || '',
+      notas,
     });
   } catch { /* auditoría best-effort */ }
 }
@@ -40,15 +44,14 @@ Deno.serve(async (req) => {
 
     // super_admin / admin siempre entran.
     if (ROLES_PRIVILEGIADOS.includes(me.role)) {
+      await logAcceso(base44, me, 'exitoso', userAgent);
       return Response.json({ acceso: true, estado: 'aprobado' });
     }
 
     // Rechazado explícitamente: bloqueado (tiene prioridad sobre cualquier
     // invitación pendiente). Registrar intento recurrente para auditoría.
     if (me.estado_acceso === 'rechazado') {
-      await registrarIntentoAudit(base44, me.email, userAgent, 'Intento de acceso con cuenta rechazada');
-      // Marcar cualquier invitación pendiente como aplicada para que no
-      // resucite el acceso del usuario rechazado en futuros ingresos.
+      await logAcceso(base44, me, 'rechazado', userAgent, 'Intento de acceso con cuenta rechazada');
       try {
         const correo = (me.email || '').toLowerCase();
         const invs = await base44.asServiceRole.entities.InvitacionPendiente.filter({ email: correo, aplicada: false });
@@ -64,6 +67,7 @@ Deno.serve(async (req) => {
       if (me.intentos_acceso) {
         await base44.asServiceRole.entities.User.update(me.id, { intentos_acceso: 0 }).catch(() => {});
       }
+      await logAcceso(base44, me, 'exitoso', userAgent);
       return Response.json({ acceso: true, estado: 'aprobado' });
     }
 
@@ -79,6 +83,8 @@ Deno.serve(async (req) => {
         if (inv.centro_principal) cambios.centro_principal = inv.centro_principal;
         await base44.asServiceRole.entities.User.update(me.id, cambios).catch(() => {});
         await base44.asServiceRole.entities.InvitacionPendiente.update(inv.id, { aplicada: true }).catch(() => {});
+        const meActualizado = { ...me, role: inv.rol_asignado || me.role };
+        await logAcceso(base44, meActualizado, 'exitoso', userAgent, 'Acceso tras aplicar invitación pendiente');
         return Response.json({ acceso: true, estado: 'aprobado' });
       }
     } catch (_) { /* si falla la aplicación, se sigue con el flujo normal */ }
@@ -87,6 +93,7 @@ Deno.serve(async (req) => {
     // tenía rol/centro operativo, se marca como aprobado y se le deja entrar.
     if (!me.estado_acceso && pareceUsuarioLegitimo(me)) {
       await base44.asServiceRole.entities.User.update(me.id, { estado_acceso: 'aprobado', intentos_acceso: 0 }).catch(() => {});
+      await logAcceso(base44, me, 'exitoso', userAgent, 'Auto-aprobado (usuario legacy)');
       return Response.json({ acceso: true, estado: 'aprobado' });
     }
 
@@ -98,10 +105,7 @@ Deno.serve(async (req) => {
         estado_acceso: 'rechazado',
         intentos_acceso: intentos
       }).catch(() => {});
-      await registrarIntentoAudit(
-        base44, me.email, userAgent,
-        `Bloqueado automáticamente tras ${intentos} intentos de acceso sin autorización`
-      );
+      await logAcceso(base44, me, 'bloqueado', userAgent, `Bloqueado automáticamente tras ${intentos} intentos sin autorización`);
       return Response.json({ acceso: false, estado: 'rechazado', bloqueado_por_intentos: true });
     }
 
@@ -109,6 +113,7 @@ Deno.serve(async (req) => {
       estado_acceso: 'pendiente',
       intentos_acceso: intentos
     }).catch(() => {});
+    await logAcceso(base44, me, 'pendiente', userAgent, `Intento ${intentos} de acceso sin aprobación`);
     return Response.json({ acceso: false, estado: 'pendiente', intentos });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

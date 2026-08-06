@@ -60,15 +60,20 @@ Deno.serve(async (req) => {
     let usuario_email = data?.created_by || old_data?.created_by || "sistema";
     let usuario_nombre = "";
 
+    let usuario_rol = "";
     try {
       const users = await base44.asServiceRole.entities.User.list();
       const u = users.find(x => x.email === usuario_email);
-      if (u) usuario_nombre = u.full_name || "";
+      if (u) {
+        usuario_nombre = u.full_name || "";
+        usuario_rol = u.role || "";
+      }
     } catch (_) {}
 
     await base44.asServiceRole.entities.Historial.create({
       usuario_email,
       usuario_nombre,
+      usuario_rol,
       accion,
       entidad: entityName,
       entidad_id: event.entity_id || "",

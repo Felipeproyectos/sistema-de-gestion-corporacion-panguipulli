@@ -10,6 +10,10 @@
       "type": "string",
       "description": "Nombre del usuario"
     },
+    "usuario_rol": {
+      "type": "string",
+      "description": "Rol del usuario al momento de la acci\u00f3n"
+    },
     "accion": {
       "type": "string",
       "enum": [

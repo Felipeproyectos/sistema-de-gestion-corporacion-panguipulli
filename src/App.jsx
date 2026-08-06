@@ -12,7 +12,6 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 
 import Centros from './pages/Centros';
-import Historial from './pages/Historial';
 import Equipos2 from './pages/Equipos2';
 import Actividades from './pages/Actividades';
 import AlertasV2 from './pages/AlertasV2';
@@ -21,7 +20,7 @@ import Reportes from './pages/Reportes';
 import PublicBitacora from './pages/PublicBitacora';
 import RevisionInspecciones from './pages/RevisionInspecciones';
 import Bienvenida from './pages/Bienvenida';
-import AccesosNoAutorizados from './pages/AccesosNoAutorizados';
+import Auditoria from './pages/Auditoria';
 import Taller from './pages/Taller';
 import Proveedores from './pages/Proveedores';
 import Repuestos from './pages/Repuestos';
@@ -140,7 +139,6 @@ const AuthenticatedApp = () => {
         />
       ))}
       <Route path="/Centros" element={<LayoutWrapper currentPageName="Centros"><PageWrapper><Centros /></PageWrapper></LayoutWrapper>} />
-      <Route path="/Historial" element={<LayoutWrapper currentPageName="Historial"><PageWrapper><Historial /></PageWrapper></LayoutWrapper>} />
       <Route path="/Equipos2" element={<LayoutWrapper currentPageName="Equipos2"><PageWrapper><Equipos2 /></PageWrapper></LayoutWrapper>} />
       <Route path="/Actividades" element={<LayoutWrapper currentPageName="Actividades"><PageWrapper><Actividades /></PageWrapper></LayoutWrapper>} />
       <Route path="/AlertasV2" element={<LayoutWrapper currentPageName="AlertasV2"><PageWrapper><AlertasV2 /></PageWrapper></LayoutWrapper>} />
@@ -149,7 +147,7 @@ const AuthenticatedApp = () => {
       <Route path="/bitacora-publica" element={<PublicBitacora />} />
       <Route path="/bienvenida" element={<Bienvenida />} />
       <Route path="/RevisionInspecciones" element={<LayoutWrapper currentPageName="RevisionInspecciones"><PageWrapper><RevisionInspecciones /></PageWrapper></LayoutWrapper>} />
-      <Route path="/AccesosNoAutorizados" element={<LayoutWrapper currentPageName="AccesosNoAutorizados"><PageWrapper><AccesosNoAutorizados /></PageWrapper></LayoutWrapper>} />
+      <Route path="/Auditoria" element={<LayoutWrapper currentPageName="Auditoria"><PageWrapper><Auditoria /></PageWrapper></LayoutWrapper>} />
       <Route path="/Taller" element={<LayoutWrapper currentPageName="Taller"><PageWrapper><Taller /></PageWrapper></LayoutWrapper>} />
       <Route path="/Proveedores" element={<LayoutWrapper currentPageName="Proveedores"><PageWrapper><Proveedores /></PageWrapper></LayoutWrapper>} />
       <Route path="/Repuestos" element={<LayoutWrapper currentPageName="Repuestos"><PageWrapper><Repuestos /></PageWrapper></LayoutWrapper>} />

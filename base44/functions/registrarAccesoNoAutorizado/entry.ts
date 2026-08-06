@@ -30,6 +30,7 @@ Deno.serve(async (req) => {
       email: correo,
       fecha_intento: ahora.toISOString(),
       user_agent: user_agent || 'desconocido',
+      resultado: 'no_autorizado',
       notas,
     });
 
