@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
 
-const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 minutos sin actividad
+const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 minutos sin actividad
 const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"];
 
-// Cierra la sesión automáticamente tras 30 minutos sin actividad del usuario.
+// Cierra la sesión automáticamente tras 5 minutos sin actividad del usuario.
 // Cualquier interacción (mouse, teclado, scroll, touch) reinicia el contador.
 export default function useInactivityLogout(onTimeout) {
   const timerRef = useRef(null);

@@ -27,7 +27,7 @@ export default function AccesoPendiente({ email, rechazado = false, bloqueadoPor
             {rechazado ? (
               <>
                 {bloqueadoPorIntentos ? (
-                  <>Tu cuenta fue <strong>bloqueada automáticamente</strong> tras varios intentos de acceso sin autorización. Por seguridad, contacta al administrador del sistema para reactivarla.</>
+                  <>Tu cuenta fue <strong>bloqueada automáticamente</strong> tras 3 intentos de acceso sin autorización. Por seguridad, <strong>comunícate con el administrador del sistema</strong> para reactivarla.</>
                 ) : (
                   <>Tu solicitud de acceso <strong>fue rechazada</strong>. Si crees que esto es un error, contacta al administrador del sistema.</>
                 )}

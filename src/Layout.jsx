@@ -28,7 +28,7 @@ export default function Layout({ children, currentPageName }) {
   useInactivityLogout(() => {
     toast({
       title: "Sesión cerrada por inactividad",
-      description: "Tu sesión se cerró automáticamente tras 30 minutos sin actividad.",
+      description: "Tu sesión se cerró automáticamente tras 5 minutos sin actividad.",
       variant: "destructive"
     });
     setTimeout(() => base44.auth.logout(), 1200);

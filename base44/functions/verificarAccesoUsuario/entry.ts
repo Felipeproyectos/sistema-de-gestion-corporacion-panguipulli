@@ -4,7 +4,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 const ROLES_PRIVILEGIADOS = ['super_admin', 'admin'];
 
 // Número de intentos de acceso sin autorización antes de bloquear al usuario.
-const UMBRAL_INTENTOS = 5;
+const UMBRAL_INTENTOS = 3;
 
 // Un usuario se considera "ya en operación" (legacy, previo a la aprobación
 // obligatoria) si tiene un rol distinto de 'user' o si ya tiene área/centro
