@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Upload, Loader2, Save, Settings, Users, Shield, Mail, UserPlus, Trash2, Edit2, X, Check, AlertTriangle, Car, ExternalLink, Copy, CheckCircle, Download, Building2 } from "lucide-react";
 import GestionSedes from "@/components/configuracion/GestionSedes";
+import BackupSection from "@/components/configuracion/BackupSection";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -286,6 +287,9 @@ export default function Configuracion() {
           <p className="text-sm text-slate-500">Administra los centros principales y sus subsedes. Los cambios se reflejan en los formularios de equipos y bitácora pública.</p>
           <GestionSedes />
         </div>
+
+        {/* Copia de Seguridad */}
+        <BackupSection />
 
         {/* Enlace Bitácora Pública */}
         <BitacoraPublicaLink />
