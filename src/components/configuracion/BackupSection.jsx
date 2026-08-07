@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Download, Loader2, Database, CheckCircle } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function BackupSection() {
+  const { user } = useAuth();
   const [exporting, setExporting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
@@ -26,6 +28,8 @@ export default function BackupSection() {
     }
     setExporting(false);
   };
+
+  if (user?.role !== "super_admin") return null;
 
   return (
     <div className="bg-white rounded-3xl shadow-lg p-5 lg:p-8 space-y-4">
