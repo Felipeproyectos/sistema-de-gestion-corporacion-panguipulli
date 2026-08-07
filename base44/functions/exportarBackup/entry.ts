@@ -25,7 +25,12 @@ export default async function(req) {
     for (const name of entidades) {
       try {
         const records = await base44.asServiceRole.entities[name].list();
-        backup[name] = records;
+        // Ordenar por fecha de creación (más recientes primero) si existe el campo
+        backup[name] = records.sort((a, b) => {
+          const fa = a.created_date ? new Date(a.created_date).getTime() : 0;
+          const fb = b.created_date ? new Date(b.created_date).getTime() : 0;
+          return fb - fa;
+        });
       } catch (e) {
         backup[name] = { _error: String(e) };
       }

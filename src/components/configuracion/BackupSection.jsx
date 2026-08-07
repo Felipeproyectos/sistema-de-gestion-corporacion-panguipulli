@@ -18,7 +18,9 @@ export default function BackupSection() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `backup-sistema-${new Date().toISOString().slice(0, 10)}.json`;
+      const now = new Date();
+      const fechaHora = now.toISOString().slice(0, 16).replace('T', '_').replace(/:/g, '-');
+      a.download = `backup-sistema_${fechaHora}.json`;
       a.click();
       URL.revokeObjectURL(url);
       setDone(true);
