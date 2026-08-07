@@ -2,7 +2,7 @@
 export const CENTROS_ESTRUCTURA_STATIC = [
   {
     nombre: "CESFAM Panguipulli",
-    subsedes: ["Posta Bocatoma", "Posta Cayumapu", "Posta Melefquén", "Posta Huitar", "SAR Panguipulli"]
+    subsedes: ["Posta Bocatoma", "Posta Cayumapu", "Posta Melefquén", "Posta Huitag", "SAR Panguipulli"]
   },
   {
     nombre: "CESFAM Coñaripe",
