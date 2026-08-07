@@ -24,6 +24,15 @@ Deno.serve(async (req) => {
       OrdenTrabajo: "Orden de Trabajo",
       Proveedor: "Proveedor",
       User: "Usuario",
+      Actividad: "Actividad",
+      Kilometraje: "Kilometraje",
+      InspeccionPendiente: "Inspección",
+      Alerta: "Alerta",
+      ConsumoRepuesto: "Consumo de Repuesto",
+      OrdenDeCompra: "Orden de Compra",
+      InvitacionPendiente: "Invitación",
+      SolicitudRepuesto: "Solicitud de Repuesto",
+      SolicitudRepuestoSalud: "Solicitud de Insumo Médico",
     };
 
     const ACCIONES = { create: "crear", update: "editar", delete: "eliminar" };
@@ -53,6 +62,24 @@ Deno.serve(async (req) => {
         descripcion = `${accion === "crear" ? "Registró" : accion === "editar" ? "Editó" : "Eliminó"} proveedor: ${data.nombre || "—"} (${data.rubro || "—"})`;
       } else if (entityName === "User") {
         descripcion = `${accion === "crear" ? "Creó" : accion === "editar" ? "Editó" : "Eliminó"} usuario: ${data.email || data.full_name || "—"} — rol: ${data.role || "—"}`;
+      } else if (entityName === "Actividad") {
+        descripcion = `${accion === "crear" ? "Registró" : accion === "editar" ? "Editó" : "Eliminó"} actividad: ${data.tipo || "—"} en equipo ID ${data.equipo_id || "—"}`;
+      } else if (entityName === "Kilometraje") {
+        descripcion = `${accion === "crear" ? "Registró" : accion === "editar" ? "Editó" : "Eliminó"} kilometraje: ${data.valor_km ?? "—"} km — conductor: ${data.conductor || "—"}`;
+      } else if (entityName === "InspeccionPendiente") {
+        descripcion = `${accion === "crear" ? "Envió" : accion === "editar" ? "Editó" : "Eliminó"} inspección: ${data.tipo_formulario || "—"} — equipo: ${data.equipo_label || "—"}`;
+      } else if (entityName === "Alerta") {
+        descripcion = `${accion === "crear" ? "Generó" : accion === "editar" ? "Actualizó" : "Eliminó"} alerta: ${data.tipo || "—"} — ${data.descripcion || ""}`;
+      } else if (entityName === "ConsumoRepuesto") {
+        descripcion = `${accion === "crear" ? "Registró" : accion === "editar" ? "Editó" : "Eliminó"} consumo de repuesto: ${data.repuesto_nombre || "—"} (cant. ${data.cantidad ?? "—"})`;
+      } else if (entityName === "OrdenDeCompra") {
+        descripcion = `${accion === "crear" ? "Creó" : accion === "editar" ? "Editó" : "Eliminó"} orden de compra ${data.numero_oc || "—"} — proveedor: ${data.proveedor_nombre || "—"}`;
+      } else if (entityName === "InvitacionPendiente") {
+        descripcion = `${accion === "crear" ? "Invitó" : accion === "editar" ? "Editó" : "Eliminó"} invitación para: ${data.email || "—"} — rol: ${data.rol_asignado || "—"}`;
+      } else if (entityName === "SolicitudRepuesto") {
+        descripcion = `${accion === "crear" ? "Creó" : accion === "editar" ? "Actualizó" : "Eliminó"} solicitud de repuesto: ${data.repuesto_nombre || "—"} — Estado: ${data.estado || "—"}`;
+      } else if (entityName === "SolicitudRepuestoSalud") {
+        descripcion = `${accion === "crear" ? "Creó" : accion === "editar" ? "Actualizó" : "Eliminó"} solicitud de insumo médico: ${data.repuesto_nombre || "—"} — Estado: ${data.estado || "—"}`;
       }
     }
 
