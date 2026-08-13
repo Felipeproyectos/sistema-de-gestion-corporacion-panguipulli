@@ -49,7 +49,28 @@
     "descripcion"
   ],
   "rls": {
-    "create": true,
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "encargado_salud"
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
     "read": {
       "$or": [
         {
@@ -73,7 +94,7 @@
           }
         },
         {
-          "created_by": "{{user.email}}"
+          "created_by_id": "{{user.id}}"
         }
       ]
     },
@@ -102,7 +123,7 @@
         {
           "$and": [
             {
-              "created_by": "{{user.email}}"
+              "created_by_id": "{{user.id}}"
             },
             {
               "data.estado": "pendiente"
@@ -126,7 +147,7 @@
         {
           "$and": [
             {
-              "created_by": "{{user.email}}"
+              "created_by_id": "{{user.id}}"
             },
             {
               "data.estado": "pendiente"

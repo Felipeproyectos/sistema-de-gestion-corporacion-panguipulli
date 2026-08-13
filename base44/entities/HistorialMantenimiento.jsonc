@@ -82,16 +82,9 @@
           }
         },
         {
-          "$and": [
-            {
-              "user_condition": {
-                "role": "encargado_salud"
-              }
-            },
-            {
-              "data.centro_principal": "{{user.centro_principal}}"
-            }
-          ]
+          "user_condition": {
+            "role": "encargado_salud"
+          }
         },
         {
           "data.cargado_por_email": "{{user.email}}"
@@ -111,16 +104,24 @@
           }
         },
         {
-          "$and": [
-            {
-              "user_condition": {
-                "role": "encargado_salud"
-              }
-            },
-            {
-              "data.centro_principal": "{{user.centro_principal}}"
-            }
-          ]
+          "user_condition": {
+            "role": "encargado_salud"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "jefe_taller"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "mecanico"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "monitor_corporativo"
+          }
         },
         {
           "data.cargado_por_email": "{{user.email}}"

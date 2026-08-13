@@ -57,19 +57,12 @@
           }
         },
         {
-          "$and": [
-            {
-              "user_condition": {
-                "role": "encargado_salud"
-              }
-            },
-            {
-              "data.centro_principal": "{{user.centro_principal}}"
-            }
-          ]
+          "user_condition": {
+            "role": "encargado_salud"
+          }
         },
         {
-          "created_by": "{{user.email}}"
+          "created_by_id": "{{user.id}}"
         }
       ]
     },
@@ -86,19 +79,12 @@
           }
         },
         {
-          "$and": [
-            {
-              "user_condition": {
-                "role": "encargado_salud"
-              }
-            },
-            {
-              "data.centro_principal": "{{user.centro_principal}}"
-            }
-          ]
+          "user_condition": {
+            "role": "encargado_salud"
+          }
         },
         {
-          "created_by": "{{user.email}}"
+          "created_by_id": "{{user.id}}"
         }
       ]
     },
@@ -115,19 +101,12 @@
           }
         },
         {
-          "$and": [
-            {
-              "user_condition": {
-                "role": "encargado_salud"
-              }
-            },
-            {
-              "data.centro_principal": "{{user.centro_principal}}"
-            }
-          ]
+          "user_condition": {
+            "role": "encargado_salud"
+          }
         },
         {
-          "created_by": "{{user.email}}"
+          "created_by_id": "{{user.id}}"
         }
       ]
     },
