@@ -17,6 +17,17 @@ Deno.serve(async (req) => {
 
     const kmInicial = Number(km_inicial);
 
+    // Validar que el equipo existe antes de modificar o crear registros.
+    let equipo;
+    try {
+      equipo = await base44.asServiceRole.entities.Equipo.get(equipo_id);
+    } catch (_) {
+      return Response.json({ error: "Equipo no encontrado" }, { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
+    }
+    if (!equipo) {
+      return Response.json({ error: "Equipo no encontrado" }, { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
+    }
+
     // Cerrar turnos activos (sin km_final) de la misma ambulancia
     const registros = await base44.asServiceRole.entities.Kilometraje.filter({ equipo_id });
     const activos = registros.filter(r => !r.km_final && r.km_final !== 0);

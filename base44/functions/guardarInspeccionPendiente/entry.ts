@@ -14,7 +14,15 @@ Deno.serve(async (req) => {
     }
 
     // Buscar el equipo para obtener sus datos completos
-    const equipo = await base44.asServiceRole.entities.Equipo.get(data.equipo_id);
+    let equipo;
+    try {
+      equipo = await base44.asServiceRole.entities.Equipo.get(data.equipo_id);
+    } catch (_) {
+      return Response.json({ error: 'Equipo no encontrado' }, { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
+    }
+    if (!equipo) {
+      return Response.json({ error: 'Equipo no encontrado' }, { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
+    }
 
     const registro = await base44.asServiceRole.entities.InspeccionPendiente.create({
       tipo_formulario: data.tipo_formulario,

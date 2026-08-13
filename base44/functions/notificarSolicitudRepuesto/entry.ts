@@ -14,6 +14,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Payload sin datos de solicitud' }, { status: 400 });
     }
 
+    // Verificar que la solicitud existe en la base de datos (protección contra
+    // invocaciones arbitrarias externas: solo una solicitud real puede disparar correos).
+    if (!entityId) {
+      return Response.json({ error: 'ID de solicitud requerido' }, { status: 400 });
+    }
+    try {
+      const sol = await base44.asServiceRole.entities.SolicitudRepuesto.get(entityId);
+      if (!sol) return Response.json({ error: 'Solicitud no encontrada' }, { status: 404 });
+    } catch (_) {
+      return Response.json({ error: 'Solicitud no válida' }, { status: 404 });
+    }
+
     // Obtener usuarios con rol Encargado de Compras de Taller
     const usuarios = await base44.asServiceRole.entities.User.list('-created_date', 200);
     const comprasTaller = usuarios.filter(u => u.role === 'encargado_compras_taller');

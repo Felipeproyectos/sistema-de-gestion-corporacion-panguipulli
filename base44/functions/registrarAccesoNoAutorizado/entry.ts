@@ -10,6 +10,12 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    // Solo llamadas con un token de autenticación válido pueden invocar esta
+    // función (evita abuso y spam de correos desde llamadas externas anónimas).
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const { email, user_agent } = await req.json();
     const correo = email || 'desconocido';
 
